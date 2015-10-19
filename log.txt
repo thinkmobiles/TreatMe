@@ -1,0 +1,42 @@
+-------------------------------------------------------------------------------------
+Fri Oct 16 2015 21:04:42 GMT+0300 (EEST)
+token is not defined
+ReferenceError: token is not defined
+    at signUp (/home/migal/WebstormProjects/TreatMe/handlers/users.js:13:22)
+    at Layer.handle [as handle_request] (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/route.js:131:13)
+    at Route.dispatch (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/route.js:112:3)
+    at Layer.handle [as handle_request] (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/layer.js:95:5)
+    at /home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:277:22
+    at Function.process_params (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:330:12)
+    at next (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:271:10)
+    at Function.handle (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:176:3)
+    at router (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:46:12)
+    at Layer.handle [as handle_request] (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:312:13)
+    at /home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:280:7
+    at Function.process_params (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:330:12)
+    at next (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:271:10)
+    at /home/migal/WebstormProjects/TreatMe/node_modules/express-session/index.js:433:7
+---------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+Mon Oct 19 2015 11:56:38 GMT+0300 (EEST)
+user is not defined
+ReferenceError: user is not defined
+    at signUp (/home/migal/WebstormProjects/TreatMe/handlers/users.js:45:9)
+    at Layer.handle [as handle_request] (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/route.js:131:13)
+    at Route.dispatch (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/route.js:112:3)
+    at Layer.handle [as handle_request] (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/layer.js:95:5)
+    at /home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:277:22
+    at Function.process_params (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:330:12)
+    at next (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:271:10)
+    at Function.handle (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:176:3)
+    at router (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:46:12)
+    at Layer.handle [as handle_request] (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:312:13)
+    at /home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:280:7
+    at Function.process_params (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:330:12)
+    at next (/home/migal/WebstormProjects/TreatMe/node_modules/express/lib/router/index.js:271:10)
+    at /home/migal/WebstormProjects/TreatMe/node_modules/express-session/index.js:433:7
+---------------------------------------------------------------------------------------------------------
