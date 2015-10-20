@@ -11,13 +11,18 @@ var UserHandler = function(app, db){
     var User = db.model('User');
     var session = new SessionHandler();
 
+    function getEncryptedPass(pass) {
+        var shaSum = crypto.createHash('sha256');
+        shaSum.update(pass);
+        return shaSum.digest('hex');
+    }
+
     this.signUp = function(req, res, next){
 
         var body = req.body;
         var token = uuid.v4();
         var email;
         var userModel;
-        var shaSum = crypto.createHash('sha256');
         var password;
         var name = 'User';
 
@@ -28,19 +33,15 @@ var UserHandler = function(app, db){
         email = body.email;
         password = body.password;
 
-        shaSum.update(password);
-
-
         if (!validator.isEmail(email)){
             return next(badRequests.InvalidEmail());
         }
-
 
         email = validator.escape(email);
 
         body.token = token;
         body.email = email;
-        body.password = shaSum.digest('hex');
+        body.password = getEncryptedPass(password);
 
         userModel = new User(body);
 
@@ -102,7 +103,58 @@ var UserHandler = function(app, db){
     this.forgotPassword = function(req, rea, next){
 
 
-    }
+    };
+
+    this.signIn = function(req, res, next){
+        var options = req.body;
+        var email;
+        var password;
+        var fbId;
+
+        if (options.fbId){
+
+            fbId = options.fbId;
+
+            User
+                .findOne({fbId:fbId}, function(err, userModel){
+                    if (err) {
+                        return next(err);
+                    }
+
+                    if (!userModel){
+                        return next(badRequests.NotFound({target: 'User'}));
+                    }
+
+                    session.register(req, res, userModel._id);
+                });
+
+        } else {
+
+            if (!options.email || !options.password){
+                return next(badRequests.NotEnParams({reqParams: 'email and password or fbId'}));
+            }
+
+            email = options.email;
+            password = getEncryptedPass(options.password);
+
+            if (!validator.isEmail(email)){
+                return next(badRequests.InvalidEmail());
+            }
+
+            User
+                .findOne({email: email, password: password}, function(err, userModel){
+                    if (err) {
+                        return next(err);
+                    }
+
+                    if (!userModel){
+                        return next(badRequests.InvalidValue({param: 'email or password'}));
+                    }
+
+                    session.register(req, res, userModel._id);
+                });
+        }
+    };
 
 };
 
