@@ -71,37 +71,71 @@ var UserHandler = function(app, db){
 
     };
 
-    this.confirmRegistration = function(req, res, next){
+    this.confirmRegistration = function (req, res, next) {
 
-        var token =  req.params.token;
+        var token = req.params.token;
         var uId;
 
         User
-            .findOne({token: token}, function(err, userModel){
+            .findOneAndUpdate({token: token}, {$set: {token: '', confirmed: new Date()}}, {new: true}, function (err, userModel) {
 
-                if (err){
+                if (err) {
                     return next(err);
                 }
 
                 uId = userModel.get('_id');
 
-                userModel
-                    .update({$set: {token: '', confirmed: new Date()}}, function(err){
+                session.register(req, res, uId, true);
 
-                        if (err){
-                            return next(err);
-                        }
+            });
 
-                        session.register(req, res, uId, true);
 
-                    });
+    };
+
+    this.forgotPassword = function(req, res, next){
+
+        var body = req.body;
+        var email;
+        var forgotToken = uuid.v4();
+
+        if (!body.email){
+            return next(badRequests.NotEnParams({params: 'email'}));
+        }
+
+        if (!validator.isEmail(body.email)){
+            return next(badRequests.InvalidEmail());
+        }
+
+        email = body.email;
+
+        email = validator.escape(email);
+
+        body.email = email;
+        body.forgotToken = forgotToken;
+
+        User
+            .findOneAndUpdate(
+            {
+                email: email
+            }, {
+                $set: {forgotToken: forgotToken}
+            }, {
+               new: true
+            }, function(err, result){
+
+                if (err){
+                    return next(err);
+                }
+
+                mailer.forgotPassword(result.toJSON());
+
+                res.status(200).send({success: 'Check your email'});
 
             });
 
     };
 
-    this.forgotPassword = function(req, rea, next){
-
+    this.changePassword = function(req, res, next){
 
     };
 

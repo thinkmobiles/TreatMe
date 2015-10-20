@@ -7,7 +7,7 @@ module.exports = function (db) {
     var ObjectId = mongoose.Schema.Types.ObjectId;
 
     var User = new Schema({
-
+        name: String,
         email: String,
         password: String,
         token: String,
