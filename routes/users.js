@@ -7,11 +7,12 @@ module.exports = function(app, db){
     var userHandler = new UserHandler(app, db);
     var sessionHandler = new SessionHandler();
 
-    router.post('/signUp', userHandler.signUp);
+
     router.post('/forgotPassword', userHandler.forgotPassword);
 
     router.get('/confirm/:token', userHandler.confirmRegistration);
-    //router.post('/passwordChange/:forgotToken', userHandler)
+    //router.get('/passwordChange/', userHandler.confirmForgotPass);
+    router.post('/passwordChange/:forgotToken', userHandler.changePassword);
 
     return router;
 };

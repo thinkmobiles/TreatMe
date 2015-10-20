@@ -1,4 +1,3 @@
-
 var mailer = require('../helpers/mailer')();
 var validator = require('validator');
 var uuid = require('uuid');
@@ -6,7 +5,7 @@ var badRequests = require('../helpers/badRequests');
 var crypto = require('crypto');
 var SessionHandler = require('./sessions');
 
-var UserHandler = function(app, db){
+var UserHandler = function (app, db) {
 
     var User = db.model('User');
     var session = new SessionHandler();
@@ -17,7 +16,7 @@ var UserHandler = function(app, db){
         return shaSum.digest('hex');
     }
 
-    this.signUp = function(req, res, next){
+    this.signUp = function (req, res, next) {
 
         var body = req.body;
         var token = uuid.v4();
@@ -26,14 +25,14 @@ var UserHandler = function(app, db){
         var password;
         var name = 'User';
 
-        if (!body.password || !body.email ){
+        if (!body.password || !body.email) {
             return next(badRequests.NotEnParams({reqParams: 'password or email'}));
         }
 
         email = body.email;
         password = body.password;
 
-        if (!validator.isEmail(email)){
+        if (!validator.isEmail(email)) {
             return next(badRequests.InvalidEmail());
         }
 
@@ -46,13 +45,13 @@ var UserHandler = function(app, db){
         userModel = new User(body);
 
         userModel
-            .save(function(err){
+            .save(function (err) {
 
-                if (err){
+                if (err) {
                     return next(err);
                 }
 
-                if (body.name){
+                if (body.name) {
                     name = body.name;
                 }
 
@@ -68,7 +67,6 @@ var UserHandler = function(app, db){
             });
 
 
-
     };
 
     this.confirmRegistration = function (req, res, next) {
@@ -77,7 +75,12 @@ var UserHandler = function(app, db){
         var uId;
 
         User
-            .findOneAndUpdate({token: token}, {$set: {token: '', confirmed: new Date()}}, {new: true}, function (err, userModel) {
+            .findOneAndUpdate({token: token}, {
+                $set: {
+                    token: '',
+                    confirmed: new Date()
+                }
+            }, {new: true}, function (err, userModel) {
 
                 if (err) {
                     return next(err);
@@ -92,17 +95,17 @@ var UserHandler = function(app, db){
 
     };
 
-    this.forgotPassword = function(req, res, next){
+    this.forgotPassword = function (req, res, next) {
 
         var body = req.body;
         var email;
         var forgotToken = uuid.v4();
 
-        if (!body.email){
+        if (!body.email) {
             return next(badRequests.NotEnParams({params: 'email'}));
         }
 
-        if (!validator.isEmail(body.email)){
+        if (!validator.isEmail(body.email)) {
             return next(badRequests.InvalidEmail());
         }
 
@@ -120,10 +123,10 @@ var UserHandler = function(app, db){
             }, {
                 $set: {forgotToken: forgotToken}
             }, {
-               new: true
-            }, function(err, result){
+                new: true
+            }, function (err, result) {
 
-                if (err){
+                if (err) {
                     return next(err);
                 }
 
@@ -135,27 +138,73 @@ var UserHandler = function(app, db){
 
     };
 
-    this.changePassword = function(req, res, next){
+    this.confirmForgotPass = function(req, res, next){
+        var forgotToken = req.params.forgotToken;
+
+        User
+            .findOneAndUpdate({forgotToken: forgotToken}, {forgotToken: ''}, function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Confirm change password'});
+
+            });
 
     };
 
-    this.signIn = function(req, res, next){
+    this.changePassword = function (req, res, next) {
+
+        var forgotToken = req.params.forgotToken;
+        var body = req.body;
+        var encryptedPassword;
+        var encryptedConfirmPassword;
+        var err;
+
+        if (!body.password || !body.confirmPassword){
+            return next(badRequests.NotEnParams({params: 'password or confirmPassword'}));
+        }
+
+        encryptedPassword = getEncryptedPass(body.password);
+        encryptedConfirmPassword = getEncryptedPass(body.confirmPassword);
+
+        if (encryptedPassword !== encryptedConfirmPassword){
+            err = new Error('Password and Confirmpassword doesn\'t much');
+            err.status = 400;
+            return next(err);
+        }
+
+        User
+            .findOneAndUpdate({forgotToken: forgotToken}, {password: encryptedPassword, forgotToken: ''}, function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Password changed successfully'});
+
+            });
+
+    };
+
+    this.signIn = function (req, res, next) {
         var options = req.body;
         var email;
         var password;
         var fbId;
 
-        if (options.fbId){
+        if (options.fbId) {
 
             fbId = options.fbId;
 
             User
-                .findOne({fbId:fbId}, function(err, userModel){
+                .findOne({fbId: fbId}, function (err, userModel) {
                     if (err) {
                         return next(err);
                     }
 
-                    if (!userModel){
+                    if (!userModel) {
                         return next(badRequests.NotFound({target: 'User'}));
                     }
 
@@ -164,25 +213,35 @@ var UserHandler = function(app, db){
 
         } else {
 
-            if (!options.email || !options.password){
+            if (!options.email || !options.password) {
                 return next(badRequests.NotEnParams({reqParams: 'email and password or fbId'}));
             }
 
             email = options.email;
             password = getEncryptedPass(options.password);
 
-            if (!validator.isEmail(email)){
+            if (!validator.isEmail(email)) {
                 return next(badRequests.InvalidEmail());
             }
 
             User
-                .findOne({email: email, password: password}, function(err, userModel){
+                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, userModel) {
+
+                    var model;
+
                     if (err) {
                         return next(err);
                     }
 
-                    if (!userModel){
-                        return next(badRequests.InvalidValue({param: 'email or password'}));
+
+                    if (!userModel) {
+                        return next(badRequests.SignInError());
+                    }
+
+                    model = userModel.toJSON();
+
+                    if (model.token){
+                        return next(badRequests.UnconfirmedEmail());
                     }
 
                     session.register(req, res, userModel._id);
