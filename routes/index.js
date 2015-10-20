@@ -11,6 +11,7 @@ module.exports = function (app, db) {
     });
 
     app.post('/signIn', userHandler.signIn);
+    app.get('/signOut', userHandler.signOut);
     app.use('/users', userRouter);
 
 

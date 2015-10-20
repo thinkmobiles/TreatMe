@@ -190,6 +190,11 @@ var UserHandler = function(app, db){
         }
     };
 
+    this.signOut = function(req, res, next){
+
+        session.kill(req, res, next);
+    };
+
 };
 
 module.exports = UserHandler;
