@@ -34,6 +34,7 @@ module.exports = function(){
 
     function forgotPassword (options){
         var templateOptions = {
+            name: options.name,
             email: options.email,
             url: process.env.HOST + '/users/passwordChange/' + options.forgotToken
         };
@@ -78,6 +79,7 @@ module.exports = function(){
     }
 
     return {
-        confirmRegistration: confirmRegistration
+        confirmRegistration: confirmRegistration,
+        forgotPassword: forgotPassword
     }
 };
