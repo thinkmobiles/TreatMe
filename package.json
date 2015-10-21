@@ -9,11 +9,16 @@
     "connect-mongo": "^0.8.2",
     "express": "^4.13.3",
     "express-session": "^1.11.3",
+    "jsdoc": "^3.3.3",
     "mongoose": "^4.1.11",
     "morgan": "^1.6.1",
     "nodemailer": "^1.8.0",
     "underscore": "^1.8.3",
     "uuid": "^2.0.1",
     "validator": "^4.1.0"
+  },
+  "devDependencies": {
+    "grunt": "0.4.5",
+    "grunt-jsdoc": "0.6.8"
   }
 }
