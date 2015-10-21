@@ -7,13 +7,130 @@ var SessionHandler = require('./sessions');
 
 var UserHandler = function (app, db) {
 
-    var User = db.model('User');
+    //var Business = db.model('Business');
+    //var Client = db.model('Client');
     var session = new SessionHandler();
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
         shaSum.update(pass);
         return shaSum.digest('hex');
+    }
+
+    function signInClient(options, callback){
+        var fbId;
+        var email;
+        var password;
+
+        if (options.fbId) {
+
+            fbId = options.fbId;
+
+            Client
+                .findOne({fbId: fbId}, function (err, clientModel) {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    if (!clientModel) {
+                        return callback (badRequests.SignInError());
+                    }
+
+                    callback(null, clientModel._id);
+                });
+
+        } else {
+
+            if (!options.email || !options.password) {
+                return callback(badRequests.NotEnParams({reqParams: 'email and password or fbId'}));
+            }
+
+            email = options.email;
+            password = getEncryptedPass(options.password);
+
+            if (!validator.isEmail(email)) {
+                return callback(badRequests.InvalidEmail());
+            }
+
+            Client
+                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, clientModel) {
+                    var model;
+
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    if (!clientModel) {
+                        return callback(badRequests.SignInError());
+                    }
+
+                    model = clientModel.toJSON();
+
+                    if (model.token){
+                        return callback(badRequests.UnconfirmedEmail());
+                    }
+
+                    callback(null, clientModel._id);
+                });
+        }
+    }
+
+    function signInBusiness (options, callback){
+        var fbId;
+        var email;
+        var password;
+
+        if (options.fbId) {
+
+            fbId = options.fbId;
+
+            Business
+                .findOne({fbId: fbId}, function (err, businessModel) {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    if (!businessModel) {
+                        return callback (badRequests.SignInError());
+                    }
+
+                    callback(null, businessModel._id);
+                });
+
+        } else {
+
+            if (!options.email || !options.password) {
+                return callback(badRequests.NotEnParams({reqParams: 'email and password or fbId'}));
+            }
+
+            email = options.email;
+            password = getEncryptedPass(options.password);
+
+            if (!validator.isEmail(email)) {
+                return callback(badRequests.InvalidEmail());
+            }
+
+            Business
+                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, businessModel) {
+                    var model;
+
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    if (!businessModel) {
+                        return callback(badRequests.SignInError());
+                    }
+
+                    model = businessModel.toJSON();
+
+                    if (model.token){
+                        return callback(badRequests.UnconfirmedEmail());
+                    }
+
+                    callback(null, businessModel._id);
+                });
+        }
     }
 
     this.signUp = function (req, res, next) {
@@ -190,62 +307,23 @@ var UserHandler = function (app, db) {
 
     this.signIn = function (req, res, next) {
         var options = req.body;
-        var email;
-        var password;
-        var fbId;
 
-        if (options.fbId) {
+        if (options.status === 'business'){
+            signInBusiness(options, function(err, id){
+               if (err){
+                   return next(err);
+               }
 
-            fbId = options.fbId;
-
-            User
-                .findOne({fbId: fbId}, function (err, userModel) {
-                    if (err) {
-                        return next(err);
-                    }
-
-                    if (!userModel) {
-                        return next(badRequests.NotFound({target: 'User'}));
-                    }
-
-                    session.register(req, res, userModel._id);
-                });
-
+               session.register(req,res, id, 'Business');
+            });
         } else {
+            signInClient(options, function(err, id){
+                if (err){
+                    return next(err);
+                }
 
-            if (!options.email || !options.password) {
-                return next(badRequests.NotEnParams({reqParams: 'email and password or fbId'}));
-            }
-
-            email = options.email;
-            password = getEncryptedPass(options.password);
-
-            if (!validator.isEmail(email)) {
-                return next(badRequests.InvalidEmail());
-            }
-
-            User
-                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, userModel) {
-
-                    var model;
-
-                    if (err) {
-                        return next(err);
-                    }
-
-
-                    if (!userModel) {
-                        return next(badRequests.SignInError());
-                    }
-
-                    model = userModel.toJSON();
-
-                    if (model.token){
-                        return next(badRequests.UnconfirmedEmail());
-                    }
-
-                    session.register(req, res, userModel._id);
-                });
+                session.register(req, res, id, 'Client');
+            });
         }
     };
 
