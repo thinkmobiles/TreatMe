@@ -11,13 +11,13 @@ module.exports = function(){
     var confirmAccountTemplate = _.template(confirmAccountHTML);
     var changePasswordTemplate = _.template(changePassHTML);
 
-    function confirmRegistration (options){
+    function confirmRegistration (options, status){
 
         var templateOptions = {
             name: options.name,
             email: options.email,
             password: options.password,
-            url: process.env.HOST + '/users/confirm/' + options.token
+            url: process.env.HOST + '/' + status + '/confirm/' + options.token
         };
 
         var mailOptions = {
@@ -32,11 +32,11 @@ module.exports = function(){
 
     }
 
-    function forgotPassword (options){
+    function forgotPassword (options, status){
         var templateOptions = {
             name: options.name,
             email: options.email,
-            url: process.env.HOST + '/users/passwordChange/' + options.forgotToken
+            url: process.env.HOST + '/' + status + '/passwordChange/' + options.forgotToken
         };
 
         var mailOptions = {

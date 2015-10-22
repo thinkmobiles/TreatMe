@@ -6,10 +6,9 @@ var crypto = require('crypto');
 var SessionHandler = require('./sessions');
 var CONSTANTS = require('../constants');
 
-var UserHandler = function (app, db) {
+var BusinessHandler = function (app, db) {
 
     var Business = db.model('Business');
-    var Client = db.model('Client');
     var session = new SessionHandler();
 
     function getEncryptedPass(pass) {
@@ -18,77 +17,10 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
-    function getBusinessOrClientModel (status){
-        if (status === CONSTANTS.USER_STATUS.BUSINESS){
-            return Business;
-        }
+    this.signIn = function(req, res, next){
 
-        if (status === CONSTANTS.USER_STATUS.CLIENT){
-            return Client;
-        }
+        var options = req.body;
 
-        return;
-    }
-
-    function signInClient(options, callback){
-        var fbId;
-        var email;
-        var password;
-
-        if (options.fbId) {
-
-            fbId = options.fbId;
-
-            Client
-                .findOne({fbId: fbId}, function (err, clientModel) {
-                    if (err) {
-                        return callback(err);
-                    }
-
-                    if (!clientModel) {
-                        return callback (badRequests.SignInError());
-                    }
-
-                    callback(null, clientModel._id);
-                });
-
-        } else {
-
-            if (!options.email || !options.password) {
-                return callback(badRequests.NotEnParams({reqParams: 'email and password or fbId'}));
-            }
-
-            email = options.email;
-            password = getEncryptedPass(options.password);
-
-            if (!validator.isEmail(email)) {
-                return callback(badRequests.InvalidEmail());
-            }
-
-            Client
-                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, clientModel) {
-                    var model;
-
-                    if (err) {
-                        return callback(err);
-                    }
-
-                    if (!clientModel) {
-                        return callback(badRequests.SignInError());
-                    }
-
-                    model = clientModel.toJSON();
-
-                    if (model.token){
-                        return callback(badRequests.UnconfirmedEmail());
-                    }
-
-                    callback(null, clientModel._id);
-                });
-        }
-    }
-
-    function signInBusiness (options, callback){
         var fbId;
         var email;
         var password;
@@ -100,27 +32,27 @@ var UserHandler = function (app, db) {
             Business
                 .findOne({fbId: fbId}, function (err, businessModel) {
                     if (err) {
-                        return callback(err);
+                        return next(err);
                     }
 
                     if (!businessModel) {
-                        return callback (badRequests.SignInError());
+                        return next(badRequests.SignInError());
                     }
 
-                    callback(null, businessModel._id);
+                    session.register(req, res, businessModel._id, false, CONSTANTS.USER_STATUS.BUSINESS);
                 });
 
         } else {
 
             if (!options.email || !options.password) {
-                return callback(badRequests.NotEnParams({reqParams: 'email and password or fbId'}));
+                return next(badRequests.NotEnParams({reqParams: 'email and password or fbId'}));
             }
 
             email = options.email;
             password = getEncryptedPass(options.password);
 
             if (!validator.isEmail(email)) {
-                return callback(badRequests.InvalidEmail());
+                return next(badRequests.InvalidEmail());
             }
 
             Business
@@ -128,30 +60,30 @@ var UserHandler = function (app, db) {
                     var model;
 
                     if (err) {
-                        return callback(err);
+                        return next(err);
                     }
 
                     if (!businessModel) {
-                        return callback(badRequests.SignInError());
+                        return next(badRequests.SignInError());
                     }
 
                     model = businessModel.toJSON();
 
                     if (model.token){
-                        return callback(badRequests.UnconfirmedEmail());
+                        return next(badRequests.UnconfirmedEmail());
                     }
 
-                    callback(null, businessModel._id);
+                    session.register(req, res, businessModel._id, false, CONSTANTS.USER_STATUS.BUSINESS);
                 });
         }
-    }
+    };
 
     this.signUp = function (req, res, next) {
 
         var body = req.body;
         var token = uuid.v4();
         var email;
-        var userModel;
+        var businessModel;
         var password;
         var name = 'User';
         var status;
@@ -167,8 +99,6 @@ var UserHandler = function (app, db) {
             return next(badRequests.InvalidValue({value: status, param: 'status'}));
         }
 
-        User = getBusinessOrClientModel(status);
-
         email = body.email;
         password = body.password;
 
@@ -182,9 +112,9 @@ var UserHandler = function (app, db) {
         body.email = email;
         body.password = getEncryptedPass(password);
 
-        userModel = new User(body);
+        businessModel = new Business(body);
 
-        userModel
+        businessModel
             .save(function (err) {
 
                 if (err) {
@@ -200,7 +130,7 @@ var UserHandler = function (app, db) {
                     email: body.email,
                     password: password,
                     token: token
-                });
+                }, CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
 
                 res.status(200).send({success: 'User registered successfully'});
 
@@ -214,7 +144,7 @@ var UserHandler = function (app, db) {
         var token = req.params.token;
         var uId;
 
-        User
+        Business
             .findOneAndUpdate({token: token}, {
                 $set: {
                     token: '',
@@ -256,7 +186,7 @@ var UserHandler = function (app, db) {
         body.email = email;
         body.forgotToken = forgotToken;
 
-        User
+        Business
             .findOneAndUpdate(
             {
                 email: email
@@ -270,7 +200,7 @@ var UserHandler = function (app, db) {
                     return next(err);
                 }
 
-                mailer.forgotPassword(result.toJSON());
+                mailer.forgotPassword(result.toJSON(), CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
 
                 res.status(200).send({success: 'Check your email'});
 
@@ -281,7 +211,7 @@ var UserHandler = function (app, db) {
     this.confirmForgotPass = function(req, res, next){
         var forgotToken = req.params.forgotToken;
 
-        User
+        Business
             .findOneAndUpdate({forgotToken: forgotToken}, {forgotToken: ''}, function(err){
 
                 if (err){
@@ -315,7 +245,7 @@ var UserHandler = function (app, db) {
             return next(err);
         }
 
-        User
+        Business
             .findOneAndUpdate({forgotToken: forgotToken}, {password: encryptedPassword, forgotToken: ''}, function(err){
 
                 if (err){
@@ -328,39 +258,6 @@ var UserHandler = function (app, db) {
 
     };
 
-    this.signIn = function (req, res, next) {
-        var options = req.body;
-        var status;
-
-        if (!options.status){
-            return next(badRequests.NotEnParams({reqParams: 'status'}));
-        }
-
-        status = options.status;
-
-        if (status !== CONSTANTS.USER_STATUS.BUSINESS && status !== CONSTANTS.USER_STATUS.CLIENT){
-            return next(badRequests.InvalidValue({value: status, param: 'status'}));
-        }
-
-        if (status === CONSTANTS.USER_STATUS.BUSINESS){
-            signInBusiness(options, function(err, id){
-               if (err){
-                   return next(err);
-               }
-
-               session.register(req, res, id, status);
-            });
-        } else {
-            signInClient(options, function(err, id){
-                if (err){
-                    return next(err);
-                }
-
-                session.register(req, res, id, status);
-            });
-        }
-    };
-
     this.signOut = function(req, res, next){
 
         session.kill(req, res, next);
@@ -368,4 +265,4 @@ var UserHandler = function (app, db) {
 
 };
 
-module.exports = UserHandler;
+module.exports = BusinessHandler;
