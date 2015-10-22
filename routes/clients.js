@@ -12,10 +12,16 @@ module.exports = function(app, db){
     router.get('/signOut', clientsHandler.signOut);
 
     router.post('/forgotPassword', clientsHandler.forgotPassword);
-
     router.get('/confirm/:token', clientsHandler.confirmRegistration);
-    router.get('/passwordChange/', clientsHandler.confirmForgotPass);
+
+    router.get('/passwordChange/:forgotToken', clientsHandler.confirmForgotPass);
     router.post('/passwordChange/:forgotToken', clientsHandler.changePassword);
+
+    router.get('/', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.getProfile);
+
+    router.put('/coordinates', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.updateLocation);
+    router.put('/changeEmail', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.changeEmail);
+    router.put('/', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.updateProfile);
 
     return router;
 };
