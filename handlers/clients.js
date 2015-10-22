@@ -435,7 +435,6 @@ var ClientsHandler = function (app, db) {
                 fbId: 0,
                 __v: 0,
                 token: 0,
-                email: 0,
                 password: 0,
                 forgotToken: 0,
                 confirmed: 0
@@ -447,6 +446,7 @@ var ClientsHandler = function (app, db) {
                     }
                 };
                 var avatarUrl;
+                var avatarName;
 
                 if (err) {
                     return next(err);
@@ -459,11 +459,13 @@ var ClientsHandler = function (app, db) {
                 resultObj.coordinates = clientModel.get('loc.coordinates');
                 resultObj.firstName = clientModel.get('clientDetails.firstName');
                 resultObj.lastName = clientModel.get('clientDetails.lastName');
+                resultObj.fullName = resultObj.firstName + ' ' + resultObj.lastName;
                 resultObj.phone = clientModel.get('clientDetails.phone') || '';
-                resultObj.avatar.fileName = clientModel.get('clientDetails.avatar') || '';
+                avatarName = clientModel.get('clientDetails.avatar') || '';
+                resultObj.email = clientModel.get('email');
 
-                if (resultObj.avatar.fileName){
-                    avatarUrl = imageHandler.computeUrl(resultObj.avatar.fileName, CONSTANTS.BUCKET.IMAGES)
+                if (avatarName){
+                    avatarUrl = imageHandler.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES)
                     resultObj.avatar.url = avatarUrl;
                 }
 
