@@ -1,3 +1,10 @@
+
+/**
+ * @description Business profile management module
+ * @module businessProfile
+ *
+ */
+
 var mailer = require('../helpers/mailer')();
 var validator = require('validator');
 var uuid = require('uuid');
@@ -5,11 +12,15 @@ var badRequests = require('../helpers/badRequests');
 var crypto = require('crypto');
 var SessionHandler = require('./sessions');
 var CONSTANTS = require('../constants');
+var async = require('async');
+var ImageHandler = require('./image');
+
 
 var BusinessHandler = function (app, db) {
 
     var Business = db.model('Business');
     var session = new SessionHandler();
+    var image = new ImageHandler();
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
@@ -18,6 +29,48 @@ var BusinessHandler = function (app, db) {
     }
 
     this.signIn = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/signIn/`__
+         *
+         * This __method__ allows signIn _User_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/signIn/
+         *
+         * @example Body example:
+         *
+         * If you want login via Facebook
+         * {
+         *      "fbId": "test1"
+         * }
+         *
+         * If you want login via email
+         *
+         * {
+         *      "email": "test@test.com",
+         *      "password": "qwerty"
+         * }
+         *
+         * @example Response example:
+         *
+         *  {
+         *      "success": "Login successful"
+         *  }
+         *
+         * @param {string} [fbId] - FaceBook Id for signing user
+         * @param {string} [email] - `User's` email
+         * @param {string} password - `User's` password
+         *
+         * @method signIn
+         * @instance
+         */
 
         var options = req.body;
 
@@ -86,56 +139,70 @@ var BusinessHandler = function (app, db) {
         var businessModel;
         var password;
         var name = 'User';
-        var status;
         var User;
 
-        if (!body.password || !body.email || !body.status) {
-            return next(badRequests.NotEnParams({reqParams: 'password or email or status'}));
+        if (body.fbId){
+
+            businessModel = new Business(body);
+
+            businessModel
+                .save(function (err) {
+
+                    if (err) {
+                        return next(err);
+                    }
+
+                    if (body.name) {
+                        name = body.name;
+                    }
+
+                    //res.status(200).send({success: 'User registered successfully'});
+                    session.register(req, res, businessModel._id, true, CONSTANTS.USER_STATUS.BUSINESS);
+
+                });
+
+        } else {
+            if (!body.password || !body.email) {
+                return next(badRequests.NotEnParams({reqParams: 'password or email'}));
+            }
+
+            email = body.email;
+            password = body.password;
+
+            if (!validator.isEmail(email)) {
+                return next(badRequests.InvalidEmail());
+            }
+
+            email = validator.escape(email);
+
+            body.token = token;
+            body.email = email;
+            body.password = getEncryptedPass(password);
+
+            businessModel = new Business(body);
+
+            businessModel
+                .save(function (err) {
+
+                    if (err) {
+                        return next(err);
+                    }
+
+                    if (body.name) {
+                        name = body.name;
+                    }
+
+                    mailer.confirmRegistration({
+                        name: name,
+                        email: body.email,
+                        password: password,
+                        token: token
+                    }, CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
+
+                    res.status(200).send({success: 'User registered successfully'});
+
+                });
         }
-
-        status = body.status;
-
-        if (status !== CONSTANTS.USER_STATUS.BUSINESS && status !== CONSTANTS.USER_STATUS.CLIENT){
-            return next(badRequests.InvalidValue({value: status, param: 'status'}));
-        }
-
-        email = body.email;
-        password = body.password;
-
-        if (!validator.isEmail(email)) {
-            return next(badRequests.InvalidEmail());
-        }
-
-        email = validator.escape(email);
-
-        body.token = token;
-        body.email = email;
-        body.password = getEncryptedPass(password);
-
-        businessModel = new Business(body);
-
-        businessModel
-            .save(function (err) {
-
-                if (err) {
-                    return next(err);
-                }
-
-                if (body.name) {
-                    name = body.name;
-                }
-
-                mailer.confirmRegistration({
-                    name: name,
-                    email: body.email,
-                    password: password,
-                    token: token
-                }, CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
-
-                res.status(200).send({success: 'User registered successfully'});
-
-            });
-
 
     };
 
@@ -162,7 +229,7 @@ var BusinessHandler = function (app, db) {
 
                 uId = userModel.get('_id');
 
-                session.register(req, res, uId, true);
+                session.register(req, res, uId, true, CONSTANTS.USER_STATUS.BUSINESS);
 
             });
 
@@ -272,6 +339,7 @@ var BusinessHandler = function (app, db) {
     };
 
     this.addBusinessDetails = function(req, res, next){
+
         var uId = req.session.uId;
         var body = req.body;
 
@@ -280,7 +348,7 @@ var BusinessHandler = function (app, db) {
         }
 
         Business
-            .findOneAndUpdate({_id: uId}, body, function(err){
+            .findOneAndUpdate({_id: uId}, {salonDetails: body}, function(err){
 
                 if (err){
                     return next(err);
@@ -289,7 +357,159 @@ var BusinessHandler = function (app, db) {
                 res.status(200).send({success: 'Business details saved successful'});
             })
 
+    };
+
+    this.updateBusinessDetails = function(req, res, next){
+
+        var uId = req.session.uId;
+        var body = req.body;
+        var currentSalonDetails;
+
+        Business
+            .findOne({_id: uId}, {salonDetails: 1}, function(err, resultModel){
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!resultModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                currentSalonDetails = resultModel.get('salonDetails');
+
+                if (body.salonName){
+                    currentSalonDetails.salonName = body.salonName;
+                }
+
+                if (body.address){
+                    currentSalonDetails.address = body.address;
+                }
+
+                if (body.state){
+                    currentSalonDetails.state = body.state;
+                }
+
+                if (body.zipCode){
+                    currentSalonDetails.zipCode = body.zipCode;
+                }
+
+                if (body.phone){
+                    currentSalonDetails.phone = body.phone;
+                }
+
+                if (body.licenseNumber){
+                    currentSalonDetails.licenseNumber = body.licenseNumber;
+                }
+
+                resultModel.update({$set: {salonDetails: currentSalonDetails}}, function(err){
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'Business details updated successful'});
+
+                });
+
+            });
+
+
+    };
+
+    this.getSalonDetails = function(req, res, next){
+
+        var uId = req.session.uId;
+        var logo;
+        var viewModel;
+
+        Business
+            .findOne({_id: uId}, {salonDetails: 1}, function(err, resultModel){
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!resultModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                viewModel = resultModel.toJSON();
+
+                if (viewModel.salonDetails.logo){
+                    logo = image.computeUrl(viewModel.salonDetails.logo, CONSTANTS.BUCKET.IMAGES);
+                    viewModel.salonDetails.logo = logo;
+                }
+
+                res.status(200).send(viewModel);
+
+            });
+    };
+
+
+    this.uploadSalonLogo = function(req, res, next){
+        var uId = req.session.uId;
+
+        var body = req.body;
+        var imageName = image.createImageName();
+        var currentImageName;
+        var imageString;
+
+        if (!body || !body.logo){
+            return next(badRequests.NotEnParams({reqParams: 'logo'}));
+        }
+
+        imageString = body.logo;
+
+        Business
+            .findOne({_id: uId}, {'salonDetails.logo': 1}, function(err, resultModel){
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!resultModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                currentImageName = resultModel.get('salonDetails.logo');
+
+                async
+                    .series([
+                        function(cb) {
+                            
+                            if (!currentImageName){
+                                return cb();
+                            }
+
+                            image.deleteImage(currentImageName,CONSTANTS.BUCKET.IMAGES, cb);
+
+                        },
+
+                        function(cb) {
+                            image.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, cb);
+                        },
+
+                        function(cb){
+                            Business
+                                .findOneAndUpdate({_id: uId}, {'salonDetails.logo': imageName}, cb);
+                        }
+
+                    ], function(err){
+                       
+                        if (err){
+                            return next(err);
+                        }
+                        
+                        res.status(200).send({success: 'Logo upload successful'});
+                        
+                    });
+
+            });
+
     }
+
+
 
 };
 

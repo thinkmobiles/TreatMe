@@ -16,6 +16,11 @@ module.exports = function(app, db){
     router.get('/confirm/:token', businessHandler.confirmRegistration);
     router.get('/passwordChange/', businessHandler.confirmForgotPass);
     router.post('/passwordChange/:forgotToken', businessHandler.changePassword);
-    router.post('/details', businessHandler.addBusinessDetails);
+
+    router.get('/details', sessionHandler.authenticatedUser, businessHandler.getSalonDetails);
+    router.post('/details', sessionHandler.authenticatedUser, businessHandler.addBusinessDetails);
+    router.put('/details', sessionHandler.authenticatedUser, businessHandler.updateBusinessDetails);
+    router.put('/details/logo', sessionHandler.authenticatedUser, businessHandler.uploadSalonLogo);
+
     return router;
 };

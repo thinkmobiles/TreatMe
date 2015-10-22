@@ -21,18 +21,26 @@ if (process.env.UPLOADER_TYPE === 'AmazonS3') {
     };
 }
 
-var imageHandler = function (db) {
+var imageHandler = function () {
 
     'use strict';
 
-    //var Image = db.model('Image');
-    var User = db.model('User');
-    var self = this;
-
     var imageUploader = require('../helpers/imageUploader/imageUploader')(uploaderConfig);
+
+    this.createImageName = function(){
+        return (new ObjectId()).toString();
+    };
 
     this.computeUrl = function (imageName, bucket) {
         return imageUploader.getImageUrl(imageName, bucket) + '.png';
+    };
+
+    this.uploadImage = function(imageString, imageName, bucket, callback){
+        imageUploader.uploadImage(imageString, imageName, bucket, callback);
+    };
+
+    this.deleteImage = function(imageName, bucket, callback){
+        imageUploader.removeImage(imageName, bucket, callback);
     };
 };
 

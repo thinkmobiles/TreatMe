@@ -18,14 +18,16 @@ module.exports = function (db) {
         forgotToken: String,
         fbId: {type: String, default: null},
         confirmed: {type: Date},
-        salonName: String,
-        address: String,
-        state: String,
-        zipCode: String,
-        phone: String,
-        licenseNumber: String,
-        logo: String,
-        stylists: [Stylist],
+        salonDetails: {
+            salonName: String,
+            address: String,
+            state: String,
+            zipCode: String,
+            phone: String,
+            licenseNumber: String,
+            logo: String,
+            stylists: [Stylist]
+        },
         loc: {
             type: {
                 type: String,
