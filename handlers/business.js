@@ -60,6 +60,8 @@ var BusinessHandler = function (app, db) {
          *
          * @example Response example:
          *
+         *  Response status: 200
+         *
          *  {
          *      "success": "Login successful"
          *  }
@@ -165,19 +167,25 @@ var BusinessHandler = function (app, db) {
          *
          * @example Response example:
          *
+         * Response status: 201
+         *
          * For signUp via Facebook
          *  {
-         *      "success": "User created successful"
+         *      "success": "Business created successful"
          *  }
          *
-         *  For signUp via Facebook
+         *  For signUp via Email
          *
+         *  {
+         *      "success": "Business created successful. For using your account you must verify it. Please check email."
+         *  }
          *
          * @param {string} [fbId] - FaceBook Id for signing user
          * @param {string} [email] - `User's` email
          * @param {string} password - `User's` password
+         * @param {string} [name] - `User's` name
          *
-         * @method signIn
+         * @method signUp
          * @instance
          */
 
@@ -286,6 +294,39 @@ var BusinessHandler = function (app, db) {
 
     this.forgotPassword = function (req, res, next) {
 
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/forgotPassword/`__
+         *
+         * This __method__ allows make link to change password for _Business_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/forgotPassword/
+         *
+         * @example Body example:
+         *
+         * {
+         *      "email": "test@test.com"
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         * {
+         *      "success": "Check your email"
+         * }
+         *
+         * @param {string} email - `User's` email
+         *
+         * @method forgotPassword
+         * @instance
+         */
+
         var body = req.body;
         var email;
         var forgotToken = uuid.v4();
@@ -349,24 +390,49 @@ var BusinessHandler = function (app, db) {
 
     this.changePassword = function (req, res, next) {
 
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/passwordChange/:forgotToken`__
+         *
+         * This __method__ allows change password for _Business_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/passwordChange/bfcbd0c5-69e8-490c-ae61-701702c8e04f
+         *
+         * @example Body example:
+         *
+         * {
+         *      "password": "qwerty"
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *      "success": "Password changed successfully"
+         * }
+         *
+         * @param {string} password - `User's` password
+         *
+         * @method changePassword
+         * @instance
+         */
+
         var forgotToken = req.params.forgotToken;
         var body = req.body;
         var encryptedPassword;
-        var encryptedConfirmPassword;
-        var err;
 
-        if (!body.password || !body.confirmPassword){
-            return next(badRequests.NotEnParams({params: 'password or confirmPassword'}));
+        if (!body.password){
+            return next(badRequests.NotEnParams({params: 'password'}));
         }
 
         encryptedPassword = getEncryptedPass(body.password);
-        encryptedConfirmPassword = getEncryptedPass(body.confirmPassword);
-
-        if (encryptedPassword !== encryptedConfirmPassword){
-            err = new Error('Password and Confirmpassword doesn\'t much');
-            err.status = 400;
-            return next(err);
-        }
 
         Business
             .findOneAndUpdate({forgotToken: forgotToken}, {password: encryptedPassword, forgotToken: ''}, function(err){
