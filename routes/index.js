@@ -3,12 +3,14 @@ module.exports = function (app, db) {
     var logWriter = require('../modules/logWriter')();
 
     var businessRouter = require('./business')(app, db);
+    var clientsRouter = require('./clients')(app, db);
 
     app.get('/', function (req, res, next) {
         res.status(200).send('Express start succeed');
     });
 
     app.use('/business', businessRouter);
+    app.use('/client', clientsRouter);
 
 
     function notFound(req, res, next) {
