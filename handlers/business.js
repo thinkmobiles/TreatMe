@@ -39,7 +39,7 @@ var BusinessHandler = function (app, db) {
          *
          * __URL: `/business/signIn/`__
          *
-         * This __method__ allows signIn _User_
+         * This __method__ allows signIn _Businness_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/business/signIn/
@@ -64,9 +64,9 @@ var BusinessHandler = function (app, db) {
          *      "success": "Login successful"
          *  }
          *
-         * @param {string} [fbId] - FaceBook Id for signing user
-         * @param {string} [email] - `User's` email
-         * @param {string} password - `User's` password
+         * @param {string} [fbId] - FaceBook Id for signing `Business`
+         * @param {string} [email] - `Business` email
+         * @param {string} password - `Business` password
          *
          * @method signIn
          * @instance
@@ -132,6 +132,54 @@ var BusinessHandler = function (app, db) {
     };
 
     this.signUp = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/signUp/`__
+         *
+         * This __method__ allows signUp _Business_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/signUp/
+         *
+         * @example Body example:
+         *
+         * If you want signUp via Facebook
+         * {
+         *      "fbId": "test1",
+         *      "name": "Test"
+         * }
+         *
+         * If you want signUp via email
+         *
+         * {
+         *      "email": "test@test.com",
+         *      "password": "qwerty",
+         *      "name": "Test"
+         * }
+         *
+         * @example Response example:
+         *
+         * For signUp via Facebook
+         *  {
+         *      "success": "User created successful"
+         *  }
+         *
+         *  For signUp via Facebook
+         *
+         *
+         * @param {string} [fbId] - FaceBook Id for signing user
+         * @param {string} [email] - `User's` email
+         * @param {string} password - `User's` password
+         *
+         * @method signIn
+         * @instance
+         */
 
         var body = req.body;
         var token = uuid.v4();
@@ -199,7 +247,7 @@ var BusinessHandler = function (app, db) {
                         token: token
                     }, CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
 
-                    res.status(200).send({success: 'User registered successfully'});
+                    res.status(200).send({success: 'Business created successful. For using your account you must verify it. Please check email.'});
 
                 });
         }
