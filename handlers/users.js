@@ -4,10 +4,11 @@ var uuid = require('uuid');
 var badRequests = require('../helpers/badRequests');
 var crypto = require('crypto');
 var SessionHandler = require('./sessions');
+var CONSTANTS = require('../constants');
 
 var UserHandler = function (app, db) {
 
-    //var Business = db.model('Business');
+    var Business = db.model('Business');
     //var Client = db.model('Client');
     var session = new SessionHandler();
 
@@ -15,6 +16,18 @@ var UserHandler = function (app, db) {
         var shaSum = crypto.createHash('sha256');
         shaSum.update(pass);
         return shaSum.digest('hex');
+    }
+
+    function getBusinessOrClientModel (status){
+        if (status === CONSTANTS.USER_STATUS.BUSINESS){
+            return Business;
+        }
+
+        if (status === CONSTANTS.USER_STATUS.CLIENT){
+            return Client;
+        }
+
+        return;
     }
 
     function signInClient(options, callback){
@@ -141,10 +154,20 @@ var UserHandler = function (app, db) {
         var userModel;
         var password;
         var name = 'User';
+        var status;
+        var User;
 
-        if (!body.password || !body.email) {
-            return next(badRequests.NotEnParams({reqParams: 'password or email'}));
+        if (!body.password || !body.email || !body.status) {
+            return next(badRequests.NotEnParams({reqParams: 'password or email or status'}));
         }
+
+        status = body.status;
+
+        if (status !== CONSTANTS.USER_STATUS.BUSINESS && status !== CONSTANTS.USER_STATUS.CLIENT){
+            return next(badRequests.InvalidValue({value: status, param: 'status'}));
+        }
+
+        User = getBusinessOrClientModel(status);
 
         email = body.email;
         password = body.password;
@@ -307,14 +330,25 @@ var UserHandler = function (app, db) {
 
     this.signIn = function (req, res, next) {
         var options = req.body;
+        var status;
 
-        if (options.status === 'business'){
+        if (!options.status){
+            return next(badRequests.NotEnParams({reqParams: 'status'}));
+        }
+
+        status = options.status;
+
+        if (status !== CONSTANTS.USER_STATUS.BUSINESS && status !== CONSTANTS.USER_STATUS.CLIENT){
+            return next(badRequests.InvalidValue({value: status, param: 'status'}));
+        }
+
+        if (status === CONSTANTS.USER_STATUS.BUSINESS){
             signInBusiness(options, function(err, id){
                if (err){
                    return next(err);
                }
 
-               session.register(req,res, id, 'Business');
+               session.register(req,res, id, status);
             });
         } else {
             signInClient(options, function(err, id){
@@ -322,7 +356,7 @@ var UserHandler = function (app, db) {
                     return next(err);
                 }
 
-                session.register(req, res, id, 'Client');
+                session.register(req, res, id, status);
             });
         }
     };

@@ -1,3 +1,5 @@
+var CONSTANTS = require('../constants');
+
 var Session = function () {
 
     'use strict';
@@ -33,7 +35,7 @@ var Session = function () {
     };
 
     this.isBusiness = function(req, res, next){
-        if (req.session && req.session.uStatus === 'Business'){
+        if (req.session && req.session.uStatus === CONSTANTS.USER_STATUS.BUSINESS){
             next();
         } else {
             var err = new Error('Not business');
@@ -43,7 +45,7 @@ var Session = function () {
     };
 
     this.isClient = function(req, res, next){
-        if (req.session && req.session.uStatus === 'Client'){
+        if (req.session && req.session.uStatus === CONSTANTS.USER_STATUS.CLIENT){
             next();
         } else {
             var err = new Error('Not client');
