@@ -6,15 +6,18 @@ module.exports = function (db) {
     var Schema = mongoose.Schema;
 
     var Client = new Schema({
-        name: {type: String, default: 'Client'},
         email: String,
         password: String,
         token: String,
         forgotToken: String,
         fbId: {type: String, default: null},
         confirmed: {type: Date},
-        phone: String,
-        avatar: String,
+        clientDetails: {
+            firstName: {type: String, default: 'Client'},
+            lastName: String,
+            phone: String,
+            avatar: String
+        },
         loc: {
             type: {
                 type: String,
