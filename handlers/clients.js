@@ -6,9 +6,9 @@ var crypto = require('crypto');
 var SessionHandler = require('./sessions');
 var CONSTANTS = require('../constants');
 
-var BusinessHandler = function (app, db) {
+var ClientsHandler = function (app, db) {
 
-    var Business = db.model('Business');
+    var Client = db.model('Client');
     var session = new SessionHandler();
 
     function getEncryptedPass(pass) {
@@ -29,17 +29,21 @@ var BusinessHandler = function (app, db) {
 
             fbId = options.fbId;
 
-            Business
-                .findOne({fbId: fbId}, function (err, businessModel) {
+            Client
+                .findOne({fbId: fbId}, function (err, clientModel) {
+                    var clientId;
+
                     if (err) {
                         return next(err);
                     }
 
-                    if (!businessModel) {
+                    if (!clientModel) {
                         return next(badRequests.SignInError());
                     }
 
-                    session.register(req, res, businessModel._id, false, CONSTANTS.USER_STATUS.BUSINESS);
+                    clientId = clientModel.get('_id');
+
+                    session.register(req, res, clientId, false, CONSTANTS.USER_STATUS.CLIENT);
                 });
 
         } else {
@@ -55,25 +59,27 @@ var BusinessHandler = function (app, db) {
                 return next(badRequests.InvalidEmail());
             }
 
-            Business
-                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, businessModel) {
+            Client
+                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, clientModel) {
                     var token;
+                    var clientId;
 
                     if (err) {
                         return next(err);
                     }
 
-                    if (!businessModel) {
+                    if (!clientModel) {
                         return next(badRequests.SignInError());
                     }
 
-                    token = businessModel.get('token');
+                    token = clientModel.get('token');
+                    clientId = clientModel.get('_id');
 
                     if (token){
                         return next(badRequests.UnconfirmedEmail());
                     }
 
-                    session.register(req, res, businessModel._id, false, CONSTANTS.USER_STATUS.BUSINESS);
+                    session.register(req, res, clientId, false, CONSTANTS.USER_STATUS.CLIENT);
                 });
         }
     };
@@ -83,11 +89,10 @@ var BusinessHandler = function (app, db) {
         var body = req.body;
         var token = uuid.v4();
         var email;
-        var businessModel;
+        var clientModel;
         var password;
         var name = 'User';
         var status;
-        var User;
 
         if (!body.password || !body.email || !body.status) {
             return next(badRequests.NotEnParams({reqParams: 'password or email or status'}));
@@ -112,9 +117,9 @@ var BusinessHandler = function (app, db) {
         body.email = email;
         body.password = getEncryptedPass(password);
 
-        businessModel = new Business(body);
+        clientModel = new Client(body);
 
-        businessModel
+        clientModel
             .save(function (err) {
 
                 if (err) {
@@ -130,7 +135,7 @@ var BusinessHandler = function (app, db) {
                     email: body.email,
                     password: password,
                     token: token
-                }, CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
+                }, CONSTANTS.USER_STATUS.CLIENT.toLowerCase());
 
                 res.status(200).send({success: 'User registered successfully'});
 
@@ -142,27 +147,27 @@ var BusinessHandler = function (app, db) {
     this.confirmRegistration = function (req, res, next) {
 
         var token = req.params.token;
-        var uId;
 
-        Business
+        Client
             .findOneAndUpdate({token: token}, {
                 $set: {
                     token: '',
                     confirmed: new Date()
                 }
-            }, {new: true}, function (err, userModel) {
+            }, {new: true}, function (err, clientModel) {
+                var clientId;
 
                 if (err) {
                     return next(err);
                 }
 
-                if (!userModel){
-                    return next();
+                if (!clientModel){
+                    return next(badRequests.TokenWasUsed());
                 }
 
-                uId = userModel.get('_id');
+                clientId = clientModel.get('_id');
 
-                session.register(req, res, uId, true);
+                session.register(req, res, clientId, true);
 
             });
 
@@ -190,7 +195,7 @@ var BusinessHandler = function (app, db) {
         body.email = email;
         body.forgotToken = forgotToken;
 
-        Business
+        Client
             .findOneAndUpdate(
             {
                 email: email
@@ -219,7 +224,7 @@ var BusinessHandler = function (app, db) {
     this.confirmForgotPass = function(req, res, next){
         var forgotToken = req.params.forgotToken;
 
-        Business
+        Client
             .findOneAndUpdate({forgotToken: forgotToken}, {forgotToken: ''}, function(err){
 
                 if (err){
@@ -237,23 +242,14 @@ var BusinessHandler = function (app, db) {
         var forgotToken = req.params.forgotToken;
         var body = req.body;
         var encryptedPassword;
-        var encryptedConfirmPassword;
-        var err;
 
-        if (!body.password || !body.confirmPassword){
-            return next(badRequests.NotEnParams({params: 'password or confirmPassword'}));
+        if (!body.password){
+            return next(badRequests.NotEnParams({params: 'password'}));
         }
 
         encryptedPassword = getEncryptedPass(body.password);
-        encryptedConfirmPassword = getEncryptedPass(body.confirmPassword);
 
-        if (encryptedPassword !== encryptedConfirmPassword){
-            err = new Error('Password and Confirmpassword doesn\'t much');
-            err.status = 400;
-            return next(err);
-        }
-
-        Business
+        Client
             .findOneAndUpdate({forgotToken: forgotToken}, {password: encryptedPassword, forgotToken: ''}, function(err){
 
                 if (err){
@@ -271,26 +267,7 @@ var BusinessHandler = function (app, db) {
         session.kill(req, res, next);
     };
 
-    this.addBusinessDetails = function(req, res, next){
-        var uId = req.session.uId;
-        var body = req.body;
-
-        if (!body || !body.salonName || !body.address || !body.state || !body.zipCode || !body.phone || !body.licenseNumber){
-            return next(badRequests.NotEnParams({reqParams: 'Salon name or Business address or State or Zipcode or Phone Number or License Number'}));
-        }
-
-        Business
-            .findOneAndUpdate({_id: uId}, body, function(err){
-
-                if (err){
-                    return next(err);
-                }
-
-                res.status(200).send({success: 'Business details saved successful'});
-            })
-
-    }
-
 };
 
-module.exports = BusinessHandler;
+module.exports = ClientsHandler;
+

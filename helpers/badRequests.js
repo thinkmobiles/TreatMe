@@ -323,6 +323,28 @@ var BadRequestModule = function () {
         return new Errors(errOptions);
     };
 
+    this.TokenWasUsed = function(options){
+        var errOptions;
+
+        if (options) {
+            errOptions = options;
+        } else {
+            errOptions = {};
+        }
+
+        if (!errOptions.name) {
+            errOptions.name = 'TokenWasUsed';
+        }
+        if (!errOptions.message) {
+            errOptions.message = 'This token has already been used';
+        }
+        if (!errOptions.status) {
+            errOptions.status = 400;
+        }
+
+        return new Errors(errOptions);
+    };
+
 };
 
 module.exports = new BadRequestModule();
