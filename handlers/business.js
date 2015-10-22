@@ -156,6 +156,10 @@ var BusinessHandler = function (app, db) {
                     return next(err);
                 }
 
+                if (!userModel){
+                    return next();
+                }
+
                 uId = userModel.get('_id');
 
                 session.register(req, res, uId, true);
@@ -262,6 +266,26 @@ var BusinessHandler = function (app, db) {
 
         session.kill(req, res, next);
     };
+
+    this.addBusinessDetails = function(req, res, next){
+        var uId = req.session.uId;
+        var body = req.body;
+
+        if (!body || !body.salonName || !body.address || !body.state || !body.zipCode || !body.phone || !body.licenseNumber){
+            return next(badRequests.NotEnParams({reqParams: 'Salon name or Business address or State or Zipcode or Phone Number or License Number'}));
+        }
+
+        Business
+            .findOneAndUpdate({_id: uId}, body, function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Business details saved successful'});
+            })
+
+    }
 
 };
 

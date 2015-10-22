@@ -16,6 +16,6 @@ module.exports = function(app, db){
     router.get('/confirm/:token', businessHandler.confirmRegistration);
     router.get('/passwordChange/', businessHandler.confirmForgotPass);
     router.post('/passwordChange/:forgotToken', businessHandler.changePassword);
-
+    router.post('/details', businessHandler.addBusinessDetails);
     return router;
 };
