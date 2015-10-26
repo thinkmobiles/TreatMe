@@ -20,8 +20,9 @@ module.exports = function(app, db){
     router.get('/', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.getProfile);
 
     router.put('/coordinates', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.updateLocation);
-    router.put('/changeEmail', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.changeEmail);
     router.put('/', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.updateProfile);
+
+    router.post('/avatar', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.uploadAvatar);
 
     return router;
 };
