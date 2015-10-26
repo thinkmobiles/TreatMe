@@ -94,19 +94,22 @@ var ClientsHandler = function (app, db) {
         var email;
         var clientModel;
         var password;
-        var firstName = 'Client';
-        var lastName = '';
-        var nameArray;
+        var firstName;
+        var lastName;
+        var phone;
         var saveData = {
             clientDetails: {}
         };
 
-        if (!body.password || !body.email) {
-            return next(badRequests.NotEnParams({reqParams: 'password or email'}));
+        if (!body.password || !body.email || !body.firstName || !body.lastName || !body.phone) {
+            return next(badRequests.NotEnParams({reqParams: 'password or email or firstName or lastName or phone'}));
         }
 
         email = body.email;
         password = body.password;
+        firstName = body.firstName;
+        lastName = body.lastName;
+        phone = body.phone;
 
         if (!validator.isEmail(email)) {
             return next(badRequests.InvalidEmail());
@@ -114,21 +117,12 @@ var ClientsHandler = function (app, db) {
 
         email = validator.escape(email);
 
-        if (body.name) {
-            nameArray = body.name.split(' ');
-            firstName = nameArray[0];
-            lastName = nameArray[1];
-        }
-
-        if (body.phone) {
-            saveData.clientDetails.phone = body.phone;
-        }
-
         saveData.token = token;
         saveData.email = email;
         saveData.password = getEncryptedPass(password);
         saveData.clientDetails.firstName = firstName;
         saveData.clientDetails.lastName = lastName;
+        saveData.clientDetails.phone = phone;
 
         clientModel = new Client(saveData);
 
@@ -278,89 +272,82 @@ var ClientsHandler = function (app, db) {
     this.updateProfile = function (req, res, next) {
         var clientId = req.session.uId;
         var options = req.body;
-        var saveData = {
-            clientDetails: {}
-        };
 
-        if (!options.firstName && !options.lastName) {
-            return next(badRequests.NotEnParams({reqParams: 'firstName or lastName'}));
+        if (!options.firstName && !options.lastName && !options.phone && !options.email) {
+            return next(badRequests.NotEnParams({reqParams: 'firstName or lastName or phone or email'}));
         }
-
-        if (options.firstName) {
-            saveData.clientDetails.firstName = options.firstName;
-        }
-
-        if (options.lastName) {
-            saveData.clientDetails.lastName = options.lastName;
-        }
-
-        Client.findOneAndUpdate({_id: clientId}, saveData, function (err, clientModel) {
-            if (err) {
-                return next(err);
-            }
-
-            if (!clientModel) {
-                return next(badRequests.DatabaseError());
-            }
-
-            res.status(200).send({success: 'Client\'s profile updated successfully'});
-        });
-
-    };
-
-    this.changeEmail = function (req, res, next) {
-        var clientId = req.session.uId;
-        var email = req.body.email;
-
-        if (!email) {
-            return next(badRequests.NotEnParams({reqParams: 'email'}));
-        }
-
-        if (!validator.isEmail(email)) {
-            return next(badRequests.InvalidEmail());
-        }
-
-        email = validator.escape(email);
 
         async.waterfall([
 
-            //check if new email is free
+            //find user
             function (cb) {
+                Client.findOne({_id: clientId}, function (err, clientModel) {
+                    if (err) {
+                        return cb(err, null);
+                    }
+
+                    if (!clientModel) {
+                        return cb(badRequests.DatabaseError(), null);
+                    }
+
+                    if (options.firstName) {
+                        clientModel.clientDetails.firstName = options.firstName;
+                    }
+
+                    if (options.lastName) {
+                        clientModel.clientDetails.lastName = options.lastName;
+                    }
+
+                    if (options.phone) {
+                        clientModel.clientDetails.phone = options.phone;
+                    }
+
+                    cb(null, clientModel);
+                });
+            },
+
+            //check email in use or not
+            function (clientModel, cb) {
+                var email;
+
+                if (!options.email) {
+                    return cb(null, clientModel);
+                }
+
+                if (!validator.isEmail(options.email)) {
+                    return cb(badRequests.InvalidEmail(), null);
+                }
+
+                email = validator.escape(options.email);
+
                 Client.findOne({email: email}, function (err, someClientModel) {
                     var someClientId;
 
                     if (err) {
-                        return cb(err);
+                        return cb(err, null);
                     }
 
-                    if (someClientModel) {
-                        someClientId = someClientModel.get('_id').toString();
-
-                        if (someClientId !== clientId) {
-                            return cb(badRequests.EmailInUse());
-                        } else {
-                            return cb(null, true); //true if email don't changed for user
-                        }
+                    if (!someClientModel) {
+                        clientModel.email = email;
+                        return cb(null, clientModel);
                     }
 
-                    cb(null, null);
+                    someClientId = someClientModel.get('_id').toString();
+
+                    if (someClientId !== clientId) {
+                        return cb(badRequests.EmailInUse(), null);
+                    } else {
+                        return cb(null, clientModel);
+                    }
+
                 });
             },
 
-            //update email for Client
-            function (dontNeedUpdate, cb) {
-                if (dontNeedUpdate) {
-                    return cb();
-                }
-
-                Client
-                    .findOneAndUpdate({_id: clientId}, {email: email}, function (err, clientModel) {
+            function (clientModel, cb) {
+                clientModel
+                    .save(function (err) {
                         if (err) {
                             return cb(err);
-                        }
-
-                        if (!clientModel) {
-                            return cb(badRequests.DatabaseError());
                         }
 
                         cb();
@@ -372,7 +359,7 @@ var ClientsHandler = function (app, db) {
                 return next(err);
             }
 
-            res.status(200).send({success: 'Client\'s email changed successfully'});
+            res.status(200).send({success: 'Client\'s profile updated successfully'});
         });
     };
 
@@ -422,10 +409,10 @@ var ClientsHandler = function (app, db) {
             });
     };
 
-    this.getProfile = function(req, res, next){
+    this.getProfile = function (req, res, next) {
         var clientId = req.params.id || req.session.uId;
 
-        if (req.params.id && !CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
+        if (req.params.id && !CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)) {
             return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
         }
 
@@ -459,17 +446,76 @@ var ClientsHandler = function (app, db) {
                 resultObj.coordinates = clientModel.get('loc.coordinates');
                 resultObj.firstName = clientModel.get('clientDetails.firstName');
                 resultObj.lastName = clientModel.get('clientDetails.lastName');
-                resultObj.fullName = resultObj.firstName + ' ' + resultObj.lastName;
+                //resultObj.fullName = resultObj.firstName + ' ' + resultObj.lastName;
                 resultObj.phone = clientModel.get('clientDetails.phone') || '';
                 avatarName = clientModel.get('clientDetails.avatar') || '';
                 resultObj.email = clientModel.get('email');
 
-                if (avatarName){
-                    avatarUrl = imageHandler.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES)
+                if (avatarName) {
+                    avatarUrl = imageHandler.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                     resultObj.avatar.url = avatarUrl;
                 }
 
                 res.status(200).send(resultObj);
+            });
+    };
+
+    this.uploadAvatar = function(req, res, next){
+        var clientId = req.session.uId;
+
+        var body = req.body;
+        var imageName = imageHandler.createImageName();
+        var currentImageName;
+        var imageString;
+
+        if (!body || !body.avatar){
+            return next(badRequests.NotEnParams({reqParams: 'avatar'}));
+        }
+
+        imageString = body.avatar;
+
+        Client
+            .findOne({_id: clientId}, {'clientDetails.avatar': 1}, function(err, clientModel){
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!clientModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                currentImageName = clientModel.get('clientDetails.avatar');
+
+                async
+                    .series([
+
+                        function(cb) {
+
+                            if (!currentImageName){
+                                return cb();
+                            }
+
+                            imageHandler.deleteImage(currentImageName, CONSTANTS.BUCKET.IMAGES, cb);
+                        },
+
+                        function(cb) {
+                            imageHandler.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, cb);
+                        },
+
+                        function(cb){
+                            Client
+                                .findOneAndUpdate({_id: clientId}, {'clientDetails.avatar': imageName}, cb);
+                        }
+
+                    ], function(err){
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: 'Avatar upload successful'});
+                    });
             });
     };
 

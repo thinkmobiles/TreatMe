@@ -13,7 +13,7 @@ module.exports = function (db) {
         fbId: {type: String, default: null},
         confirmed: {type: Date},
         clientDetails: {
-            firstName: {type: String, default: 'Client'},
+            firstName: String,
             lastName: String,
             phone: String,
             avatar: String
