@@ -17,7 +17,8 @@ module.exports = function (db) {
             lastName: String,
             profession: String,
             phoneNumber: String,
-            facebookURL: String
+            facebookURL: String,
+            avatar: String
         },
         salonInfo: {
             salonName: String,

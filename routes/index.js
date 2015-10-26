@@ -1,5 +1,7 @@
 
 module.exports = function (app, db) {
+    var ServiceType = db.model('ServiceType')
+
     var logWriter = require('../modules/logWriter')();
 
     var businessRouter = require('./business')(app, db);
@@ -18,6 +20,29 @@ module.exports = function (app, db) {
     app.get('/subscriptionTypes', subscriptionHandler.getSubscriptionTypes);
     app.post('/subscriptionTypes', subscriptionHandler.createSubscriptionType);
     app.put('/subscriptionTypes/:id', subscriptionHandler.updateSubscriptionType);
+    app.post('/service', function(req, res, next){
+
+        var body = req.body;
+        var serviceModel;
+
+        if (!body.name){
+            next(new Error('Required params name'));
+        }
+
+        serviceModel = new ServiceType(body);
+
+        serviceModel
+            .save(function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Service created successfully'});
+
+            });
+
+    });
 
 
     function notFound(req, res, next) {

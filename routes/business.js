@@ -17,10 +17,11 @@ module.exports = function(app, db){
     router.get('/passwordChange/', businessHandler.confirmForgotPass);
     router.post('/passwordChange/:forgotToken', businessHandler.changePassword);
 
-    router.get('/details', sessionHandler.authenticatedUser, businessHandler.getSalonDetails);
+    router.get('/details/personal', sessionHandler.authenticatedUser, businessHandler.getStylistInfo);
+    router.get('/details/salon', sessionHandler.authenticatedUser, businessHandler.getSalonInfo);
     router.put('/personal', sessionHandler.authenticatedUser, businessHandler.updatePersonalInfo);
     router.put('/salon', sessionHandler.authenticatedUser, businessHandler.updateSalonInfo);
-    router.put('/details/logo', sessionHandler.authenticatedUser, businessHandler.uploadSalonLogo);
+    router.put('/avatar', sessionHandler.authenticatedUser, businessHandler.uploadStylistAvatar);
 
     return router;
 };

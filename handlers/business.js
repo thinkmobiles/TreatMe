@@ -19,6 +19,9 @@ var ImageHandler = require('./image');
 var BusinessHandler = function (app, db) {
 
     var Business = db.model('Business');
+    var ServiceType = db.model('ServiceType');
+    var Services = db.model('Services');
+
     var session = new SessionHandler();
     var image = new ImageHandler();
 
@@ -712,7 +715,7 @@ var BusinessHandler = function (app, db) {
 
     };
 
-    this.getSalonDetails = function(req, res, next){
+    this.getStylistInfo = function(req, res, next){
 
         /**
          * __Type__ __`GET`__
@@ -751,11 +754,11 @@ var BusinessHandler = function (app, db) {
          */
 
         var uId = req.session.uId;
-        var logo;
+        var avatar;
         var viewModel;
 
         Business
-            .findOne({_id: uId}, {salonDetails: 1}, function(err, resultModel){
+            .findOne({_id: uId}, {personalInfo: 1}, function(err, resultModel){
 
                 if (err){
                     return next(err);
@@ -767,9 +770,12 @@ var BusinessHandler = function (app, db) {
 
                 viewModel = resultModel.toJSON();
 
-                if (viewModel.salonDetails.logo){
-                    logo = image.computeUrl(viewModel.salonDetails.logo, CONSTANTS.BUCKET.IMAGES);
-                    viewModel.salonDetails.logo = logo;
+                if (viewModel.personalInfo.avatar){
+                    avatar = image.computeUrl(viewModel.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
+                    viewModel.personalInfo.avatar = {
+                        avatarName: viewModel.personalInfo.avatar,
+                        url: avatar
+                    };
                 }
 
                 res.status(200).send(viewModel);
@@ -777,8 +783,28 @@ var BusinessHandler = function (app, db) {
             });
     };
 
+    this.getSalonInfo = function(req, res, next){
 
-    this.uploadSalonLogo = function(req, res, next){
+        var uId = req.session.uId;
+
+        Business
+            .findOne({_id: uId}, {salonInfo: 1}, function(err, resultModel){
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!resultModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                res.status(200).send(resultModel.toJSON());
+
+            });
+
+    };
+
+    this.uploadStylistAvatar = function(req, res, next){
 
         /**
          * __Type__ __`PUT`__
@@ -820,14 +846,14 @@ var BusinessHandler = function (app, db) {
         var currentImageName;
         var imageString;
 
-        if (!body || !body.logo){
-            return next(badRequests.NotEnParams({reqParams: 'logo'}));
+        if (!body || !body.avatar){
+            return next(badRequests.NotEnParams({reqParams: 'avatar'}));
         }
 
-        imageString = body.logo;
+        imageString = body.avatar;
 
         Business
-            .findOne({_id: uId}, {'salonDetails.logo': 1}, function(err, resultModel){
+            .findOne({_id: uId}, {'personalInfo.avatar': 1}, function(err, resultModel){
 
                 if (err){
                     return next(err);
@@ -837,7 +863,7 @@ var BusinessHandler = function (app, db) {
                     return next(badRequests.DatabaseError());
                 }
 
-                currentImageName = resultModel.get('salonDetails.logo');
+                currentImageName = resultModel.get('personalInfo.avatar');
 
                 async
                     .series([
@@ -847,7 +873,7 @@ var BusinessHandler = function (app, db) {
                                 return cb();
                             }
 
-                            image.deleteImage(currentImageName,CONSTANTS.BUCKET.IMAGES, cb);
+                            image.deleteImage(currentImageName, CONSTANTS.BUCKET.IMAGES, cb);
 
                         },
 
@@ -857,7 +883,7 @@ var BusinessHandler = function (app, db) {
 
                         function(cb){
                             Business
-                                .findOneAndUpdate({_id: uId}, {'salonDetails.logo': imageName}, cb);
+                                .findOneAndUpdate({_id: uId}, {'personalInfo.avatar': imageName}, cb);
                         }
 
                     ], function(err){
@@ -866,13 +892,38 @@ var BusinessHandler = function (app, db) {
                             return next(err);
                         }
                         
-                        res.status(200).send({success: 'Logo upload successful'});
+                        res.status(200).send({success: 'Avatar upload successful'});
                         
                     });
 
             });
 
-    }
+    };
+
+    this.getBusinessService = function(req, res, next){
+
+        var uId = req.session.uId;
+
+        ServiceType.find({}, function(err, allServiceModels){
+
+            if (err){
+                return next(err);
+            }
+
+            Services
+                .find({stylist: uId}, function(err, stylistServiceModel){
+
+                    if (err){
+                        return next(err);
+                    }
+
+
+
+                });
+
+        });
+
+    };
 
 
 
