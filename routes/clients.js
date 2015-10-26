@@ -23,6 +23,8 @@ module.exports = function(app, db){
     router.put('/', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.updateProfile);
 
     router.post('/avatar', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.uploadAvatar);
+    router.delete('/avatar', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.removeAvatar);
+
 
     return router;
 };
