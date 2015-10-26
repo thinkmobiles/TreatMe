@@ -162,7 +162,8 @@ var BusinessHandler = function (app, db) {
          * {
          *      "email": "test@test.com",
          *      "password": "qwerty",
-         *      "name": "Test"
+         *      "firstName": "Test",
+         *      "lastName": "Test",
          * }
          *
          * @example Response example:
@@ -183,7 +184,8 @@ var BusinessHandler = function (app, db) {
          * @param {string} [fbId] - FaceBook Id for signing user
          * @param {string} [email] - `Business` email
          * @param {string} password - `Business` password
-         * @param {string} [name] - `Business` name
+         * @param {string} firstName - `Business` firstName
+         * @param {string} lastName - `Business` lastName
          *
          * @method signUp
          * @instance
@@ -194,8 +196,8 @@ var BusinessHandler = function (app, db) {
         var email;
         var businessModel;
         var password;
-        var name = 'User';
-        var User;
+        var firstName;
+        var lastName;
 
         if (body.fbId){
 
@@ -218,8 +220,8 @@ var BusinessHandler = function (app, db) {
                 });
 
         } else {
-            if (!body.password || !body.email) {
-                return next(badRequests.NotEnParams({reqParams: 'password or email'}));
+            if (!body.password || !body.email || !body.firstName || !body.lastName) {
+                return next(badRequests.NotEnParams({reqParams: 'password or email or First name or Last name'}));
             }
 
             email = body.email;
@@ -249,7 +251,7 @@ var BusinessHandler = function (app, db) {
                     }
 
                     mailer.confirmRegistration({
-                        name: name,
+                        name: body.firstName + ' ' + body.lastName,
                         email: body.email,
                         password: password,
                         token: token
@@ -364,7 +366,12 @@ var BusinessHandler = function (app, db) {
                     return res.status(200).send({success: 'Check your email'});
                 }
 
-                mailer.forgotPassword(result.toJSON(), CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
+                mailer.forgotPassword({
+                        name: result.salonDetails.firstName + ' ' + result.salonDetails.lastName,
+                        email: result.email,
+                        forgotToken: result.forgotToken
+                    },
+                    CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
 
                 res.status(200).send({success: 'Check your email'});
 

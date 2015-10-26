@@ -11,7 +11,6 @@ module.exports = function (db) {
     });
 
     var Business = new Schema({
-        name: {type: String, default: 'Salon'},
         email: String,
         password: String,
         token: String,
@@ -19,6 +18,8 @@ module.exports = function (db) {
         fbId: {type: String, default: null},
         confirmed: {type: Date},
         salonDetails: {
+            firstName: String,
+            lastName: String,
             salonName: String,
             address: String,
             state: String,
