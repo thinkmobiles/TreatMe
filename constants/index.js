@@ -6,7 +6,7 @@ module.exports = {
     BUCKET: {
         IMAGES: 'images'
     },
-    REG_EXP:{
+    REG_EXP: {
         OBJECT_ID: new RegExp('(^[0-9a-fA-F]{24}$)')
     }
 };

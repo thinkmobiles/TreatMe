@@ -4,6 +4,9 @@ module.exports = function (app, db) {
 
     var businessRouter = require('./business')(app, db);
     var clientsRouter = require('./clients')(app, db);
+    var SubscriptionHandler = require('../handlers/subscription');
+
+    var subscriptionHandler = new SubscriptionHandler(db);
 
     app.get('/', function (req, res, next) {
         res.status(200).send('Express start succeed');
@@ -11,6 +14,10 @@ module.exports = function (app, db) {
 
     app.use('/business', businessRouter);
     app.use('/client', clientsRouter);
+
+    app.get('/subscriptionTypes', subscriptionHandler.getSubscriptionTypes);
+    app.post('/subscriptionTypes', subscriptionHandler.createSubscriptionType);
+    app.put('/subscriptionTypes/:id', subscriptionHandler.updateSubscriptionType);
 
 
     function notFound(req, res, next) {

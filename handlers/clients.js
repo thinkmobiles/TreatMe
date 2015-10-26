@@ -491,21 +491,21 @@ var ClientsHandler = function (app, db) {
                     .series([
 
                         function(cb) {
-
-                            if (!currentImageName){
-                                return cb();
-                            }
-
-                            imageHandler.deleteImage(currentImageName, CONSTANTS.BUCKET.IMAGES, cb);
-                        },
-
-                        function(cb) {
                             imageHandler.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, cb);
                         },
 
                         function(cb){
                             Client
                                 .findOneAndUpdate({_id: clientId}, {'clientDetails.avatar': imageName}, cb);
+                        },
+
+                        function(cb) {
+
+                            if (!currentImageName){
+                                return cb();
+                            }
+
+                            imageHandler.deleteImage(currentImageName, CONSTANTS.BUCKET.IMAGES, cb);
                         }
 
                     ], function(err){
@@ -518,6 +518,45 @@ var ClientsHandler = function (app, db) {
                     });
             });
     };
+
+    this.removeAvatar = function(req, res, next){
+        var clientId = req.session.uId;
+
+        Client
+            .findOne({_id: clientId}, function(err, clientModel){
+                var avatarName;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!clientModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                avatarName = clientModel.get('clientDetails.avatar');
+
+                clientModel
+                    .update({'clientDetails.avatar': ''}, function(err){
+                        if (err){
+                            return next(err);
+                        }
+
+                        if (!avatarName){
+                            return res.status(200).send({success: 'Avatar removed successfully'});
+                        }
+
+                        imageHandler.deleteImage(avatarName, CONSTANTS.BUCKET.IMAGES, function(err){
+                            if (err){
+                                return next(err);
+                            }
+
+                            res.status(200).send({success: 'Avatar removed successfully'});
+                        });
+                    });
+            });
+    };
+
 
 };
 
