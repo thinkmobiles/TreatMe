@@ -18,8 +18,8 @@ module.exports = function(app, db){
     router.post('/passwordChange/:forgotToken', businessHandler.changePassword);
 
     router.get('/details', sessionHandler.authenticatedUser, businessHandler.getSalonDetails);
-    router.post('/details', sessionHandler.authenticatedUser, businessHandler.addBusinessDetails);
-    router.put('/details', sessionHandler.authenticatedUser, businessHandler.updateBusinessDetails);
+    router.put('/personal', sessionHandler.authenticatedUser, businessHandler.updatePersonalInfo);
+    router.put('/salon', sessionHandler.authenticatedUser, businessHandler.updateSalonInfo);
     router.put('/details/logo', sessionHandler.authenticatedUser, businessHandler.uploadSalonLogo);
 
     return router;

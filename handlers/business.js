@@ -196,8 +196,7 @@ var BusinessHandler = function (app, db) {
         var email;
         var businessModel;
         var password;
-        var firstName;
-        var lastName;
+        var createObj;
 
         if (body.fbId){
 
@@ -233,11 +232,17 @@ var BusinessHandler = function (app, db) {
 
             email = validator.escape(email);
 
-            body.token = token;
-            body.email = email;
-            body.password = getEncryptedPass(password);
+            createObj = {
+                personalInfo: {
+                    firstName: body.firstName,
+                    lastName: body.lastName
+                },
+                email: email,
+                password: getEncryptedPass(password),
+                token: token
+            };
 
-            businessModel = new Business(body);
+            businessModel = new Business(createObj);
 
             businessModel
                 .save(function (err) {
@@ -486,7 +491,7 @@ var BusinessHandler = function (app, db) {
         session.kill(req, res, next);
     };
 
-    this.addBusinessDetails = function(req, res, next){
+    this.updatePersonalInfo = function(req, res, next){
 
         /**
          * __Type__ __`POST`__
@@ -533,24 +538,60 @@ var BusinessHandler = function (app, db) {
 
         var uId = req.session.uId;
         var body = req.body;
+        var personalInfo;
 
-        if (!body || !body.salonName || !body.address || !body.state || !body.zipCode || !body.phone || !body.licenseNumber){
-            return next(badRequests.NotEnParams({reqParams: 'Salon name or Business address or State or Zipcode or Phone Number or License Number'}));
+        if (!body){
+            return next(badRequests.NotEnParams());
         }
 
         Business
-            .findOneAndUpdate({_id: uId}, {salonDetails: body}, function(err){
+            .findOne({_id: uId}, {personalInfo: 1}, function(err, resultModel){
 
                 if (err){
                     return next(err);
                 }
 
-                res.status(200).send({success: 'Business details saved successful'});
-            })
+                if (!resultModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                personalInfo = (resultModel.toJSON()).personalInfo;
+
+                if (body.firstName){
+                     personalInfo.firstName = body.firstName;
+                }
+
+                if (body.lastName){
+                    personalInfo.lastName = body.lastName;
+                }
+
+                if (body.profession){
+                    personalInfo.profession = body.profession;
+                }
+
+                if (body.personalPhoneNumber){
+                    personalInfo.phoneNumber = body.personalPhoneNumber;
+                }
+
+                if (body.facebookURL){
+                    personalInfo.facebookURL = body.facebookURL;
+                }
+
+                resultModel.update({personalInfo: personalInfo}, function(err){
+
+                    if (err){
+                        return next(err);
+                    }
+
+
+                    res.status(200).send({success: 'Personal info updated successfully'});
+                });
+
+            });
 
     };
 
-    this.updateBusinessDetails = function(req, res, next){
+    this.updateSalonInfo = function(req, res, next){
 
         /**
          * __Type__ __`PUT`__
@@ -600,7 +641,7 @@ var BusinessHandler = function (app, db) {
         var currentSalonDetails;
 
         Business
-            .findOne({_id: uId}, {salonDetails: 1}, function(err, resultModel){
+            .findOne({_id: uId}, {salonInfo: 1}, function(err, resultModel){
 
                 if (err){
                     return next(err);
@@ -610,10 +651,22 @@ var BusinessHandler = function (app, db) {
                     return next(badRequests.DatabaseError());
                 }
 
-                currentSalonDetails = resultModel.get('salonDetails');
+                currentSalonDetails = resultModel.get('salonInfo');
 
                 if (body.salonName){
                     currentSalonDetails.salonName = body.salonName;
+                }
+
+                if (body.yourBusinessRole){
+                    currentSalonDetails.yourBusinessRole = body.yourBusinessRole;
+                }
+
+                if (body.phoneNumber){
+                    currentSalonDetails.phoneNumber = body.phoneNumber;
+                }
+
+                if (body.email){
+                    currentSalonDetails.email = body.email;
                 }
 
                 if (body.address){
@@ -636,7 +689,15 @@ var BusinessHandler = function (app, db) {
                     currentSalonDetails.licenseNumber = body.licenseNumber;
                 }
 
-                resultModel.update({$set: {salonDetails: currentSalonDetails}}, function(err){
+                if (body.city){
+                    currentSalonDetails.city = body.city;
+                }
+
+                if (body.country){
+                    currentSalonDetails.country = body.country;
+                }
+
+                resultModel.update({salonInfo: currentSalonDetails}, function(err){
 
                     if (err){
                         return next(err);

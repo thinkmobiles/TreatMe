@@ -5,11 +5,6 @@ module.exports = function (db) {
     var mongoose = require('mongoose');
     var Schema = mongoose.Schema;
 
-    var Stylist = new Schema({
-        name: String,
-        avatar: String
-    });
-
     var Business = new Schema({
         email: String,
         password: String,
@@ -17,17 +12,24 @@ module.exports = function (db) {
         forgotToken: String,
         fbId: {type: String, default: null},
         confirmed: {type: Date},
-        salonDetails: {
+        personalInfo: {
             firstName: String,
             lastName: String,
+            profession: String,
+            phoneNumber: String,
+            facebookURL: String
+        },
+        salonInfo: {
             salonName: String,
+            phoneNumber: String,
+            email: String,
+            yourBusinessRole: {type: String, default: 'Employee'},
             address: String,
             state: String,
             zipCode: String,
-            phone: String,
-            licenseNumber: String,
-            logo: String,
-            stylists: [Stylist]
+            city: String,
+            country: String,
+            licenseNumber: String
         },
         loc: {
             type: {
