@@ -39,7 +39,7 @@ var BusinessHandler = function (app, db) {
          *
          * __URL: `/business/signIn/`__
          *
-         * This __method__ allows signIn _User_
+         * This __method__ allows signIn _Businness_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/business/signIn/
@@ -60,13 +60,15 @@ var BusinessHandler = function (app, db) {
          *
          * @example Response example:
          *
+         *  Response status: 200
+         *
          *  {
          *      "success": "Login successful"
          *  }
          *
-         * @param {string} [fbId] - FaceBook Id for signing user
-         * @param {string} [email] - `User's` email
-         * @param {string} password - `User's` password
+         * @param {string} [fbId] - FaceBook Id for signing `Business`
+         * @param {string} [email] - `Business` email
+         * @param {string} password - `Business` password
          *
          * @method signIn
          * @instance
@@ -132,6 +134,60 @@ var BusinessHandler = function (app, db) {
     };
 
     this.signUp = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/signUp/`__
+         *
+         * This __method__ allows signUp _Business_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/signUp/
+         *
+         * @example Body example:
+         *
+         * If you want signUp via Facebook
+         * {
+         *      "fbId": "test1",
+         *      "name": "Test"
+         * }
+         *
+         * If you want signUp via email
+         *
+         * {
+         *      "email": "test@test.com",
+         *      "password": "qwerty",
+         *      "name": "Test"
+         * }
+         *
+         * @example Response example:
+         *
+         * Response status: 201
+         *
+         * For signUp via Facebook
+         *  {
+         *      "success": "Business created successful"
+         *  }
+         *
+         *  For signUp via Email
+         *
+         *  {
+         *      "success": "Business created successful. For using your account you must verify it. Please check email."
+         *  }
+         *
+         * @param {string} [fbId] - FaceBook Id for signing user
+         * @param {string} [email] - `Business` email
+         * @param {string} password - `Business` password
+         * @param {string} [name] - `Business` name
+         *
+         * @method signUp
+         * @instance
+         */
 
         var body = req.body;
         var token = uuid.v4();
@@ -199,7 +255,7 @@ var BusinessHandler = function (app, db) {
                         token: token
                     }, CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
 
-                    res.status(200).send({success: 'User registered successfully'});
+                    res.status(200).send({success: 'Business created successful. For using your account you must verify it. Please check email.'});
 
                 });
         }
@@ -237,6 +293,39 @@ var BusinessHandler = function (app, db) {
     };
 
     this.forgotPassword = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/forgotPassword/`__
+         *
+         * This __method__ allows make link to change password for _Business_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/forgotPassword/
+         *
+         * @example Body example:
+         *
+         * {
+         *      "email": "test@test.com"
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         * {
+         *      "success": "Check your email"
+         * }
+         *
+         * @param {string} email - `Business` email
+         *
+         * @method forgotPassword
+         * @instance
+         */
 
         var body = req.body;
         var email;
@@ -301,24 +390,49 @@ var BusinessHandler = function (app, db) {
 
     this.changePassword = function (req, res, next) {
 
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/passwordChange/:forgotToken`__
+         *
+         * This __method__ allows change password for _Business_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/passwordChange/bfcbd0c5-69e8-490c-ae61-701702c8e04f
+         *
+         * @example Body example:
+         *
+         * {
+         *      "password": "qwerty"
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *      "success": "Password changed successfully"
+         * }
+         *
+         * @param {string} password - `Business` password
+         *
+         * @method changePassword
+         * @instance
+         */
+
         var forgotToken = req.params.forgotToken;
         var body = req.body;
         var encryptedPassword;
-        var encryptedConfirmPassword;
-        var err;
 
-        if (!body.password || !body.confirmPassword){
-            return next(badRequests.NotEnParams({params: 'password or confirmPassword'}));
+        if (!body.password){
+            return next(badRequests.NotEnParams({params: 'password'}));
         }
 
         encryptedPassword = getEncryptedPass(body.password);
-        encryptedConfirmPassword = getEncryptedPass(body.confirmPassword);
-
-        if (encryptedPassword !== encryptedConfirmPassword){
-            err = new Error('Password and Confirmpassword doesn\'t much');
-            err.status = 400;
-            return next(err);
-        }
 
         Business
             .findOneAndUpdate({forgotToken: forgotToken}, {password: encryptedPassword, forgotToken: ''}, function(err){
@@ -335,10 +449,80 @@ var BusinessHandler = function (app, db) {
 
     this.signOut = function(req, res, next){
 
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/passwordChange/:forgotToken`__
+         *
+         * This __method__ allows signOut _Business_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/signOut
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *      "success": "Logout successful"
+         * }
+         *
+         * @method signOut
+         * @instance
+         */
+
+
         session.kill(req, res, next);
     };
 
     this.addBusinessDetails = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/details`__
+         *
+         * This __method__ allows add details for _Business_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/details
+         *
+         * @example Body example:
+         *
+         * {
+         *    "salonName": "Misha",
+         *    "address": "Uzhgorod, Gvardijska 19",
+         *    "state": "Zakarpatska",
+         *    "zipCode": "88000",
+         *    "phone": "+380968987567",
+         *    "licenseNumber": "1224"
+         * }
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *     "success": "Business details saved successful"
+         * }
+         *
+         * @param {string} salonName - `Business` Salon Name
+         * @param {string} address - `Business` Salon Address
+         * @param {string} state - `Business` Salon State
+         * @param {string} zipCode - `Business` Zip Code
+         * @param {string} phone - `Business` Phone Number
+         * @param {string} licenseNumber - `Business` License Number
+         *
+         * @method addBusinessDetails
+         * @instance
+         */
 
         var uId = req.session.uId;
         var body = req.body;
@@ -360,6 +544,49 @@ var BusinessHandler = function (app, db) {
     };
 
     this.updateBusinessDetails = function(req, res, next){
+
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/details`__
+         *
+         * This __method__ allows update details for _Business_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/details
+         *
+         * @example Body example:
+         *
+         * {
+         *    "salonName": "Misha",
+         *    "address": "Uzhgorod, Gvardijska 19",
+         *    "state": "Zakarpatska",
+         *    "zipCode": "88000",
+         *    "phone": "+380968987567",
+         *    "licenseNumber": "1224"
+         * }
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *     "success": "Business details saved successful"
+         * }
+         *
+         * @param {string} [salonName] - `Business` Salon Name
+         * @param {string} [address] - `Business` Salon Address
+         * @param {string} [state] - `Business` Salon State
+         * @param {string} [zipCode] - `Business` Zip Code
+         * @param {string} [phone] - `Business` Phone Number
+         * @param {string} [licenseNumber] - `Business` License Number
+         *
+         * @method updateBusinessDetails
+         * @instance
+         */
 
         var uId = req.session.uId;
         var body = req.body;
@@ -419,6 +646,42 @@ var BusinessHandler = function (app, db) {
 
     this.getSalonDetails = function(req, res, next){
 
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/details`__
+         *
+         * This __method__ allows get details for _Business_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/details
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *     "_id": "5628d12da8087993131ba2cc",
+         *     "salonDetails": {
+         *         "licenseNumber": "1224",
+         *         "phone": "+380968571460",
+         *         "zipCode": "88000",
+         *         "state": "Zakarpatska",
+         *         "address": "Uzhgorod, Gvardijska 19",
+         *         "salonName": "Misha",
+         *         "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5629d6c42096d3770def73d2.png",
+         *         "stylists": []
+         *     }
+         * }
+         *
+         * @method getBusinessDetails
+         * @instance
+         */
+
         var uId = req.session.uId;
         var logo;
         var viewModel;
@@ -448,6 +711,40 @@ var BusinessHandler = function (app, db) {
 
 
     this.uploadSalonLogo = function(req, res, next){
+
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/business/details/logo`__
+         *
+         * This __method__ allows upload logo for _Business_ Salon
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/business/details/logo
+         *
+         * @example Body example:
+         *
+         * {
+         *      "logo": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAQDAw..."
+         * }
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *     "success": "Logo upload successful"
+         * }
+         *
+         * @param {string } logo  - `Business` logo (`Base64`)
+         *
+         * @method uploadSalonLogo
+         * @instance
+         */
+
         var uId = req.session.uId;
 
         var body = req.body;
