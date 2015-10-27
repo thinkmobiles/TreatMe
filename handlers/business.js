@@ -984,27 +984,38 @@ var BusinessHandler = function (app, db) {
 
             name = resultModel.get('name');
 
-            createObj = {
-                name: name,
-                stylist: ObjectId(uId),
-                serviceId: serviceId
-            };
-
-            serviceModel = new Services(createObj);
-
-            serviceModel
-                .save(function(err){
+            Services
+                .findOne({stylist: ObjectId(uId), name: name}, function(err, resultModel){
 
                     if (err){
                         return next(err);
                     }
 
-                    res.status(200).send({success: 'request succeed'});
+                    if (resultModel){
+                        return res.status(200).send({success: 'You have already requested this service'});
+                    }
+
+                    createObj = {
+                        name: name,
+                        stylist: ObjectId(uId),
+                        serviceId: serviceId
+                    };
+
+                    serviceModel = new Services(createObj);
+
+                    serviceModel
+                        .save(function(err){
+
+                            if (err){
+                                return next(err);
+                            }
+
+                            res.status(200).send({success: 'request succeed'});
+
+                        });
 
                 });
-
         });
-
     }
 
 

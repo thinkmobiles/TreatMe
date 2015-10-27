@@ -6,6 +6,8 @@ module.exports = function (app, db) {
 
     var businessRouter = require('./business')(app, db);
     var clientsRouter = require('./clients')(app, db);
+    var adminRouter = require('./admin')(db);
+
     var SubscriptionHandler = require('../handlers/subscription');
 
     var subscriptionHandler = new SubscriptionHandler(db);
@@ -16,6 +18,7 @@ module.exports = function (app, db) {
 
     app.use('/business', businessRouter);
     app.use('/client', clientsRouter);
+    app.use('/admin', adminRouter);
 
     app.get('/subscriptionTypes', subscriptionHandler.getSubscriptionTypes);
     app.post('/subscriptionTypes', subscriptionHandler.createSubscriptionType);
@@ -26,7 +29,7 @@ module.exports = function (app, db) {
         var serviceModel;
 
         if (!body.name){
-            next(new Error('Required params name'));
+            next(new Error('Required param name'));
         }
 
         serviceModel = new ServiceType(body);

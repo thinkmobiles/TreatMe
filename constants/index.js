@@ -8,6 +8,9 @@ module.exports = {
     },
     REG_EXP: {
         OBJECT_ID: new RegExp('(^[0-9a-fA-F]{24}$)')
+    },
+    LIMIT: {
+        REQUESTED_SERVICES: 20
     }
 };
 
