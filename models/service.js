@@ -12,6 +12,7 @@ module.exports = function (db) {
             ref: 'Business'
         },
         serviceId: String,
+        name: String,
         price: String,
         approved: {
             type: Boolean,

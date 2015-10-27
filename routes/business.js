@@ -23,5 +23,7 @@ module.exports = function(app, db){
     router.put('/salon', sessionHandler.authenticatedUser, businessHandler.updateSalonInfo);
     router.put('/avatar', sessionHandler.authenticatedUser, businessHandler.uploadStylistAvatar);
 
+    router.get('/services', sessionHandler.authenticatedUser, businessHandler.getBusinessService);
+    router.get('/services/:id', sessionHandler.authenticatedUser, businessHandler.sendRequestForService);
     return router;
 };

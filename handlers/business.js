@@ -6,6 +6,7 @@
  */
 
 var mailer = require('../helpers/mailer')();
+var mongoose = require('mongoose');
 var validator = require('validator');
 var uuid = require('uuid');
 var badRequests = require('../helpers/badRequests');
@@ -14,13 +15,15 @@ var SessionHandler = require('./sessions');
 var CONSTANTS = require('../constants');
 var async = require('async');
 var ImageHandler = require('./image');
+var _ = require('lodash');
+var ObjectId = mongoose.Types.ObjectId;
 
 
 var BusinessHandler = function (app, db) {
 
     var Business = db.model('Business');
     var ServiceType = db.model('ServiceType');
-    var Services = db.model('Services');
+    var Services = db.model('Service');
 
     var session = new SessionHandler();
     var image = new ImageHandler();
@@ -903,6 +906,11 @@ var BusinessHandler = function (app, db) {
     this.getBusinessService = function(req, res, next){
 
         var uId = req.session.uId;
+        var ind;
+        var allId;
+        var stylistId;
+        var serviceArray = [];
+        var serviceObj;
 
         ServiceType.find({}, function(err, allServiceModels){
 
@@ -917,13 +925,87 @@ var BusinessHandler = function (app, db) {
                         return next(err);
                     }
 
+                    allId = _.map(_.pluck(allServiceModels, '_id'), function(id){
+                        return id.toString();
+                    });
 
+                    stylistId = _.map(_.pluck(stylistServiceModel, 'serviceId'), function(id){
+                        return id.toString();
+                    });
+
+                    for (var i = 0, n = allServiceModels.length; i < n; i++){
+                        ind = stylistId.indexOf(allId[i]);
+
+                        if (ind !== -1){
+                            serviceObj = {
+                                id: stylistServiceModel[ind].serviceId,
+                                name: stylistServiceModel[ind].name,
+                                status: stylistServiceModel[ind].approved ? 'approved' : 'pending'
+                            };
+
+                            serviceArray.push(serviceObj);
+                        } else {
+                            serviceObj = {
+                                id: allServiceModels[i]._id,
+                                name: allServiceModels[i].name,
+                                status: 'new'
+                            };
+
+                            serviceArray.push(serviceObj);
+                        }
+
+                    }
+
+                    res.status(200).send(serviceArray);
 
                 });
 
         });
 
     };
+
+    this.sendRequestForService = function(req, res, next){
+
+        var uId = req.session.uId;
+        var serviceId = req.params.id;
+        var serviceModel;
+        var name;
+        var createObj;
+
+        ServiceType.findOne({_id: serviceId}, {name: 1}, function(err, resultModel){
+
+            if (err){
+               return next(err);
+            }
+
+            if (!resultModel){
+                return next(badRequests.DatabaseError());
+            }
+
+            name = resultModel.get('name');
+
+            createObj = {
+                name: name,
+                stylist: ObjectId(uId),
+                serviceId: serviceId
+            };
+
+            serviceModel = new Services(createObj);
+
+            serviceModel
+                .save(function(err){
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'request succeed'});
+
+                });
+
+        });
+
+    }
 
 
 
