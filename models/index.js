@@ -7,5 +7,6 @@ module.exports = function(db){
     require('./serviceType')(db);
     require('./subscription')(db);
     require('./subscriptionType')(db);
+    require('./appointment')(db);
 
 };

@@ -6,13 +6,16 @@ var crypto = require('crypto');
 var SessionHandler = require('./sessions');
 var async = require('async');
 var ImageHandler = require('./image');
+var mongoose = require('mongoose');
 var CONSTANTS = require('../constants');
 
 var ClientsHandler = function (app, db) {
 
     var Client = db.model('Client');
+    var Appointment = db.model('Appointment');
     var session = new SessionHandler();
     var imageHandler = new ImageHandler(db);
+    var ObjectId = mongoose.Types.ObjectId;
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
@@ -446,7 +449,6 @@ var ClientsHandler = function (app, db) {
                 resultObj.coordinates = clientModel.get('loc.coordinates');
                 resultObj.firstName = clientModel.get('clientDetails.firstName');
                 resultObj.lastName = clientModel.get('clientDetails.lastName');
-                //resultObj.fullName = resultObj.firstName + ' ' + resultObj.lastName;
                 resultObj.phone = clientModel.get('clientDetails.phone') || '';
                 avatarName = clientModel.get('clientDetails.avatar') || '';
                 resultObj.email = clientModel.get('email');
@@ -554,6 +556,148 @@ var ClientsHandler = function (app, db) {
                             res.status(200).send({success: 'Avatar removed successfully'});
                         });
                     });
+            });
+    };
+
+    this.createAppointment = function(req, res, next){
+        var body = req.body;
+        var appointmentModel;
+        var saveObj;
+        var clientId;
+
+        if (!body.clientId || !body.serviceType || !body.bookingDate){
+            return next(badRequests.NotEnParams({}));
+        }
+
+        clientId = body.clientId;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
+            return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(body.serviceType)){
+            return next(badRequests.InvalidValue({value: body.serviceType, param: 'serviceType'}));
+        }
+
+        Client
+            .findOne({_id: clientId}, function(err, clientModel){
+                var clientLoc;
+
+                if (err){
+                    return next(err);
+                }
+
+                if(!clientModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                clientLoc = clientModel.get('loc');
+
+                if (!clientLoc || !clientLoc.coordinates.length){
+                    return next(badRequests.UnknownGeoLocation());
+                }
+
+                saveObj = {
+                    client: ObjectId(clientId),
+                    clientLoc: clientLoc,
+                    serviceType: ObjectId(body.serviceType),
+                    bookingDate: body.bookingDate,
+                    status: CONSTANTS.STATUSES.APPOINTMENT.CREATED
+                };
+
+                appointmentModel = new Appointment(saveObj);
+
+                appointmentModel
+                    .save(function(err){
+                        var appointmentId;
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        appointmentId = appointmentModel.get('_id');
+
+                        res.status(200).send({success: 'Appointment created successfully', appointmentId: appointmentId});
+                    });
+            });
+    };
+
+    this.getAllClientAppointments = function(req, res, next){
+        var clientId = req.session.uId;
+
+        Appointment
+            .find({client: clientId}, {__v: 0, client: 0, clientLoc: 0, stylist: 0, requestDate: 0, status: 0})
+            .populate({path: 'serviceType', select: 'name'})
+            .sort({bookingDate: 1})
+            .exec(function(err, appointmentModelsArray){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModelsArray.length){
+                    return next(badRequests.NotFound({target: 'Appointments'}));
+                }
+
+                res.status(200).send(appointmentModelsArray);
+            });
+    };
+
+    this.getClientAppointmentById = function(req, res, next){
+        var appointmentId = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'id'}));
+        }
+
+        Appointment
+            .findOne({_id: appointmentId}, {__v: 0, client: 0, clientLoc: 0})
+            .populate({path:'stylist', select: 'personalInfo.firstName personalInfo.lastName personalInfo.profession personalInfo.avatar salonInfo.salonName salonInfo.phoneNumber salonInfo.address loc'})
+            .populate({path: 'serviceType', select: 'name'})
+            .exec(function(err, appointmentModel){
+                var stylistAvatarName;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                stylistAvatarName = appointmentModel.get('stylist.personalInfo.avatar');
+
+                if (stylistAvatarName){
+                    appointmentModel.stylist.personalInfo.avatar = imageHandler.computeUrl(stylistAvatarName, CONSTANTS.BUCKET.IMAGES);
+                }
+
+                res.status(200).send(appointmentModel);
+            });
+    };
+
+    this.cancelByClient = function(req, res, next){
+        var clientId = req.session.uId;
+        var appointmentId = req.body.appointmentId;
+        var cancellationReason = req.body.cancellationReason;
+
+        if (!appointmentId || !cancellationReason){
+            return next(badRequests.NotEnParams({reqParams: 'appointmentId and cancellationReason'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        Appointment
+            .findOneAndUpdate({_id: appointmentId, client: clientId}, {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_CLIENT, cancellationReason: cancellationReason}}, function(err, appointmentModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                res.status(200).send({success: 'Appointment was canceled by client successfully'});
             });
     };
 

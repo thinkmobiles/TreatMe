@@ -17,13 +17,20 @@ module.exports = function(app, db){
     router.get('/passwordChange/:forgotToken', clientsHandler.confirmForgotPass);
     router.post('/passwordChange/:forgotToken', clientsHandler.changePassword);
 
-    router.get('/', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.getProfile);
+    router.get('/appointment', sessionHandler.authenticatedUser, clientsHandler.getAllClientAppointments);
+    router.get('/appointment/:id', sessionHandler.authenticatedUser, clientsHandler.getClientAppointmentById);
+
+    router.get('/:id?', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.getProfile);
 
     router.put('/coordinates', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.updateLocation);
     router.put('/', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.updateProfile);
 
     router.post('/avatar', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.uploadAvatar);
     router.delete('/avatar', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.removeAvatar);
+
+    router.post('/appointment', sessionHandler.authenticatedUser, clientsHandler.createAppointment);
+    router.post('/appointment/cancel', sessionHandler.authenticatedUser, clientsHandler.cancelByClient);
+
 
 
     return router;
