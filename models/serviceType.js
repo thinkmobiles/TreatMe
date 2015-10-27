@@ -6,7 +6,8 @@ module.exports = function (db) {
     var Schema = mongoose.Schema;
 
     var ServiceType = new Schema({
-        name: String
+        name: String,
+        logo: String
 
     }, {
         collection: 'ServiceTypes'

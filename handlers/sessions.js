@@ -9,6 +9,7 @@ var Session = function () {
         req.session.uId = userId;
         req.session.uStatus = status;
 
+
         if (typeof isNew === 'boolean' && isNew) {
             return res.status(201).send({success: 'User created successful'});
         }
