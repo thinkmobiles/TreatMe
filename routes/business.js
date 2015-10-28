@@ -30,6 +30,7 @@ module.exports = function(app, db){
     router.get('/appointment', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getAllStylistAppointments);
     router.get('/appointment/start/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.startAppointmentById);
     router.get('/appointment/finish/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.finishAppointmentById);
+    router.get('/appointment/accept/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.acceptAppointmentById);
     router.get('/appointment/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getBusinessAppointmentById);
 
     return router;

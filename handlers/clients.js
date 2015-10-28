@@ -96,10 +96,6 @@ var ClientsHandler = function (app, db) {
         var token = uuid.v4();
         var email;
         var clientModel;
-        var password;
-        var firstName;
-        var lastName;
-        var phone;
         var saveData = {
             clientDetails: {}
         };
@@ -109,10 +105,6 @@ var ClientsHandler = function (app, db) {
         }
 
         email = body.email;
-        password = body.password;
-        firstName = body.firstName;
-        lastName = body.lastName;
-        phone = body.phone;
 
         if (!validator.isEmail(email)) {
             return next(badRequests.InvalidEmail());
@@ -122,10 +114,10 @@ var ClientsHandler = function (app, db) {
 
         saveData.token = token;
         saveData.email = email;
-        saveData.password = getEncryptedPass(password);
-        saveData.clientDetails.firstName = firstName;
-        saveData.clientDetails.lastName = lastName;
-        saveData.clientDetails.phone = phone;
+        saveData.password = getEncryptedPass(body.password);
+        saveData.clientDetails.firstName = body.firstName;
+        saveData.clientDetails.lastName = body.lastName;
+        saveData.clientDetails.phone = body.phone;
 
         clientModel = new Client(saveData);
 
@@ -136,9 +128,9 @@ var ClientsHandler = function (app, db) {
                 }
 
                 mailer.confirmRegistration({
-                    name: firstName + ' ' + lastName,
+                    name: body.firstName + ' ' + body.lastName,
                     email: email,
-                    password: password,
+                    password: body.password,
                     token: token
                 }, CONSTANTS.USER_STATUS.CLIENT.toLowerCase());
 
@@ -564,6 +556,7 @@ var ClientsHandler = function (app, db) {
         var appointmentModel;
         var saveObj;
         var clientId;
+        var clientLoc;
 
         if (!body.clientId || !body.serviceType || !body.bookingDate){
             return next(badRequests.NotEnParams({}));
@@ -579,24 +572,49 @@ var ClientsHandler = function (app, db) {
             return next(badRequests.InvalidValue({value: body.serviceType, param: 'serviceType'}));
         }
 
-        Client
-            .findOne({_id: clientId}, function(err, clientModel){
-                var clientLoc;
+        async.series([
 
-                if (err){
-                    return next(err);
-                }
+            function(cb){
+                Client
+                    .findOne({_id: clientId}, function(err, clientModel){
+                        if (err){
+                            return cb(err);
+                        }
 
-                if(!clientModel){
-                    return next(badRequests.DatabaseError());
-                }
+                        if(!clientModel){
+                            return cb(badRequests.DatabaseError());
+                        }
 
-                clientLoc = clientModel.get('loc');
+                        clientLoc = clientModel.get('loc');
 
-                if (!clientLoc || !clientLoc.coordinates.length){
-                    return next(badRequests.UnknownGeoLocation());
-                }
+                        if (!clientLoc || !clientLoc.coordinates.length){
+                            return cb(badRequests.UnknownGeoLocation());
+                        }
 
+                        cb();
+                    });
+            },
+
+            function(cb){
+                Appointment
+                    .findOne({client: clientId, bookingDate: body.bookingDate}, function(err, model){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (model){
+                            var error = new Error('You already have an appointment for this time');
+
+                            error.status = 400;
+
+                            return cb(error);
+                        }
+
+                        cb();
+                    });
+            },
+
+            function(cb){
                 saveObj = {
                     client: ObjectId(clientId),
                     clientLoc: clientLoc,
@@ -612,14 +630,22 @@ var ClientsHandler = function (app, db) {
                         var appointmentId;
 
                         if (err){
-                            return next(err);
+                            return cb(err);
                         }
 
-                        appointmentId = appointmentModel.get('_id');
+                        appointmentId = appointmentModel.get('_id').toString();
 
-                        res.status(200).send({success: 'Appointment created successfully', appointmentId: appointmentId});
+                        cb(null, appointmentId);
                     });
-            });
+            }
+
+        ], function(err, result){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Appointment created successfully', appointmentId: result[2]});
+        });
     };
 
     this.getAllClientAppointments = function(req, res, next){
@@ -632,10 +658,6 @@ var ClientsHandler = function (app, db) {
             .exec(function(err, appointmentModelsArray){
                 if (err){
                     return next(err);
-                }
-
-                if (!appointmentModelsArray.length){
-                    return next(badRequests.NotFound({target: 'Appointments'}));
                 }
 
                 res.status(200).send(appointmentModelsArray);
