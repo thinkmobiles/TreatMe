@@ -1082,10 +1082,6 @@ var BusinessHandler = function (app, db) {
                     return next(err);
                 }
 
-                if (!appointmentModelsArray.length){
-                    return next(badRequests.NotFound({target: 'Appointments'}));
-                }
-
                 res.status(200).send(appointmentModelsArray);
             });
     };
@@ -1116,6 +1112,50 @@ var BusinessHandler = function (app, db) {
                 }
 
                 res.status(200).send({success: 'Appointment begins successfully'});
+            });
+    };
+
+    this.acceptAppointmentById = function(req, res, next){
+        var stylistId = req.session.uId;
+        var appointmentId = req.params.id;
+        var updateObj;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        updateObj = {
+            stylist: ObjectId(stylistId),
+            status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED
+
+        };
+
+        Appointment
+            .findOne({_id: appointmentId}, function(err, appointmentModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                if (appointmentModel.stylist || appointmentModel.status !== CONSTANTS.STATUSES.APPOINTMENT.CREATED){
+                    var error = new Error('Somebody accepted appointment earlier then you');
+
+                    error.status = 400;
+
+                    return next(error);
+                }
+
+                appointmentModel
+                    .update(updateObj, function(err){
+                        if (err){
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: 'Appointment accepted successfully'});
+                    });
             });
     };
 
