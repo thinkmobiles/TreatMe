@@ -1,4 +1,3 @@
-'use strict';
 
 var socketEvents = function (app) {
 
@@ -6,8 +5,6 @@ var socketEvents = function (app) {
 
     var io = app.get('io');
     var db = app.get('db');
-
-    //var Contact = db.model('Contact');
 
     io.on('connection', function( socket ) {
 

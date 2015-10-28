@@ -30,7 +30,7 @@ module.exports = function (db) {
         },
         status: {
             type: String,
-            defualt: CONSTANTS.STATUSES.APPOINTMENT.CREATED
+            default: CONSTANTS.STATUSES.APPOINTMENT.CREATED
         },
         startDate: Date,
         endDate: Date,
