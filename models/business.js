@@ -12,6 +12,7 @@ module.exports = function (db) {
         forgotToken: String,
         fbId: {type: String, default: null},
         confirmed: {type: Date},
+        approved: {type: Boolean, default: false},
         personalInfo: {
             firstName: String,
             lastName: String,

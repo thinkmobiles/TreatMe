@@ -7,6 +7,42 @@ var AdminHandler = function(db){
     var image = new ImageHandler(db);
     var Services = db.model('Service');
     var ServiceType = db.model('ServiceType');
+    var Stylist = db.model('Business');
+
+    this.getRequestedStylists = function(req, res, next){
+
+        var page = (req.params.page >= 1) ? req.params.page : 1;
+
+        Stylist
+            .find({approved: false}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'salonInfo.salonName': 1})
+            .skip(CONSTANTS.LIMIT.REQUESTED_STYLISTS * (page - 1))
+            .limit(CONSTANTS.LIMIT.REQUESTED_STYLISTS)
+            .exec(function(err, resultModel){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(resultModel);
+
+            });
+
+    };
+
+    this.approveStylist = function(req, res, next){
+
+        var sId = req.params.id;
+
+        Stylist
+            .findOneAndUpdate({_id: sId, approved: false}, {approved: true}, function(err, resultModel){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Stylist approved successfully'});
+            });
+
+
+    };
 
     this.getRequestedService = function(req, res, next){
 

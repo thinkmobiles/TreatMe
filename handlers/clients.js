@@ -172,7 +172,7 @@ var ClientsHandler = function (app, db) {
 
                 clientId = clientModel.get('_id');
 
-                session.register(req, res, clientId, true);
+                session.register(req, res, clientId, true, CONSTANTS.USER_STATUS.CLIENT);
 
             });
 

@@ -1017,7 +1017,6 @@ var BusinessHandler = function (app, db) {
 
                 });
         });
-    }
     };
 
     this.getBusinessAppointmentById = function(req, res, next){
@@ -1158,10 +1157,10 @@ var BusinessHandler = function (app, db) {
 
                 res.status(200).send({success: 'Appointment begins successfully'});
             });
+
+
+
     };
-
-
-
 };
 
 module.exports = BusinessHandler;

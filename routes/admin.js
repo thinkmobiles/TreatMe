@@ -12,7 +12,8 @@ module.exports = function(db){
     router.put('/services/:id', admin.updateService);
     router.delete('/services/:id', admin.updateService);
 
-
+    router.get('/stylist/:page?', admin.getRequestedStylists);
+    router.get('/stylist/approve/:id', admin.approveStylist);
 
     router.get('/services/:page?', admin.getRequestedService);
     router.post('/services/approve', admin.approveService);
