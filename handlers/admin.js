@@ -91,6 +91,82 @@ var AdminHandler = function(db){
             });
     };
 
+    this.getServices = function(req, res, next){
+
+        ServiceType
+            .find({}, {__v: 0})
+            .exec(function(err, resultModel){
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!resultModel.length){
+                    return res.status(200).send([]);
+                }
+
+                for (var i = resultModel.length; i--; ){
+                    (resultModel[i]).logo = image.computeUrl( (resultModel[i]).logo, CONSTANTS.BUCKET.IMAGES);
+                }
+
+                res.status(200).send(resultModel);
+
+            });
+
+    };
+
+    this.updateService = function(req, res, next){
+
+        var sId = req.params.id;
+        var body = req.body;
+        var updateObj = {};
+
+        if (body.name){
+            updateObj.name = body.name;
+        }
+
+        if (body.logo){
+            updateObj.logo = body.logo;
+        }
+
+        ServiceType
+            .findOneAndUpdate({_id: sId} , updateObj, function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Service updated successfully'});
+
+            });
+
+    };
+
+    this.removeService = function(req, res, next){
+
+        var sId = req.params.id;
+
+        ServiceType
+            .findOneAndRemove({_id: sId}, function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                Services
+                    .findOneAndRemove({serviceId: sId}, function(err){
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: 'Service removed successfully'});
+
+                    });
+
+            });
+    }
+
 };
 
 module.exports = AdminHandler;

@@ -8,6 +8,10 @@ module.exports = function(db){
    // var sessionHandler = new SessionHandler();
 
     router.post('/services', admin.addService);
+    router.get('/services', admin.getServices);
+    router.put('/services/:id', admin.updateService);
+    router.delete('/services/:id', admin.updateService);
+
 
 
     router.get('/services/:page?', admin.getRequestedService);
