@@ -22,6 +22,7 @@ var ObjectId = mongoose.Types.ObjectId;
 var BusinessHandler = function (app, db) {
 
     var Business = db.model('Business');
+    var Appointment = db.model('Appointment');
     var ServiceType = db.model('ServiceType');
     var Services = db.model('Service');
 
@@ -1017,6 +1018,147 @@ var BusinessHandler = function (app, db) {
                 });
         });
     }
+    };
+
+    this.getBusinessAppointmentById = function(req, res, next){
+        var appointmentId = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'id'}));
+        }
+
+        Appointment
+            .findOne({_id: appointmentId}, {__v: 0, stylist: 0, status: 0, requestDate: 0})
+            .populate({path:'client', select: 'clientDetails.firstName clientDetails.lastName clientDetails.avatar clientDetails.phone'})
+            .populate({path: 'serviceType', select: 'name'})
+            .exec(function(err, appointmentModel){
+                var clientAvatarName;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                clientAvatarName = appointmentModel.get('client.clientDetails.avatar');
+
+                if (clientAvatarName){
+                    appointmentModel.client.clientDetails.avatar = image.computeUrl(clientAvatarName, CONSTANTS.BUCKET.IMAGES);
+                }
+
+                res.status(200).send(appointmentModel);
+            });
+    };
+
+    this.cancelByStylist = function(req, res, next){
+        var stylistId = req.session.uId;
+        var appointmentId = req.body.appointmentId;
+        var cancellationReason = req.body.cancellationReason;
+
+        if (!appointmentId || !cancellationReason){
+            return next(badRequests.NotEnParams({reqParams: 'appointmentId and cancellationReason'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        Appointment
+            .findOneAndUpdate(
+            {_id: appointmentId, stylist: stylistId},
+            {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_STYLIST, cancellationReason: cancellationReason}},
+            function(err, appointmentModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                res.status(200).send({success: 'Appointment was canceled by stylist successfully'});
+            });
+    };
+
+    this.getAllStylistAppointments = function(req, res, next){
+        var stylistId = req.session.uId;
+
+        Appointment
+            .find({stylist: stylistId}, {__v: 0, client: 0, clientLoc: 0, stylist: 0, requestDate: 0, status: 0})
+            .populate({path: 'serviceType', select: 'name'})
+            .sort({bookingDate: 1})
+            .exec(function(err, appointmentModelsArray){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModelsArray.length){
+                    return next(badRequests.NotFound({target: 'Appointments'}));
+                }
+
+                res.status(200).send(appointmentModelsArray);
+            });
+    };
+
+    this.startAppointmentById = function(req, res, next){
+        var stylistId = req.session.uId;
+        var appointmentId = req.params.id;
+        var updateObj;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        updateObj = {
+            startDate: new Date(),
+            status: CONSTANTS.STATUSES.APPOINTMENT.BEGINS
+
+        };
+
+        Appointment
+            .findOneAndUpdate({_id: appointmentId, stylist: stylistId}, updateObj, function(err, appointmentModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                res.status(200).send({success: 'Appointment begins successfully'});
+            });
+    };
+
+    this.finishAppointmentById = function(req, res, next){
+        var stylistId = req.session.uId;
+        var appointmentId = req.params.id;
+        var updateObj;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        updateObj = {
+            endDate: new Date(),
+            status: CONSTANTS.STATUSES.APPOINTMENT.SUCCEEDED
+
+        };
+
+        Appointment
+            .findOneAndUpdate({_id: appointmentId, stylist: stylistId}, updateObj, function(err, appointmentModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                res.status(200).send({success: 'Appointment begins successfully'});
+            });
+    };
 
 
 

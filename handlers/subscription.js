@@ -11,10 +11,9 @@ var CONSTANTS = require('../constants');
 var SubscriptionsHandler = function (db) {
 
     var SubscriptionType = db.model('SubscriptionType');
+    var Business = db.model('Business');
 
     this.getSubscriptionTypes = function(req, res, next){
-        var clientId = req.session.uId;
-
         SubscriptionType
             .find({}, {__v: 0}, function(err, subscriptionModels){
             if (err){
@@ -22,6 +21,39 @@ var SubscriptionsHandler = function (db) {
             }
             res.status(200).send(subscriptionModels);
         });
+    };
+
+    this.getSubscriptionTypeById = function(req, res, next){
+        var subscriptionId = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){
+            return next(badRequests.InvalidValue({value: subscriptionId, param: 'id'}));
+        }
+
+        SubscriptionType
+            .findOne({_id:subscriptionId}, {__v: 0}, function(err, subscriptionModel){
+                var resultObj;
+
+                if (err){
+                    return next(err);
+                }
+
+                if(!subscriptionModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                resultObj = subscriptionModel.toJSON();
+
+                Business.count({}, function(err, stylistCount){
+                    if (err){
+                        return next(err);
+                    }
+
+                    resultObj.salonsCount = stylistCount;
+
+                    res.status(200).send(resultObj);
+                });
+            })
     };
 
     this.createSubscriptionType = function(req, res, next){

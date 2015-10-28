@@ -1,6 +1,6 @@
 
 module.exports = function (app, db) {
-    var ServiceType = db.model('ServiceType')
+    var ServiceType = db.model('ServiceType');
 
     var logWriter = require('../modules/logWriter')();
 
@@ -21,6 +21,7 @@ module.exports = function (app, db) {
     app.use('/admin', adminRouter);
 
     app.get('/subscriptionTypes', subscriptionHandler.getSubscriptionTypes);
+    app.get('/subscriptionTypes/:id', subscriptionHandler.getSubscriptionTypeById);
     app.post('/subscriptionTypes', subscriptionHandler.createSubscriptionType);
     app.put('/subscriptionTypes/:id', subscriptionHandler.updateSubscriptionType);
 

@@ -345,6 +345,28 @@ var BadRequestModule = function () {
         return new Errors(errOptions);
     };
 
+    this.UnknownGeoLocation = function(options){
+        var errOptions;
+
+        if (options) {
+            errOptions = options;
+        } else {
+            errOptions = {};
+        }
+
+        if (!errOptions.name) {
+            errOptions.name = 'UnknownLocation';
+        }
+        if (!errOptions.message) {
+            errOptions.message = 'User\'s location is unknown';
+        }
+        if (!errOptions.status) {
+            errOptions.status = 400;
+        }
+
+        return new Errors(errOptions);
+    };
+
 };
 
 module.exports = new BadRequestModule();
