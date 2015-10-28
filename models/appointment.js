@@ -32,6 +32,8 @@ module.exports = function (db) {
             type: String,
             defualt: CONSTANTS.STATUSES.APPOINTMENT.CREATED
         },
+        startDate: Date,
+        endDate: Date,
         cancellationReason: String,
         stylist: {
             type: ObjectId,

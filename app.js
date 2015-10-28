@@ -36,8 +36,8 @@ module.exports = function () {
     app.set('port', process.env.PORT || 8871);
 
     //=====socket.io==========================
-    /*var io = require('socket.io')(server);
-    app.set('io', io);*/
+    var io = require('socket.io')(server);
+    app.set('io', io);
     //=========================================
 
     app.use(express.static(__dirname + '/public'));
@@ -57,7 +57,7 @@ module.exports = function () {
     require('./models/index')(mainDb);
     app.set('db', mainDb);
 
-    //require('./helpers/socketEvents')(app);
+    require('./helpers/socketEvents')(app);
 
     mainDb.on('error', console.error.bind(console, 'connection error:'));
     mainDb.once('open', function callback() {

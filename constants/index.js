@@ -14,6 +14,7 @@ module.exports = {
             CREATED: 'Created',
             SCHEDULED: 'Scheduled',
             CONFIRMED: 'Confirmed',
+            BEGINS: 'Begins',
             SUCCEEDED: 'Succeeded',
             CANCEL_BY_CLIENT: 'Cancel by client',
             CANCEL_BY_STYLIST: 'Cancel by stylist'

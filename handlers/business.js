@@ -1090,6 +1090,64 @@ var BusinessHandler = function (app, db) {
             });
     };
 
+    this.startAppointmentById = function(req, res, next){
+        var stylistId = req.session.uId;
+        var appointmentId = req.params.id;
+        var updateObj;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        updateObj = {
+            startDate: new Date(),
+            status: CONSTANTS.STATUSES.APPOINTMENT.BEGINS
+
+        };
+
+        Appointment
+            .findOneAndUpdate({_id: appointmentId, stylist: stylistId}, updateObj, function(err, appointmentModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                res.status(200).send({success: 'Appointment begins successfully'});
+            });
+    };
+
+    this.finishAppointmentById = function(req, res, next){
+        var stylistId = req.session.uId;
+        var appointmentId = req.params.id;
+        var updateObj;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        updateObj = {
+            endDate: new Date(),
+            status: CONSTANTS.STATUSES.APPOINTMENT.SUCCEEDED
+
+        };
+
+        Appointment
+            .findOneAndUpdate({_id: appointmentId, stylist: stylistId}, updateObj, function(err, appointmentModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                res.status(200).send({success: 'Appointment begins successfully'});
+            });
+    };
+
 
 
 };
