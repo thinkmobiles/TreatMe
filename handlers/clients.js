@@ -723,6 +723,40 @@ var ClientsHandler = function (app, db) {
             });
     };
 
+    this.rateAppointmentById = function(req, res, next){
+        var clientId = req.session.uId;
+        var body = req.body;
+        var rateComment;
+        var appointmentId;
+
+        if (!body.appointmentId || !isNaN(body.rate)){
+            return next(badRequests.NotEnParams({reqParams: 'appointmentId and rate'}));
+        }
+
+        appointmentId = body.appointmentId;
+
+        if(!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        if (body.rateComment){
+            rateComment = body.rateComment;
+        }
+
+        Appointment
+            .findOneAndUpdate({_id: appointmentId, client: clientId}, {$set: {rate: body.rate, rateComment: rateComment}}, function(err, appointmentModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                res.status(200).send({success: 'Your appointment rated successfully'});
+            });
+    };
+
 
 };
 

@@ -30,6 +30,7 @@ module.exports = function(app, db){
 
     router.post('/appointment', sessionHandler.authenticatedUser, clientsHandler.createAppointment);
     router.post('/appointment/cancel', sessionHandler.authenticatedUser, clientsHandler.cancelByClient);
+    router.post('/appointment/rate', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.rateAppointmentById);
 
 
 
