@@ -8,5 +8,6 @@ module.exports = function(db){
     require('./subscription')(db);
     require('./subscriptionType')(db);
     require('./appointment')(db);
+    require('./gallery')(db);
 
 };

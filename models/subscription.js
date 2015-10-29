@@ -11,7 +11,10 @@ module.exports = function (db) {
             type: ObjectId,
             ref: 'Client'
         },
-        subscriptionType: String,
+        subscriptionType: {
+            type: ObjectId,
+            ref: 'SubscriptionType'
+        },
         price: String,
         purchaseDate: {
             type: Date,

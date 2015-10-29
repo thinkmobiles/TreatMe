@@ -17,6 +17,8 @@ module.exports = function(app, db){
     router.get('/passwordChange/:forgotToken', clientsHandler.confirmForgotPass);
     router.post('/passwordChange/:forgotToken', clientsHandler.changePassword);
 
+    router.get('/gallery', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.getGalleryPhotoes);
+    router.get('/subscriptions', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.getActiveSubscriptions);
     router.get('/appointment', sessionHandler.authenticatedUser, clientsHandler.getAllClientAppointments);
     router.get('/appointment/:id', sessionHandler.authenticatedUser, clientsHandler.getClientAppointmentById);
 
@@ -31,8 +33,9 @@ module.exports = function(app, db){
     router.post('/appointment', sessionHandler.authenticatedUser, clientsHandler.createAppointment);
     router.post('/appointment/cancel', sessionHandler.authenticatedUser, clientsHandler.cancelByClient);
     router.post('/appointment/rate', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.rateAppointmentById);
+    router.post('/gallery', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.addPhotoToGallery);
 
-
+    router.delete('/gallery/:id', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.removePhotoFromGallery);
 
     return router;
 };

@@ -13,6 +13,8 @@ var ClientsHandler = function (app, db) {
 
     var Client = db.model('Client');
     var Appointment = db.model('Appointment');
+    var Gallery = db.model('Gallery');
+    var Subscription = db.model('Subscription');
     var session = new SessionHandler();
     var imageHandler = new ImageHandler(db);
     var ObjectId = mongoose.Types.ObjectId;
@@ -757,6 +759,140 @@ var ClientsHandler = function (app, db) {
             });
     };
 
+    this.addPhotoToGallery = function(req, res, next){
+        var clientId = req.session.uId;
+        var appointmentId = req.body.appointmentId;
+        var imageString = req.body.image;
+        var stylistId = req.body.stylistId;
+
+        if (!appointmentId || !imageString || !stylistId){
+            return next(badRequests.NotEnParams({reqParams: 'appointmentId and image'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)){
+            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
+        }
+
+        Appointment
+            .findOne({_id: appointmentId, client: clientId, stylist: stylistId}, function(err, appointmentModel){
+                var galleryModel;
+                var saveObj;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                saveObj = {
+                    clientId: clientId,
+                    stylistId: stylistId,
+                    appointment: ObjectId(appointmentId)
+                };
+
+                galleryModel = new Gallery(saveObj);
+
+                galleryModel
+                    .save(function(err){
+                        var imageName;
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        imageName = galleryModel.get('_id').toString();
+
+                        imageHandler.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, function(err){
+                            if (err){
+                                return next(err);
+                            }
+
+                            res.status(200).send({success: 'Your photo was added to gallery'});
+                        });
+                    });
+            });
+    };
+
+    this.getActiveSubscriptions = function(req, res, next){
+        var clientId = req.session.uId;
+
+        Subscription
+            .find({client: clientId, expirationDate: {$gte: new Date()}})
+            .populate({path: 'subscriptionType', select: 'name price'})
+            .exec(function(err, subscriptionModelsArray){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(subscriptionModelsArray);
+            });
+    };
+
+    this.removePhotoFromGallery = function(req, res, next){
+        var clientId = req.session.uId;
+        var imageName = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(imageName)){
+            return next(badRequests.InvalidValue({value: imageName, param: 'id'}));
+        }
+
+        async.waterfall([
+
+            function(cb){
+                Gallery
+                    .findOne({_id: imageName, clientId: clientId}, function(err, imageModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!imageModel){
+                            return cb(badRequests.NotFound({target: 'image'}));
+                        }
+
+                        cb(null, imageModel);
+                    });
+            },
+
+            function(imageModel, cb){
+                imageModel.remove(cb);
+            },
+
+            function(cb){
+                imageHandler.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, cb);
+            }
+        ], function(err){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Photo was removed from gallery'});
+        });
+    };
+
+    this.getGalleryPhotoes = function(req, res, next){
+        var clientId = req.session.uId;
+
+        Gallery
+            .find({clientId: clientId})
+            .populate([
+                {path: 'appointment', select: 'bookingDate'},
+                {path: 'appointment.serviceType', select: 'name'},
+                {path: 'appointment.stylist', select: 'salonInfo.salonName personalInfo.firstName personalInfo.lastName personalInfo.avatar '}
+            ])
+            .exec(function(err, galleryModelsArray){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(galleryModelsArray);
+            });
+    };
 
 };
 

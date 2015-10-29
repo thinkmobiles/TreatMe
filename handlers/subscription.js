@@ -31,7 +31,7 @@ var SubscriptionsHandler = function (db) {
         }
 
         SubscriptionType
-            .findOne({_id:subscriptionId}, {__v: 0}, function(err, subscriptionModel){
+            .findOne({_id: subscriptionId}, {__v: 0}, function(err, subscriptionModel){
                 var resultObj;
 
                 if (err){
@@ -58,7 +58,7 @@ var SubscriptionsHandler = function (db) {
 
     this.createSubscriptionType = function(req, res, next){
         var body = req.body;
-        var subscriptionModel;
+        var subscriptionTypeModel;
         var saveObj;
 
         if (!body.name || !body.price){
@@ -70,8 +70,8 @@ var SubscriptionsHandler = function (db) {
             price: body.price
         };
 
-        subscriptionModel = new SubscriptionType(saveObj);
-        subscriptionModel
+        subscriptionTypeModel = new SubscriptionType(saveObj);
+        subscriptionTypeModel
             .save(function(err){
                 if (err){
                     return next(err);
@@ -102,12 +102,12 @@ var SubscriptionsHandler = function (db) {
             updateObj.price = body.price;
         }
         SubscriptionType
-            .findOneAndUpdate({_id:subscriptionId}, updateObj, function(err, subscriptionModel){
+            .findOneAndUpdate({_id: subscriptionId}, updateObj, function(err, subscriptionTypeModel){
                 if (err){
                     return next(err);
                 }
 
-                if (!subscriptionModel){
+                if (!subscriptionTypeModel){
                     return next(badRequests.NotFound({target: 'Subscription'}));
                 }
 
