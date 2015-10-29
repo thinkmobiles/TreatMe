@@ -1,30 +1,125 @@
 var CONSTANTS = require('../constants');
 var badRequests = require('../helpers/badRequests');
 var ImageHandler = require('./image');
+var BusinessHandler = require('./business');
+var passGen = require('password-generator');
+var mailer = require('../helpers/mailer')();
+var crypto = require('crypto');
 
 var AdminHandler = function(db){
 
+    var self = this;
     var image = new ImageHandler(db);
+    var business = new BusinessHandler(null, db);
     var Services = db.model('Service');
     var ServiceType = db.model('ServiceType');
     var Stylist = db.model('Business');
+
+    function getEncryptedPass(pass) {
+        var shaSum = crypto.createHash('sha256');
+        shaSum.update(pass);
+        return shaSum.digest('hex');
+    }
+
+    this.getStylistByCriterion = function(criterion, page, callback){
+
+        Stylist
+            .find(criterion, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'salonInfo.salonName': 1})
+            .skip(CONSTANTS.LIMIT.REQUESTED_STYLISTS * (page - 1))
+            .limit(CONSTANTS.LIMIT.REQUESTED_STYLISTS)
+            .exec(function(err, resultModel){
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, resultModel);
+
+            });
+    };
 
     this.getRequestedStylists = function(req, res, next){
 
         var page = (req.params.page >= 1) ? req.params.page : 1;
 
-        Stylist
-            .find({approved: false}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'salonInfo.salonName': 1})
-            .skip(CONSTANTS.LIMIT.REQUESTED_STYLISTS * (page - 1))
-            .limit(CONSTANTS.LIMIT.REQUESTED_STYLISTS)
-            .exec(function(err, resultModel){
-                if (err){
-                    return next(err);
-                }
+        self.getStylistByCriterion({approved: false}, page, function(err, result){
 
-                res.status(200).send(resultModel);
+            if (err){
+                return next(err);
+            }
 
-            });
+            res.status(200).send(result);
+
+        });
+
+    };
+
+    this.getALlStylists = function(req, res, next){
+
+        var page = (req.params.page >= 1) ? req.params.page : 1;
+
+        self.getStylistByCriterion({}, page, function(err, result){
+
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send(result);
+
+        });
+
+    };
+
+    this.getStylistById = function(req, res, next){
+
+        var sId = req.params.id;
+
+        business.getStylistById(sId, {salonInfo: true, personalInfo: true}, function(err, resultModel){
+
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send(resultModel);
+
+        });
+
+    };
+
+    this.createStylist = function(req, res, next){
+
+        var body = req.body;
+        var password = passGen(12, false);
+        var mailOptions;
+
+
+        if (!body || !body.email || !body.personalInfo.firstName || !body.personalInfo.lastName || !body.personalInfo.profession || !body.personalInfo.phoneNumber
+            || !body.salonInfo || !body.salonInfo.salonName || !body.salonInfo.businessRole || !body.salonInfo.phoneNumber
+            || !body.salonInfo.email || !body.salonInfo.address || !body.salonInfo.licenseNumber
+            || !body.salonInfo.city || !body.salonInfo.zipCode || !body.salonInfo.country){
+
+            return next(badRequests.NotEnParams());
+
+        }
+
+        body.password = getEncryptedPass(password);
+
+        business.addStylistProfile(body, function(err){
+
+            if (err){
+                return next(err);
+            }
+
+            mailOptions = {
+                name: body.personalInfo.firstName,
+                email: body.email,
+                password: password
+            };
+
+            mailer.adminCreateStylist(mailOptions);
+
+            res.status(200).send({success: 'Stylist created successfully'});
+
+        });
 
     };
 

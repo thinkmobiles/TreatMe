@@ -21,6 +21,7 @@ var ObjectId = mongoose.Types.ObjectId;
 
 var BusinessHandler = function (app, db) {
 
+    var self = this;
     var Business = db.model('Business');
     var Appointment = db.model('Appointment');
     var ServiceType = db.model('ServiceType');
@@ -34,6 +35,59 @@ var BusinessHandler = function (app, db) {
         shaSum.update(pass);
         return shaSum.digest('hex');
     }
+
+    // using in other handlers
+
+    this.getStylistById = function(sId, options, callback){
+
+        var projectionObj = {};
+        var stylistModel;
+
+        if (options.personalInfo){
+            projectionObj.personalInfo = 1;
+        }
+
+        if (options.salonInfo){
+            projectionObj.salonInfo = 1;
+        }
+
+        Business
+            .findOne({_id: sId}, projectionObj, function(err, resultModel){
+
+                if (err){
+                    return callback(err);
+                }
+
+                stylistModel = resultModel.toJSON();
+
+                if (stylistModel.personalInfo && stylistModel.personalInfo.avatar){
+                    stylistModel.personalInfo.avatar = image.computeUrl(stylistModel.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
+                }
+
+
+                callback(null, stylistModel);
+
+
+            });
+
+    };
+
+    this.addStylistProfile = function(createObj, callback){
+
+        var businessModel = new Business(createObj);
+
+        businessModel
+            .save(function(err){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null);
+
+            });
+
+    };
 
     this.signIn = function(req, res, next){
 
@@ -757,8 +811,8 @@ var BusinessHandler = function (app, db) {
          * @instance
          */
 
-        var uId = req.session.uId;
-        var avatar;
+        var sId = req.session.uId;
+        /*var avatar;
         var viewModel;
 
         Business
@@ -784,7 +838,17 @@ var BusinessHandler = function (app, db) {
 
                 res.status(200).send(viewModel);
 
-            });
+            });*/
+
+        self.getStylistById(sId, {personalInfo: true}, function(err, result){
+
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send(result);
+
+        });
     };
 
     this.getSalonInfo = function(req, res, next){

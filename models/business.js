@@ -25,7 +25,7 @@ module.exports = function (db) {
             salonName: String,
             phoneNumber: String,
             email: String,
-            yourBusinessRole: {type: String, default: 'Employee'},
+            businessRole: {type: String, default: 'Employee'},
             address: String,
             state: String,
             zipCode: String,
