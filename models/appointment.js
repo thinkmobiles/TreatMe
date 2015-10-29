@@ -35,6 +35,8 @@ module.exports = function (db) {
         startDate: Date,
         endDate: Date,
         cancellationReason: String,
+        rate: Number,
+        rateComment: String,
         stylist: {
             type: ObjectId,
             ref: 'Business'
