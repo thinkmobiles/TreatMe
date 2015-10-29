@@ -7,9 +7,11 @@ module.exports = function(){
 
     var confirmAccountHTML = fs.readFileSync('public/templates/mailer/createUser.html', encoding = "utf-8");
     var changePassHTML = fs.readFileSync('public/templates/mailer/changePassword.html', encoding = "utf-8");
+    var adminCreateStylistHTML = fs.readFileSync('public/templates/mailer/adminCreateStylist.html', encoding = "utf-8");
 
     var confirmAccountTemplate = _.template(confirmAccountHTML);
     var changePasswordTemplate = _.template(changePassHTML);
+    var adminCreateStylistTemplate = _.template(adminCreateStylistHTML);
 
     function confirmRegistration (options, status){
 
@@ -50,6 +52,24 @@ module.exports = function(){
         sendEmail(mailOptions);
     }
 
+    function adminCreateStylist (options){
+        var templateOptions = {
+            name: options.name,
+            email: options.email,
+            password: options.password
+        };
+
+        var mailOptions = {
+            from: 'Misha <no-replay@misha.com>',
+            to: templateOptions.email,
+            subject: 'Stylist created',
+            generateTextFromHTML: true,
+            html: adminCreateStylistTemplate(templateOptions)
+        };
+
+        sendEmail(mailOptions);
+    }
+
     function sendEmail(mailOptions, callback){
 
         var transport = nodemailer.createTransport({service: 'SendGrid', auth: {user: 'mmmigalll', pass: 'mishavashkeba1991'}});
@@ -80,6 +100,7 @@ module.exports = function(){
 
     return {
         confirmRegistration: confirmRegistration,
-        forgotPassword: forgotPassword
+        forgotPassword: forgotPassword,
+        adminCreateStylist: adminCreateStylist
     }
 };
