@@ -16,6 +16,8 @@ define([
             "dashboard"                 :  "dashboard",
             "newApplications"           :  "newApplications",
             "stylists"                  :  "stylists",
+            "stylists/add"              :  "addStylists",
+            "stylists/:id"              :  "stylistDetails",
             "clients"                   :  "clients",
             "pendingRequests"           :  "pendingRequests",
             "bookings"                  :  "bookings",
@@ -140,6 +142,13 @@ define([
             this.loadWrapperView('gallery', null, REDIRECT.whenNOTAuthorized);
         },
 
+        addStylists: function () {
+            this.loadWrapperView('stylists', {}, REDIRECT.whenNOTAuthorized, 'Item');
+        },
+
+        stylistDetails: function (id) {
+            this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
+        },
 
         /*users: function () {
             this.loadWrapperView('users', null, REDIRECT.whenNOTAuthorized);

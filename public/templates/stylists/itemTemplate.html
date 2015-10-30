@@ -1,0 +1,45 @@
+<form class="stylistForm">
+    <div class="userNameContainer">
+        <span>
+        <%if (user._id) { %>
+            <%= user.firstName + ' ' + user.lastName%>
+        <% } else { %>
+            Add stylist profile
+        <% } %>
+        </span>
+    </div>
+
+    <div class="accountInfo">
+        <div class="avatar"></div>
+        <input type="text" class="firstName" name="firstName" placeholder="First Name"/><br/>
+        <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><br/>
+        <input type="text" class="role" name="role" placeholder="Profession"/><br/>
+        <input type="text" class="phone" name="phone" placeholder="Personal Phone Number"/><br/>
+
+        <div class="phoneSettings">
+            <span>Show</span>
+            <input type="radio" name="phoneSettings" value="personal" checked /> personal number
+            <input type="radio" name="phoneSettings" value="salon"/> salon number
+        </div>
+
+        <div class="salonInfo">
+            <span>Salon info</span>
+            <input type="text" name="salonName" placeholder="Salon Name"/><br/>
+            <input type="text" name="businessRole" placeholder="Business Role"/><br/>
+            <input type="text" name="salonNumber" placeholder="Salon Number"/><br/>
+            <input type="text" name="salonEmail" placeholder="Salon Email"/><br/>
+            <input type="text" name="salonAddress" placeholder="Salon Address"/><br/>
+            <input type="text" name="salonAddress2" placeholder="Salon Address Line 2"/><br/>
+            <input type="text" name="license" placeholder="License Number"/><br/>
+            <input type="text" name="city" placeholder="City"/><br/>
+            <input type="text" name="region" placeholder="State/Province/Region"/><br/>
+            <input type="text" name="zip" placeholder="Zip Code"/><br/>
+            <input type="text" name="country" placeholder="Country"/><br/>
+        </div>
+
+        <button class="saveBtn">Save</button>
+
+    </div>
+
+</form>
+
