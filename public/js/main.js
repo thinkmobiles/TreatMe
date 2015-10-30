@@ -27,7 +27,20 @@ require.config({
 
 require(['app', 'socketio'], function(app, io){
 
-    Backbone.View.prototype.errorNotification = function (xhr) {
+    Backbone.View.prototype.handleError = function (err) {
+        if (err.message) {
+            alert(err.message);
+        } else {
+            alert(err);
+        }
+    };
+
+    Backbone.View.prototype.handleModelError = function (model, response, options) {
+        var errMessage = response.responseJSON.message;
+        alert(errMessage);
+    };
+
+    Backbone.View.prototype.handleErrorResponse = function (xhr) {
         if (xhr) {
             if (xhr.status === 401 || xhr.status === 403) {
                 if (xhr.status === 401) {

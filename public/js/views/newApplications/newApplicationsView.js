@@ -1,9 +1,10 @@
 'use strict';
 
 define([
+    'collections/stylistCollection',
     'text!templates/newApplications/newApplicationsTemplate.html'
 
-], function (MainTemplate) {
+], function (StylistCollection, MainTemplate) {
 
     var View;
 
@@ -17,14 +18,27 @@ define([
         },
 
         initialize: function () {
-            this.render();
+            var self = this;
+
+            self.collection = [];
+
+            $.ajax({
+                type: 'GET',
+                url: '/admin/stylist/requested',
+                success: function (data) {
+                    self.collection = new StylistCollection(data);
+                    self.render();
+                },
+                error  : self.handleErrorResponse
+            });
         },
 
         render: function () {
             var self = this;
             var $el = self.$el;
+            var users = self.collection.toJSON();
 
-            $el.html(self.mainTemplate());
+            $el.html(self.mainTemplate({users: users}));
 
             return this;
         },
