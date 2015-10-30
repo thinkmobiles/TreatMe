@@ -890,6 +890,10 @@ var ClientsHandler = function (app, db) {
                     return next(err);
                 }
 
+                galleryModelsArray.map(function(model){
+                    return model.url = imageHandler.computeUrl(model._id, CONSTANTS.BUCKET.IMAGES);
+                });
+
                 res.status(200).send(galleryModelsArray);
             });
     };

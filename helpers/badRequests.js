@@ -11,6 +11,7 @@ var BadRequestModule = function () {
     var NOT_ENOUGH_PARAMS = "Not enough incoming parameters.";
     var INVALID_EMAIL = "Incorrect email address.";
     var EMAIL_IN_USE = 'Email in use. Please input another email address.';
+    var FBID_IN_USE = 'FacebookId in use. Please input another facebook id address.';
 
     function Errors(options) {
         //http://j-query.blogspot.com/2014/03/custom-error-objects-in-javascript.html
@@ -93,6 +94,25 @@ var BadRequestModule = function () {
         }
         if (!errOptions.message) {
             errOptions.message = EMAIL_IN_USE;
+        }
+
+        return new Errors(errOptions);
+    };
+
+    this.FbIdInUse = function(options) {
+        var errOptions;
+
+        if (options) {
+            errOptions = options;
+        } else {
+            errOptions = {};
+        }
+
+        if (!errOptions.name) {
+            errOptions.name = 'DoubledFacebookId';
+        }
+        if (!errOptions.message) {
+            errOptions.message = FBID_IN_USE;
         }
 
         return new Errors(errOptions);

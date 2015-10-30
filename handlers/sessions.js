@@ -1,14 +1,14 @@
 var CONSTANTS = require('../constants');
+var badRequests = require('../helpers/badRequests');
 
 var Session = function () {
 
     'use strict';
 
-    this.register = function (req, res, userId, isNew, status) {
+    this.register = function (req, res, userId, isNew, role) {
         req.session.loggedIn = true;
         req.session.uId = userId;
-        req.session.uStatus = status;
-
+        req.session.role = role;
 
         if (typeof isNew === 'boolean' && isNew) {
             return res.status(201).send({success: 'User created successful'});
@@ -25,7 +25,7 @@ var Session = function () {
     };
 
     this.authenticatedUser = function (req, res, next) {
-        if (req.session && req.session.uId && req.session.loggedIn && req.session.uStatus) {
+        if (req.session && req.session.uId && req.session.loggedIn && req.session.role) {
             next();
         } else {
             var err = new Error('UnAuthorized');
@@ -35,25 +35,30 @@ var Session = function () {
 
     };
 
-    this.isBusiness = function(req, res, next){
-        if (req.session && req.session.uStatus === CONSTANTS.USER_STATUS.BUSINESS){
+    this.isStylist = function(req, res, next){
+        if (req.session && (req.session.role === CONSTANTS.USER_ROLE.STYLIST)){
             next();
         } else {
-            var err = new Error('Not business');
-            err.status = 400;
-            next(err);
+            next(badRequests.AccessError({'message': 'Only Stylist does have permissions for do this'}));
         }
     };
 
     this.isClient = function(req, res, next){
-        if (req.session && req.session.uStatus === CONSTANTS.USER_STATUS.CLIENT){
+        if (req.session && req.session.role === CONSTANTS.USER_ROLE.CLIENT){
             next();
         } else {
-            var err = new Error('Not client');
-            err.status = 400;
-            next(err);
+            next(badRequests.AccessError({'message': 'Only Client does have permissions for do this'}));
         }
     };
+
+    this.isAdmin = function(req, res, next){
+        if (req.session && req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+            next();
+        } else {
+            next(badRequests.AccessError({'message': 'Only Admin does have permissions for do this'}));
+        }
+    }
+
 
 };
 
