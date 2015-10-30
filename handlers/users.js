@@ -157,7 +157,7 @@ var UserHandler = function (app, db) {
                 personalInfo: {
                     firstName: body.firstName,
                     lastName: body.lastName,
-                    phone: body.phone,
+                    phone: body.phone
                 },
                 email: email,
                 password: getEncryptedPass(password),
@@ -167,6 +167,7 @@ var UserHandler = function (app, db) {
 
             User
                 .findOne({email: createObj.email, role: body.role}, function(err, resultModel){
+                    var user;
 
                     if (err){
                         return next(err);
@@ -231,7 +232,109 @@ var UserHandler = function (app, db) {
                 session.register(req, res, uId, true, CONSTANTS.USER_ROLE.STYLIST);
 
             });
+    };
 
+    this.forgotPassword = function (req, res, next) {
+
+        var body = req.body;
+        var email;
+        var forgotToken = uuid.v4();
+
+        if (!body.email) {
+            return next(badRequests.NotEnParams({params: 'email'}));
+        }
+
+        if (!validator.isEmail(body.email)) {
+            return next(badRequests.InvalidEmail());
+        }
+
+        email = body.email;
+
+        email = validator.escape(email);
+
+        User
+            .findOneAndUpdate(
+            {
+                email: email
+            }, {
+                $set: {forgotToken: forgotToken}
+            }, {
+                new: true
+            }, function (err, result) {
+                var role;
+
+                if (err) {
+                    return next(err);
+                }
+
+                if (!result) {
+                    return res.status(200).send({success: 'Check your email'});
+                }
+
+                if (result.role === CONSTANTS.USER_ROLE.CLIENT){
+                    role = CONSTANTS.USER_ROLE.CLIENT;
+                } else {
+                    role = CONSTANTS.USER_ROLE.STYLIST;
+                }
+
+                mailer.forgotPassword(result.toJSON(), role);
+
+                res.status(200).send({success: 'Check your email'});
+
+            });
+
+    };
+
+    this.confirmForgotPass = function (req, res, next) {
+        var forgotToken = req.query.token;
+        var userRole = req.query.role;
+
+        User
+            .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {forgotToken: ''}, function (err, userModel) {
+                if (err) {
+                    return next(err);
+                }
+
+                if (!userModel){
+                    return next(badRequests.TokenWasUsed());
+                }
+
+                res.status(200).send({success: 'Confirm change password'});
+            });
+    };
+
+    this.changePassword = function (req, res, next) {
+
+        var forgotToken;
+        var userRole;
+        var body = req.body;
+        var encryptedPassword;
+
+        if (!body.password || !body.token || !body.role) {
+            return next(badRequests.NotEnParams({params: 'password'}));
+        }
+
+        forgotToken = req.body.token;
+        userRole = req.body.role;
+
+        encryptedPassword = getEncryptedPass(body.password);
+
+        User
+            .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {
+                password: encryptedPassword,
+                forgotToken: ''
+            }, function (err, userModel) {
+
+                if (err) {
+                    return next(err);
+                }
+
+                if (!userModel){
+                    return next(badRequests.TokenWasUsed());
+                }
+
+                res.status(200).send({success: 'Password changed successfully'});
+            });
 
     };
 
