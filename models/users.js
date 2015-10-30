@@ -1,8 +1,8 @@
 module.exports = function (db) {
     'use strict';
-    var CONSTANTS = require('../constants');
     var mongoose = require('mongoose');
     var Schema = mongoose.Schema;
+    var CONSTANTS = require('../constants');
 
     var User = new Schema({
         email: String,
@@ -46,19 +46,16 @@ module.exports = function (db) {
         collection: 'Users'
     });
 
+    User.methods.toJSON = function(){
+        var user = this.toObject();
 
-    var user = db.model('User', User);
-
-    user.prototype.toJSON = function(){
-
-        if (this.role === CONSTANTS.USER_ROLE.CLIENT){
-            delete this.salonInfo;
+        if (user.role === CONSTANTS.USER_ROLE.CLIENT){
+            delete user.salonInfo;
         }
 
-        return this;
-
+        return user;
     };
 
-
+   db.model('User', User);
 
 };
