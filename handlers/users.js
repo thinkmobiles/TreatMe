@@ -234,9 +234,37 @@ var UserHandler = function (app, db) {
 
     };
 
-    this.signOut = function(req, res, next){
+    this.signOut = function (req, res, next) {
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/signOut/`__
+         *
+         * This __method__ allows signOut _User_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/signOut/
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Logout successful"
+         *  }
+         *
+         * @method signOut
+         * @instance
+         */
+
         session.kill(req, res, next);
     };
+
 
     this.confirmRegistration = function (req, res, next) {
 
@@ -318,6 +346,7 @@ var UserHandler = function (app, db) {
     };
 
     this.confirmForgotPass = function (req, res, next) {
+
         var forgotToken = req.query.token;
         var userRole = req.query.role;
 
@@ -379,7 +408,7 @@ var UserHandler = function (app, db) {
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/business/signIn/`__
+         * __URL: `/signIn/`__
          *
          * This __method__ allows signIn _User_
          *
@@ -708,8 +737,152 @@ var UserHandler = function (app, db) {
                 });
 
             });
+    };
+
+    this.getProfile = function (req, res, next) {
+        var userId = req.params.id || req.session.uId;
+        var projectionObj;
+
+        if (req.params.id && !CONSTANTS.REG_EXP.OBJECT_ID.test(userId)) {
+            return next(badRequests.InvalidValue({value: userId, param: 'id'}));
+        }
+
+        projectionObj = {
+            fbId: 0,
+            __v: 0,
+            token: 0,
+            password: 0,
+            forgotToken: 0,
+            confirmed: 0,
+            approved:0
+        };
+
+        User
+            .findOne({_id: userId}, projectionObj, function (err, clientModel) {
+
+                if (err) {
+                    return next(err);
+                }
+                if (!clientModel) {
+                    return next(badRequests.NotFound({target: 'User'}));
+                }
+
+                res.status(200).send(clientModel);
+            });
+    };
+
+    this.uploadAvatar = function(req, res, next){
 
 
+        var body = req.body;
+        var userId = req.session.uId;
+        var imageName = image.createImageName();
+        var currentImageName;
+        var imageString;
+
+        if (!body.avatar){
+            return next(badRequests.NotEnParams({reqParams: 'avatar'}));
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+
+            if (!body.userId){
+                return next(badRequests.NotEnParams({reqParams: 'userId'}));
+            }
+            userId = body.userId;
+        }
+
+        imageString = body.avatar;
+
+        User
+            .findOne({_id: userId}, {'personalInfo.avatar': 1}, function(err, userModel){
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!userModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                currentImageName = userModel.get('personalInfo.avatar');
+
+                async
+                    .series([
+
+                        function(cb) {
+                            image.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, cb);
+                        },
+
+                        function(cb){
+                            userModel
+                                .update({'personalInfo.avatar': imageName}, cb);
+                        },
+
+                        function(cb) {
+
+                            if (!currentImageName){
+                                return cb();
+                            }
+
+                            image.deleteImage(currentImageName, CONSTANTS.BUCKET.IMAGES, cb);
+                        }
+
+                    ], function(err){
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: 'Avatar upload successful'});
+                    });
+            });
+    };
+
+    this.removeAvatar = function(req, res, next){
+        var userId = req.session.uId;
+
+        if (req.params.id && req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+            userId = req.params.id;
+
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(userId)){
+                return next(badRequests.InvalidValue({value: userId, param: 'id'}));
+            }
+        }
+
+        User
+            .findOne({_id: userId}, function(err, userModel){
+                var avatarName;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!userModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                avatarName = userModel.get('personalInfo.avatar');
+
+                userModel
+                    .update({'personalInfo.avatar': ''}, function(err){
+                        if (err){
+                            return next(err);
+                        }
+
+                        if (!avatarName){
+                            return res.status(200).send({success: 'Avatar removed successfully'});
+                        }
+
+                        image.deleteImage(avatarName, CONSTANTS.BUCKET.IMAGES, function(err){
+                            if (err){
+                                return next(err);
+                            }
+
+                            res.status(200).send({success: 'Avatar removed successfully'});
+                        });
+                    });
+            });
     };
 
 };
