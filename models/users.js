@@ -23,7 +23,7 @@ module.exports = function (db) {
         },
         salonInfo: {
             salonName: String,
-            phoneNumber: String,
+            phone: String,
             email: String,
             businessRole: {type: String, default: 'Employee'},
             address: String,

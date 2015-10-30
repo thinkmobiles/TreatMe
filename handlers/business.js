@@ -1,10 +1,4 @@
 
-/**
- * @description Business profile management module
- * @module businessProfile
- *
- */
-
 var mailer = require('../helpers/mailer')();
 var mongoose = require('mongoose');
 var validator = require('validator');
