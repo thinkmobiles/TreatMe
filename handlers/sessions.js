@@ -36,7 +36,7 @@ var Session = function () {
     };
 
     this.isStylist = function(req, res, next){
-        if (req.session && req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+        if (req.session && (req.session.role === CONSTANTS.USER_ROLE.STYLIST)){
             next();
         } else {
             next(badRequests.AccessError({'message': 'Only Stylist does have permissions for do this'}));

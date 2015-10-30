@@ -34,11 +34,11 @@ module.exports = function(){
 
     }
 
-    function forgotPassword (options, status){
+    function forgotPassword (options, role){
         var templateOptions = {
             name: options.name,
             email: options.email,
-            url: process.env.HOST + '/' + status + '/passwordChange/' + options.forgotToken
+            url: process.env.HOST + '/passwordChange?token=' + options.forgotToken + '&role=' + role
         };
 
         var mailOptions = {
