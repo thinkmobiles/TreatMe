@@ -110,104 +110,115 @@ var UserHandler = function (app, db) {
             return next(badRequests.NotEnParams({reqParams: 'Role'}));
         }
 
-        if (body.fbId){
-            
-            User
-                .findOne({fbId: body.fbId, role: body.role}, function(err, resultModel){
-                    
-                    if (err){
-                        return next(err);
-                    }
-                    
-                    if (resultModel){
-                        return next(badRequests.FbIdInUse());
-                    }
+        if (role === 'Admin'){
+            if (!body.email || !body.password){
+                return next(badRequests.NotEnParams({reqParams: 'Email or password'}));
+            }
 
-                    userModel = new User(body);
-
-                    userModel
-                        .save(function (err) {
-
-                            if (err) {
-                                return next(err);
-                            }
-
-                            if (body.name) {
-                                name = body.name;
-                            }
-
-                            //res.status(200).send({success: 'User registered successfully'});
-                            session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.STYLIST);
-
-                        });
-
-                    
-                });
+            user = new User({email: body.email})
 
         } else {
-            if (!body.password || !body.email || !body.firstName || !body.lastName || !body.phone) {
-                return next(badRequests.NotEnParams({reqParams: 'password or email or First name or Last name'}));
-            }
+            if (body.fbId){
 
-            email = body.email;
-            password = body.password;
+                User
+                    .findOne({fbId: body.fbId, role: body.role}, function(err, resultModel){
 
-            if (!validator.isEmail(email)) {
-                return next(badRequests.InvalidEmail());
-            }
+                        if (err){
+                            return next(err);
+                        }
 
-            email = validator.escape(email);
+                        if (resultModel){
+                            return next(badRequests.FbIdInUse());
+                        }
 
-            createObj = {
-                personalInfo: {
-                    firstName: body.firstName,
-                    lastName: body.lastName,
-                    phone: body.phone,
-                },
-                email: email,
-                password: getEncryptedPass(password),
-                token: token,
-                role: body.role
-            };
+                        userModel = new User(body);
 
-            User
-                .findOne({email: createObj.email, role: body.role}, function(err, resultModel){
+                        userModel
+                            .save(function (err) {
 
-                    if (err){
-                        return next(err);
-                    }
+                                if (err) {
+                                    return next(err);
+                                }
 
-                    if (resultModel){
-                        return next(badRequests.EmailInUse());
-                    }
+                                if (body.name) {
+                                    name = body.name;
+                                }
 
-                    user = new User(createObj);
+                                //res.status(200).send({success: 'User registered successfully'});
+                                session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.STYLIST);
 
-                    user
-                        .save(function (err) {
-
-                            if (err) {
-                                return next(err);
-                            }
-
-                            if (body.name) {
-                                name = body.name;
-                            }
-
-                            mailer.confirmRegistration({
-                                name: body.firstName + ' ' + body.lastName,
-                                email: body.email,
-                                password: password,
-                                token: token
                             });
 
-                            res.status(200).send({success: 'User created successful. For using your account you must verify it. Please check email.'});
 
-                        });
+                    });
 
-                });
+            } else {
+                if (!body.password || !body.email || !body.firstName || !body.lastName || !body.phone) {
+                    return next(badRequests.NotEnParams({reqParams: 'password or email or First name or Last name'}));
+                }
 
+                email = body.email;
+                password = body.password;
+
+                if (!validator.isEmail(email)) {
+                    return next(badRequests.InvalidEmail());
+                }
+
+                email = validator.escape(email);
+
+                createObj = {
+                    personalInfo: {
+                        firstName: body.firstName,
+                        lastName: body.lastName,
+                        phone: body.phone,
+                    },
+                    email: email,
+                    password: getEncryptedPass(password),
+                    token: token,
+                    role: body.role
+                };
+
+                User
+                    .findOne({email: createObj.email, role: body.role}, function(err, resultModel){
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        if (resultModel){
+                            return next(badRequests.EmailInUse());
+                        }
+
+                        user = new User(createObj);
+
+                        user
+                            .save(function (err) {
+
+                                if (err) {
+                                    return next(err);
+                                }
+
+                                if (body.name) {
+                                    name = body.name;
+                                }
+
+                                mailer.confirmRegistration({
+                                    name: body.firstName + ' ' + body.lastName,
+                                    email: body.email,
+                                    password: password,
+                                    token: token
+                                });
+
+                                res.status(200).send({success: 'User created successful. For using your account you must verify it. Please check email.'});
+
+                            });
+
+                    });
+
+            }
         }
+
+
     };
 
     this.confirmRegistration = function (req, res, next) {
