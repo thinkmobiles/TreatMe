@@ -397,8 +397,9 @@ var UserHandler = function (app, db) {
         var fbId;
         var email;
         var password;
+        var role;
 
-        if (!body.role){
+        if (!options.role){
             return next(badRequests.NotEnParams({reqParams: 'Role'}));
         }
 
@@ -416,7 +417,13 @@ var UserHandler = function (app, db) {
                         return next(badRequests.SignInError());
                     }
 
-                    session.register(req, res, userModel._id, false, CONSTANTS.USER_ROLE.STYLIST);
+                    if (options.role === CONSTANTS.USER_ROLE.CLIENT){
+                        role = CONSTANTS.USER_ROLE.CLIENT;
+                    } else {
+                        role = CONSTANTS.USER_ROLE.STYLIST;
+                    }
+
+                    session.register(req, res, userModel._id, false, role);
                 });
 
         } else {
@@ -450,7 +457,13 @@ var UserHandler = function (app, db) {
                         return next(badRequests.UnconfirmedEmail());
                     }
 
-                    session.register(req, res, businessModel._id, false, CONSTANTS.USER_ROLE.STYLIST);
+                    if (options.role === CONSTANTS.USER_ROLE.CLIENT){
+                        role = CONSTANTS.USER_ROLE.CLIENT;
+                    } else {
+                        role = CONSTANTS.USER_ROLE.STYLIST;
+                    }
+
+                    session.register(req, res, businessModel._id, false, role);
                 });
         }
     };

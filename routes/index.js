@@ -25,6 +25,7 @@ module.exports = function (app, db) {
     app.use('/admin', adminRouter);
 
     app.post('/signUp', user.signUp);
+    app.post('/signIn', user.signIn);
     app.get('/confirm/:token', user.confirmRegistration);
     app.get('/passwordChange', user.confirmForgotPass);
     app.post('/passwordChange', user.changePassword);
