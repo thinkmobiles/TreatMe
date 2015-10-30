@@ -4,29 +4,35 @@ module.exports = function (app, db) {
 
     var logWriter = require('../modules/logWriter')();
 
-    var businessRouter = require('./business')(app, db);
-    var clientsRouter = require('./clients')(app, db);
+   /* var businessRouter = require('./business')(app, db);
+    var clientsRouter = require('./clients')(app, db);*/
     var adminRouter = require('./admin')(db);
 
     var SubscriptionHandler = require('../handlers/subscription');
     var UserHandler = require('../handlers/users');
+    var SessionHandler = require('../handlers/sessions');
 
     var subscriptionHandler = new SubscriptionHandler(db);
-    var user = new UserHandler(app,
-        db);
+    var user = new UserHandler(app, db);
+    var sessionHandler = new SessionHandler();
 
     app.get('/', function (req, res, next) {
         res.status(200).send('Express start succeed');
     });
 
-    app.use('/business', businessRouter);
-    app.use('/client', clientsRouter);
+    /*app.use('/business', businessRouter);
+    app.use('/client', clientsRouter);*/
     app.use('/admin', adminRouter);
 
     app.post('/signUp', user.signUp);
     app.get('/confirm/:token', user.confirmRegistration);
     app.get('/passwordChange', user.confirmForgotPass);
     app.post('/passwordChange', user.changePassword);
+
+
+    app.put('/personal', sessionHandler.authenticatedUser, user.updatePersonalInfo);
+    app.put('/salon', sessionHandler.authenticatedUser, sessionHandler.isStylist, user.updateSalonInfo);
+
 
     app.get('/subscriptionTypes', subscriptionHandler.getSubscriptionTypes);
     app.get('/subscriptionTypes/:id', subscriptionHandler.getSubscriptionTypeById);
