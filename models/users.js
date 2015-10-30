@@ -14,6 +14,7 @@ module.exports = function (db) {
         forgotToken: String,
         fbId: {type: String, default: null},
         confirmed: {type: Date},
+        creationDate: {type:Date, default: Date.now},
         approved: {type: Boolean, default: false},
         role: {type: String, match: /^Stylist$|^Client$|^Admin$/},
         personalInfo: {
