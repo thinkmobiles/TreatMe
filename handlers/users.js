@@ -221,6 +221,37 @@ var UserHandler = function (app, db) {
 
     };
 
+    this.signOut = function (req, res, next) {
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/signOut/`__
+         *
+         * This __method__ allows signOut _User_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/signOut/
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Logout successful"
+         *  }
+         *
+         * @method signOut
+         * @instance
+         */
+
+        session.kill(req, res, next);
+    };
+
     this.confirmRegistration = function (req, res, next) {
 
         var token = req.params.token;
@@ -301,6 +332,7 @@ var UserHandler = function (app, db) {
     };
 
     this.confirmForgotPass = function (req, res, next) {
+
         var forgotToken = req.query.token;
         var userRole = req.query.role;
 
@@ -362,7 +394,7 @@ var UserHandler = function (app, db) {
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/business/signIn/`__
+         * __URL: `/signIn/`__
          *
          * This __method__ allows signIn _User_
          *
@@ -720,9 +752,6 @@ var UserHandler = function (app, db) {
 
         User
             .findOne({_id: userId}, projectionObj, function (err, clientModel) {
-                var avatarUrl;
-                var avatarName;
-                var clientModelJSON;
 
                 if (err) {
                     return next(err);
@@ -731,24 +760,7 @@ var UserHandler = function (app, db) {
                     return next(badRequests.NotFound({target: 'User'}));
                 }
 
-                clientModelJSON = clientModel.toJSON();
-
-                avatarName = clientModelJSON.personalInfo.avatar || '';
-
-                if (avatarName) {
-                    avatarUrl = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
-                    clientModelJSON.personalInfo.avatar = avatarUrl;
-                }
-
-                clientModelJSON.coordinates = clientModelJSON.loc.coordinates;
-
-                delete clientModelJSON.loc;
-
-                if (clientModelJSON.role === CONSTANTS.USER_ROLE.CLIENT){
-                    delete clientModelJSON.salonInfo;
-                }
-
-                res.status(200).send(clientModelJSON);
+                res.status(200).send(clientModel);
             });
     };
 
