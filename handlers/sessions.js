@@ -4,11 +4,10 @@ var Session = function () {
 
     'use strict';
 
-    this.register = function (req, res, userId, isNew, status) {
+    this.register = function (req, res, userId, isNew, role) {
         req.session.loggedIn = true;
         req.session.uId = userId;
-        req.session.uStatus = status;
-
+        req.session.role = role;
 
         if (typeof isNew === 'boolean' && isNew) {
             return res.status(201).send({success: 'User created successful'});
@@ -36,7 +35,7 @@ var Session = function () {
     };
 
     this.isBusiness = function(req, res, next){
-        if (req.session && req.session.uStatus === CONSTANTS.USER_STATUS.BUSINESS){
+        if (req.session && req.session.role === CONSTANTS.USER_STATUS.BUSINESS){
             next();
         } else {
             var err = new Error('Not business');
@@ -46,7 +45,7 @@ var Session = function () {
     };
 
     this.isClient = function(req, res, next){
-        if (req.session && req.session.uStatus === CONSTANTS.USER_STATUS.CLIENT){
+        if (req.session && req.session.role === CONSTANTS.USER_STATUS.CLIENT){
             next();
         } else {
             var err = new Error('Not client');
