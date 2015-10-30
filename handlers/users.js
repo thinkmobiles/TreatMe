@@ -110,12 +110,25 @@ var UserHandler = function (app, db) {
             return next(badRequests.NotEnParams({reqParams: 'Role'}));
         }
 
-        if (role === 'Admin'){
+        if (body.role === 'Admin'){
             if (!body.email || !body.password){
                 return next(badRequests.NotEnParams({reqParams: 'Email or password'}));
             }
 
-            user = new User({email: body.email})
+            password = getEncryptedPass(body.password);
+
+            user = new User({email: body.email, password: password, role: CONSTANTS.USER_ROLE.ADMIN, approved: true});
+
+            user
+                .save(function(err){
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.ADMIN);
+
+                });
 
         } else {
             if (body.fbId){
@@ -219,6 +232,10 @@ var UserHandler = function (app, db) {
         }
 
 
+    };
+
+    this.signOut = function(req, res, next){
+        session.kill(req, res, next);
     };
 
     this.confirmRegistration = function (req, res, next) {
@@ -409,10 +426,6 @@ var UserHandler = function (app, db) {
         var password;
         var role;
 
-        if (!options.role){
-            return next(badRequests.NotEnParams({reqParams: 'Role'}));
-        }
-
         if (options.fbId) {
 
             fbId = options.fbId;
@@ -427,11 +440,7 @@ var UserHandler = function (app, db) {
                         return next(badRequests.SignInError());
                     }
 
-                    if (options.role === CONSTANTS.USER_ROLE.CLIENT){
-                        role = CONSTANTS.USER_ROLE.CLIENT;
-                    } else {
-                        role = CONSTANTS.USER_ROLE.STYLIST;
-                    }
+                    role = userModel.get('role');
 
                     session.register(req, res, userModel._id, false, role);
                 });
@@ -450,30 +459,31 @@ var UserHandler = function (app, db) {
             }
 
             User
-                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, businessModel) {
+                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, userModel) {
                     var token;
 
                     if (err) {
                         return next(err);
                     }
 
-                    if (!businessModel) {
+                    if (!userModel) {
                         return next(badRequests.SignInError());
                     }
 
-                    token = businessModel.get('token');
+                    token = userModel.get('token');
+                    role = userModel.get('role');
 
                     if (token){
                         return next(badRequests.UnconfirmedEmail());
                     }
 
-                    if (options.role === CONSTANTS.USER_ROLE.CLIENT){
+                    /*if (options.role === CONSTANTS.USER_ROLE.CLIENT){
                         role = CONSTANTS.USER_ROLE.CLIENT;
                     } else {
                         role = CONSTANTS.USER_ROLE.STYLIST;
-                    }
+                    }*/
 
-                    session.register(req, res, businessModel._id, false, role);
+                    session.register(req, res, userModel._id, false, role);
                 });
         }
     };

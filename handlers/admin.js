@@ -40,26 +40,15 @@ var AdminHandler = function(db){
             });
     };
 
-    this.test = function(req, res, next){
-
-        User
-            .findOne(function(err, result){
-
-                res.status(200).send(result.toJSON());
-
-            });
-
-    };
-
     this.getStylistList = function(req, res, next){
 
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = req.query.limit ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var status = req.query.status ? (req.query.status).toLowerCase() : 'all';
-        var criterion = {};
+        var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
 
         if (status === 'requested'){
-            criterion = {approved: false}
+            criterion.approved = false
         }
 
         self.getStylistByCriterion(criterion, page, limit, function(err, result){
@@ -95,12 +84,14 @@ var AdminHandler = function(db){
         var body = req.body;
         var password = passGen(12, false);
         var mailOptions;
+        var personal = body.personalInfo;
+        var salon = body.salonInfo;
 
 
-        if (!body || !body.email || !body.personalInfo.firstName || !body.personalInfo.lastName || !body.personalInfo.profession || !body.personalInfo.phoneNumber
-            || !body.salonInfo || !body.salonInfo.salonName || !body.salonInfo.businessRole || !body.salonInfo.phoneNumber
-            || !body.salonInfo.email || !body.salonInfo.address || !body.salonInfo.licenseNumber
-            || !body.salonInfo.city || !body.salonInfo.zipCode || !body.salonInfo.country){
+        if (!body.email || !personal.firstName || !personal.lastName || !personal.profession || !personal.phoneNumber
+            || !salon.salonName || !salon.businessRole || !salon.phoneNumber
+            || !salon.email || !salon.address || !salon.licenseNumber
+            || !salon.city || !salon.zipCode || !salon.country){
 
             return next(badRequests.NotEnParams());
 

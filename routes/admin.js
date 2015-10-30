@@ -5,21 +5,20 @@ var SessionHandler = require('../handlers/sessions');
 
 module.exports = function(db){
     var admin = new AdminHandler(db);
-   // var sessionHandler = new SessionHandler();
+    var sessionHandler = new SessionHandler();
 
-    router.post('/services', admin.addService);
-    router.get('/services', admin.getServices);
-    router.put('/services/:id', admin.updateService);
-    router.delete('/services/:id', admin.removeService);
+    router.post('/services', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.addService);
+    router.get('/services', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getServices);
+    router.put('/services/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateService);
+    router.delete('/services/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeService);
 
-    router.get('/test', admin.test);
-    router.get('/stylist', admin.getStylistList);
-    router.get('/stylist/:id', admin.getStylistById);
-    router.get('/stylist/approve/:id', admin.approveStylist);
-    router.post('/stylist', admin.createStylist);
+    router.get('/stylist', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistList);
+    router.get('/stylist/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistById);
+    router.get('/stylist/approve/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveStylist);
+    router.post('/stylist', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.createStylist);
 
-    router.get('/services/:page?', admin.getRequestedService);
-    router.post('/services/approve', admin.approveService);
+    router.get('/services/:page?', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getRequestedService);
+    router.post('/services/approve', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveService);
 
     return router;
 };

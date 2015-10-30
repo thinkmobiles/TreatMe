@@ -56,6 +56,8 @@ module.exports = function (db) {
         return user;
     };
 
+
+
    db.model('User', User);
 
 };
