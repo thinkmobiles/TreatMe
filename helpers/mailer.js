@@ -19,7 +19,7 @@ module.exports = function(){
             name: options.name,
             email: options.email,
             password: options.password,
-            url: process.env.HOST + '/' + status + '/confirm/' + options.token
+            url: process.env.HOST + '/confirm/' + options.token
         };
 
         var mailOptions = {
