@@ -45,19 +45,19 @@ var UserHandler = function (app, db) {
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/business/signUp/`__
+         * __URL: `/signUp/`__
          *
-         * This __method__ allows signUp _Business_
+         * This __method__ allows signUp _Users_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/business/signUp/
+         *         http://projects.thinkmobiles.com:8871/signUp/
          *
          * @example Body example:
          *
          * If you want signUp via Facebook
          * {
          *      "fbId": "test1",
-         *      "name": "Test"
+         *      "role": "Stylist"
          * }
          *
          * If you want signUp via email
@@ -67,6 +67,8 @@ var UserHandler = function (app, db) {
          *      "password": "qwerty",
          *      "firstName": "Test",
          *      "lastName": "Test",
+         *      "role": "Stylist",
+         *      "phone": "911"
          * }
          *
          * @example Response example:
@@ -75,20 +77,21 @@ var UserHandler = function (app, db) {
          *
          * For signUp via Facebook
          *  {
-         *      "success": "Business created successful"
+         *      "success": "User created successful"
          *  }
          *
          *  For signUp via Email
          *
          *  {
-         *      "success": "Business created successful. For using your account you must verify it. Please check email."
+         *      "success": "User created successful. For using your account you must verify it. Please check email."
          *  }
          *
-         * @param {string} [fbId] - FaceBook Id for signing user
-         * @param {string} [email] - `Business` email
-         * @param {string} password - `Business` password
-         * @param {string} firstName - `Business` firstName
-         * @param {string} lastName - `Business` lastName
+         * @param {string} [fbId] - FaceBook Id for signing User
+         * @param {string} [email] - `User` email
+         * @param {string} password - `User` password
+         * @param {string} firstName - `User` firstName
+         * @param {string} lastName - `User` lastName
+         * @param {string} role - `User` role (Stylist or Client)
          *
          * @method signUp
          * @instance
@@ -100,6 +103,7 @@ var UserHandler = function (app, db) {
         var userModel;
         var password;
         var createObj;
+        var user;
 
         if (!body.role){
             return next(badRequests.NotEnParams({reqParams: 'Role'}));
@@ -234,6 +238,10 @@ var UserHandler = function (app, db) {
 
 
     };
+
+
+
+
 
 };
 
