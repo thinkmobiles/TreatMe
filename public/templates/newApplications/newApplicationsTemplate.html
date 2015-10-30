@@ -1,0 +1,37 @@
+New Applications ...
+
+<div>
+    <div class="buttons">
+        <button id="acceptSelectedBtn">Accept</button>
+        <button id="removeSelectedBtn">Delete</button>
+        <a href="#stylists/add">Add Application</a>
+    </div>
+
+    <div class="list">
+        <table>
+            <thead>
+            <tr>
+                <th></th>
+                <th>Date</th>
+                <th>Stylist Name</th>
+                <th>Salon Name</th>
+                <th>Accept</th>
+                <th>Delete</th>
+            </tr>
+            </thead>
+            <tbody>
+                <% _.forEach(users, function (user) {%>
+                <tr data-id="<%= user._id%>">
+                    <td></td>
+                    <td><%= user.createdAt %></td>
+                    <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
+                    <td><%= user.salonInfo.salonName %></td>
+                    <td><button>Accept</button></td>
+                    <td><button>Delete</button></td>
+                </tr>
+                <%});%>
+            </tbody>
+        </table>
+    </div>
+
+</div>
