@@ -13,7 +13,7 @@ var AdminHandler = function(db){
     var business = new BusinessHandler(null, db);
     var Services = db.model('Service');
     var ServiceType = db.model('ServiceType');
-    var Stylist = db.model('Business');
+    var User = db.model('User');
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
@@ -21,11 +21,14 @@ var AdminHandler = function(db){
         return shaSum.digest('hex');
     }
 
-    this.getStylistByCriterion = function(criterion, page, callback){
 
-        Stylist
+    this.getStylistByCriterion = function(criterion, page, limit, callback){
+
+        criterion.role = CONSTANTS.USER_ROLE.STYLIST;
+
+        User
             .find(criterion, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'salonInfo.salonName': 1})
-            .skip(CONSTANTS.LIMIT.REQUESTED_STYLISTS * (page - 1))
+            .skip(limit * (page - 1))
             .limit(CONSTANTS.LIMIT.REQUESTED_STYLISTS)
             .exec(function(err, resultModel){
                 if (err){
@@ -37,27 +40,29 @@ var AdminHandler = function(db){
             });
     };
 
-    this.getRequestedStylists = function(req, res, next){
+    this.test = function(req, res, next){
 
-        var page = (req.params.page >= 1) ? req.params.page : 1;
+        User
+            .findOne(function(err, result){
 
-        self.getStylistByCriterion({approved: false}, page, function(err, result){
+                res.status(200).send(result.toJSON());
 
-            if (err){
-                return next(err);
-            }
-
-            res.status(200).send(result);
-
-        });
+            });
 
     };
 
-    this.getALlStylists = function(req, res, next){
+    this.getStylistList = function(req, res, next){
 
-        var page = (req.params.page >= 1) ? req.params.page : 1;
+        var page = (req.query.page >= 1) ? req.query.page : 1;
+        var limit = req.query.limit ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
+        var status = req.query.status ? (req.query.status).toLowerCase() : 'all';
+        var criterion = {};
 
-        self.getStylistByCriterion({}, page, function(err, result){
+        if (status === 'requested'){
+            criterion = {approved: false}
+        }
+
+        self.getStylistByCriterion(criterion, page, limit, function(err, result){
 
             if (err){
                 return next(err);

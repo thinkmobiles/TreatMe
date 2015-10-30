@@ -1,8 +1,11 @@
+var ImageHandler = require('../handlers/image');
+
 module.exports = function (db) {
     'use strict';
-
     var mongoose = require('mongoose');
     var Schema = mongoose.Schema;
+    var CONSTANTS = require('../constants');
+    var imageHandler = new ImageHandler();
 
     var User = new Schema({
         email: String,
@@ -11,6 +14,7 @@ module.exports = function (db) {
         forgotToken: String,
         fbId: {type: String, default: null},
         confirmed: {type: Date},
+        creationDate: {type:Date, default: Date.now},
         approved: {type: Boolean, default: false},
         role: {type: String, match: /^Stylist$|^Client$|^Admin$/},
         personalInfo: {
@@ -45,6 +49,28 @@ module.exports = function (db) {
     }, {
         collection: 'Users'
     });
+
+    User.methods.toJSON = function(){
+        var user = this.toObject();
+        var avatarName;
+        var avatarUrl;
+
+        if (user.role === CONSTANTS.USER_ROLE.CLIENT){
+            delete user.salonInfo;
+        }
+
+        avatarName = user.personalInfo.avatar || '';
+
+        if (avatarName) {
+            avatarUrl = imageHandler.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+            user.personalInfo.avatar = avatarUrl;
+        }
+
+        user.coordinates = user.loc.coordinates;
+        delete user.loc;
+
+        return user;
+    };
 
 
     db.model('User', User);
