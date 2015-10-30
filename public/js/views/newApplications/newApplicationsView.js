@@ -27,7 +27,7 @@ define([
                 url: '/admin/stylist/requested',
                 success: function (data) {
                     self.collection = new StylistCollection(data);
-                    self.render();
+                    self.render(); //TODO: use collection on reset !
                 },
                 error  : self.handleErrorResponse
             });
