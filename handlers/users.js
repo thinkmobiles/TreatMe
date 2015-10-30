@@ -688,8 +688,172 @@ var UserHandler = function (app, db) {
                 });
 
             });
+    };
+
+    this.getProfile = function (req, res, next) {
+        var userId = req.params.id || req.session.uId;
+        var projectionObj;
+
+        if (req.params.id && !CONSTANTS.REG_EXP.OBJECT_ID.test(userId)) {
+            return next(badRequests.InvalidValue({value: userId, param: 'id'}));
+        }
+
+        projectionObj = {
+            fbId: 0,
+            __v: 0,
+            token: 0,
+            password: 0,
+            forgotToken: 0,
+            confirmed: 0,
+            approved:0
+        };
+
+        User
+            .findOne({_id: userId}, projectionObj, function (err, clientModel) {
+                var avatarUrl;
+                var avatarName;
+                var clientModelJSON;
+
+                if (err) {
+                    return next(err);
+                }
+                if (!clientModel) {
+                    return next(badRequests.NotFound({target: 'User'}));
+                }
+
+                clientModelJSON = clientModel.toJSON();
+
+                avatarName = clientModelJSON.personalInfo.avatar || '';
+
+                if (avatarName) {
+                    avatarUrl = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                    clientModelJSON.personalInfo.avatar = avatarUrl;
+                }
+
+                clientModelJSON.coordinates = clientModelJSON.loc.coordinates;
+
+                delete clientModelJSON.loc;
+
+                if (clientModelJSON.role === CONSTANTS.USER_ROLE.CLIENT){
+                    delete clientModelJSON.salonInfo;
+                }
+
+                res.status(200).send(clientModelJSON);
+            });
+    };
+
+    this.uploadAvatar = function(req, res, next){
 
 
+        var body = req.body;
+        var userId = req.session.uId;
+        var imageName = image.createImageName();
+        var currentImageName;
+        var imageString;
+
+        if (!body.avatar){
+            return next(badRequests.NotEnParams({reqParams: 'avatar'}));
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+
+            if (!body.userId){
+                return next(badRequests.NotEnParams({reqParams: 'userId'}));
+            }
+            userId = body.userId;
+        }
+
+        imageString = body.avatar;
+
+        User
+            .findOne({_id: userId}, {'personalInfo.avatar': 1}, function(err, userModel){
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!userModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                currentImageName = userModel.get('personalInfo.avatar');
+
+                async
+                    .series([
+
+                        function(cb) {
+                            image.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, cb);
+                        },
+
+                        function(cb){
+                            userModel
+                                .update({'personalInfo.avatar': imageName}, cb);
+                        },
+
+                        function(cb) {
+
+                            if (!currentImageName){
+                                return cb();
+                            }
+
+                            image.deleteImage(currentImageName, CONSTANTS.BUCKET.IMAGES, cb);
+                        }
+
+                    ], function(err){
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: 'Avatar upload successful'});
+                    });
+            });
+    };
+
+    this.removeAvatar = function(req, res, next){
+        var userId = req.session.uId;
+
+        if (req.params.id && req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+            userId = req.params.id;
+
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(userId)){
+                return next(badRequests.InvalidValue({value: userId, param: 'id'}));
+            }
+        }
+
+        User
+            .findOne({_id: userId}, function(err, userModel){
+                var avatarName;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!userModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                avatarName = userModel.get('personalInfo.avatar');
+
+                userModel
+                    .update({'personalInfo.avatar': ''}, function(err){
+                        if (err){
+                            return next(err);
+                        }
+
+                        if (!avatarName){
+                            return res.status(200).send({success: 'Avatar removed successfully'});
+                        }
+
+                        image.deleteImage(avatarName, CONSTANTS.BUCKET.IMAGES, function(err){
+                            if (err){
+                                return next(err);
+                            }
+
+                            res.status(200).send({success: 'Avatar removed successfully'});
+                        });
+                    });
+            });
     };
 
 };

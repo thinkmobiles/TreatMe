@@ -29,7 +29,10 @@ module.exports = function (app, db) {
     app.get('/confirm/:token', user.confirmRegistration);
     app.get('/passwordChange', user.confirmForgotPass);
     app.post('/passwordChange', user.changePassword);
+    app.get('/profile/:id?', sessionHandler.authenticatedUser, user.getProfile);
 
+    app.post('/avatar', sessionHandler.authenticatedUser, user.uploadAvatar);
+    app.delete('/avatar/:id?', sessionHandler.authenticatedUser, user.removeAvatar);
 
     app.put('/personal', sessionHandler.authenticatedUser, user.updatePersonalInfo);
     app.put('/salon', sessionHandler.authenticatedUser, sessionHandler.isStylist, user.updateSalonInfo);
