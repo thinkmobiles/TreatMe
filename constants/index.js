@@ -1,7 +1,8 @@
 module.exports = {
-    USER_STATUS: {
-        BUSINESS: 'Business',
-        CLIENT: 'Client'
+    USER_ROLE: {
+        STYLIST: 'Stylist',
+        CLIENT: 'Client',
+        ADMIN: 'Admin'
     },
     BUCKET: {
         IMAGES: 'images'

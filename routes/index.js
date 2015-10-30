@@ -9,8 +9,11 @@ module.exports = function (app, db) {
     var adminRouter = require('./admin')(db);
 
     var SubscriptionHandler = require('../handlers/subscription');
+    var UserHandler = require('../handlers/users');
 
     var subscriptionHandler = new SubscriptionHandler(db);
+    var user = new UserHandler(app,
+        db);
 
     app.get('/', function (req, res, next) {
         res.status(200).send('Express start succeed');
@@ -19,6 +22,9 @@ module.exports = function (app, db) {
     app.use('/business', businessRouter);
     app.use('/client', clientsRouter);
     app.use('/admin', adminRouter);
+
+    app.post('/signUp', user.signUp);
+    app.get('/confirm/:token', user.confirmRegistration);
 
     app.get('/subscriptionTypes', subscriptionHandler.getSubscriptionTypes);
     app.get('/subscriptionTypes/:id', subscriptionHandler.getSubscriptionTypeById);

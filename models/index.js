@@ -1,6 +1,7 @@
 module.exports = function(db){
     "use strict";
 
+    require('./users')(db);
     require('./business')(db);
     require('./client')(db);
     require('./service')(db);
