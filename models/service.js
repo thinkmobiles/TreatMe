@@ -9,7 +9,7 @@ module.exports = function (db) {
     var Service = new Schema({
         stylist: {
             type: ObjectId,
-            ref: 'Business'
+            ref: 'User'
         },
         serviceId: String,
         name: String,

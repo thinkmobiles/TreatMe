@@ -4,8 +4,8 @@ module.exports = function (app, db) {
 
     var logWriter = require('../modules/logWriter')();
 
-   /* var businessRouter = require('./business')(app, db);
-    var clientsRouter = require('./clients')(app, db);*/
+    //var businessRouter = require('./business')(app, db);
+    var clientsRouter = require('./clients')(app, db);
     var adminRouter = require('./admin')(db);
 
     var SubscriptionHandler = require('../handlers/subscription');
@@ -24,8 +24,8 @@ module.exports = function (app, db) {
         res.sendfile('index.html');
     });
 
-    /*app.use('/business', businessRouter);
-    app.use('/client', clientsRouter);*/
+    //app.use('/business', businessRouter);
+    app.use('/client', clientsRouter);
     app.use('/admin', adminRouter);
 
     app.post('/signUp', user.signUp);
@@ -42,10 +42,16 @@ module.exports = function (app, db) {
 
     app.put('/personal', sessionHandler.authenticatedUser, user.updatePersonalInfo);
     app.put('/salon', sessionHandler.authenticatedUser, sessionHandler.isStylist, user.updateSalonInfo);
+    app.put('/coordinates', sessionHandler.authenticatedUser, user.updateLocation);
+
+    app.get('/gallery/:id', sessionHandler.authenticatedUser, user.getGalleryPhotoes);
+    app.delete('/gallery/:id', sessionHandler.authenticatedUser, user.removePhotoFromGallery);
+
+    app.get('/appointment', sessionHandler.authenticatedUser, user.getAppointments); //can accept query ?id=123 [&status=Pending //or Booked] status for admin only
+    app.post('/appointment/cancel', sessionHandler.authenticatedUser, user.cancelByUser); //not for admin
 
 
-    app.get('/subscriptionTypes', subscriptionHandler.getSubscriptionTypes);
-    app.get('/subscriptionTypes/:id', subscriptionHandler.getSubscriptionTypeById);
+    app.get('/subscriptionTypes/:id?', subscriptionHandler.getSubscriptionTypes);
     app.post('/subscriptionTypes', subscriptionHandler.createSubscriptionType);
     app.put('/subscriptionTypes/:id', subscriptionHandler.updateSubscriptionType);
 

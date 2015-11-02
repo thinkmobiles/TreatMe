@@ -6,6 +6,7 @@
  */
 
 var CONSTANTS = require('../constants');
+var mongoose = require('mongoose');
 var badRequests = require('../helpers/badRequests');
 var ImageHandler = require('./image');
 var UserHandler = require('./users');

@@ -9,13 +9,13 @@ module.exports = function (db) {
     var Subscription = new Schema({
         client: {
             type: ObjectId,
-            ref: 'Client'
+            ref: 'User'
         },
         subscriptionType: {
             type: ObjectId,
             ref: 'SubscriptionType'
         },
-        price: String,
+        price: String, //for current user, maybe with discount
         purchaseDate: {
             type: Date,
             default: Date.now
