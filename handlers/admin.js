@@ -1,3 +1,10 @@
+
+/**
+ * @description admin profile managment module
+ * @module adminHandler
+ *
+ */
+
 var CONSTANTS = require('../constants');
 var badRequests = require('../helpers/badRequests');
 var ImageHandler = require('./image');
@@ -41,6 +48,31 @@ var AdminHandler = function(db){
     };
 
     this.getStylistList = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/stylist/`__
+         *
+         * __Query params: page, limit, status
+         *
+         * This __method__ allows get stylist list by some sriterion for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/stylist?page=1&limit=20&status=requested
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *
+         * @method getStylistList
+         * @instance
+         */
 
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = req.query.limit ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
