@@ -44,7 +44,8 @@ module.exports = function (db) {
                 default: 'Point'
             },
             coordinates: [Number]
-        }
+        },
+        createdAt: {type: Date, default: Date.now}
 
     }, {
         collection: 'Users'
@@ -72,6 +73,8 @@ module.exports = function (db) {
             user.coordinates = user.loc.coordinates;
             delete user.loc;
         }
+
+        delete user.password;
 
         return user;
     };

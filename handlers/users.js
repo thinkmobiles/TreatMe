@@ -217,6 +217,23 @@ var UserHandler = function (app, db) {
             });
     }
 
+    this.addStylistProfile = function(createObj, callback){
+
+        var userModel = new User(createObj);
+
+        userModel
+            .save(function(err){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null);
+
+            });
+
+    };
+
     this.signUp = function (req, res, next) {
 
         /**
@@ -267,11 +284,12 @@ var UserHandler = function (app, db) {
          *      "success": "User created successful. For using your account you must verify it. Please check email."
          *  }
          *
-         * @param {string} [fbId] - FaceBook Id for signing User
+         * @param {string} [fbId] - FaceBook Id for signup User
          * @param {string} [email] - `User` email
          * @param {string} password - `User` password
          * @param {string} firstName - `User` firstName
          * @param {string} lastName - `User` lastName
+         * @param {string} phone - `User` phone
          * @param {string} role - `User` role (Stylist or Client)
          *
          * @method signUp
@@ -297,18 +315,29 @@ var UserHandler = function (app, db) {
 
             password = getEncryptedPass(body.password);
 
-            user = new User({email: body.email, password: password, role: CONSTANTS.USER_ROLE.ADMIN, approved: true});
+            User.findOne({email: body.email, password: password, role: CONSTANTS.USER_ROLE.ADMIN, approved: true}, function(err, result){
 
-            user
-                .save(function(err){
+                if (err){
+                    return next(err);
+                }
 
-                    if (err){
-                        return next(err);
-                    }
+                if (result){
+                    return next(badRequests.EmailInUse());
+                }
 
-                    session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.ADMIN);
+                user = new User({email: body.email, password: password, role: CONSTANTS.USER_ROLE.ADMIN, approved: true});
 
-                });
+                user
+                    .save(function(err){
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.ADMIN);
+
+                    });
+            });
 
         } else {
             if (body.fbId){
@@ -634,6 +663,7 @@ var UserHandler = function (app, db) {
         var email;
         var password;
         var role;
+        var findObj;
 
         if (options.fbId) {
 
@@ -663,12 +693,18 @@ var UserHandler = function (app, db) {
             email = options.email;
             password = getEncryptedPass(options.password);
 
+            if (options.role && options.role === CONSTANTS.USER_ROLE.ADMIN){
+                findObj = {email: email, password: password, role: options.role};
+            } else {
+                findObj = {email: email, password: password}
+            }
+
             if (!validator.isEmail(email)) {
                 return next(badRequests.InvalidEmail());
             }
 
             User
-                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, userModel) {
+                .findOneAndUpdate(findObj, {forgotToken: ''}, function (err, userModel) {
                     var token;
 
                     if (err) {
@@ -676,7 +712,11 @@ var UserHandler = function (app, db) {
                     }
 
                     if (!userModel) {
-                        return next(badRequests.SignInError());
+                        if (!options.role){
+                            return next(badRequests.SignInError());
+                        }
+
+                        return next(badRequests.AccessError());
                     }
 
                     token = userModel.get('token');

@@ -47,10 +47,14 @@ var BusinessHandler = function (app, db) {
         }
 
         User
-            .findOne({_id: sId}, projectionObj, function(err, resultModel){
+            .findOne({_id: ObjectId(sId)}, projectionObj, function(err, resultModel){
 
                 if (err){
                     return callback(err);
+                }
+
+                if (!stylistModel){
+                    return callback(null, []);
                 }
 
                 stylistModel = resultModel.toJSON();
