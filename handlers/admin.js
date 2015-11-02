@@ -8,7 +8,7 @@
 var CONSTANTS = require('../constants');
 var badRequests = require('../helpers/badRequests');
 var ImageHandler = require('./image');
-var UserHandler = require('./user');
+var UserHandler = require('./users');
 var passGen = require('password-generator');
 var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
@@ -293,18 +293,22 @@ var AdminHandler = function(db){
     this.approveStylist = function(req, res, next){
 
         /**
-         * __Type__ __`GET`__
+         * __Type__ __`POST`__
          *
          * __Content-Type__ `application/json`
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/admin/stylist/approve/:id`__
+         * __URL: `/admin/stylist/approve/`__
          *
          * This __method__ allows approve stylist by _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/stylist/approve/563342cf1480ea7c109dc385
+         *         http://projects.thinkmobiles.com:8871/admin/stylist/approve/
+         *
+         * {
+         *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc385]
+         * }
          *
          * @example Response example:
          *
@@ -368,7 +372,7 @@ var AdminHandler = function(db){
          *
          * {"success": "Stylists deleted successfully"}
          *
-         * @method approveStylist
+         * @method removeStylist
          * @instance
          */
 
