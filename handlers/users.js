@@ -37,6 +37,23 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
+    this.addStylistProfile = function(createObj, callback){
+
+        var userModel = new User(createObj);
+
+        userModel
+            .save(function(err){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null);
+
+            });
+
+    };
+
     this.signUp = function (req, res, next) {
 
         /**

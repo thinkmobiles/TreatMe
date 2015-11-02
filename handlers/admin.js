@@ -8,7 +8,7 @@
 var CONSTANTS = require('../constants');
 var badRequests = require('../helpers/badRequests');
 var ImageHandler = require('./image');
-var BusinessHandler = require('./business');
+var UserHandler = require('./business');
 var passGen = require('password-generator');
 var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
@@ -17,7 +17,7 @@ var AdminHandler = function(db){
 
     var self = this;
     var image = new ImageHandler(db);
-    var business = new BusinessHandler(null, db);
+    var user = new UserHandler(null, db);
     var Services = db.model('Service');
     var ServiceType = db.model('ServiceType');
     var User = db.model('User');
@@ -31,7 +31,7 @@ var AdminHandler = function(db){
     function getStylistById(sId, callback){
 
         User
-            .findOne({_id: sId}, {token: 0, forgotToken: 0, __v: 0, confirmed: 0}, function(err, resultModel){
+            .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0}, function(err, resultModel){
 
                 if (err){
                     return callback(err);
@@ -48,7 +48,7 @@ var AdminHandler = function(db){
             });
     }
 
-    this.getStylistByCriterion = function(criterion, page, limit, sId, callback){
+    this.getStylistByCriterion = function(criterion, page, limit, callback){
 
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
 
@@ -77,14 +77,14 @@ var AdminHandler = function(db){
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/stylist/`__
+         * __URL: `/admin/stylist/`__
          *
          * __Query params: page, limit, status__
          *
          * This __method__ allows get stylist list by some sriterion for _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/stylist?page=1&limit=20&status=requested
+         *         http://projects.thinkmobiles.com:8871/admin/stylist?page=1&limit=20&status=requested
          *
          * @example Response example:
          *
@@ -135,12 +135,12 @@ var AdminHandler = function(db){
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/stylist/:id`__
+         * __URL: `/admin/stylist/:id`__
          *
          * This __method__ allows get stylist by id for _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/stylist/563342cf1480ea7c109dc385
+         *         http://projects.thinkmobiles.com:8871/admin/stylist/563342cf1480ea7c109dc385
          *
          * @example Response example:
          *
@@ -161,12 +161,11 @@ var AdminHandler = function(db){
          *      },
          *      "approved": false,
          *      "creationDate": "2015-11-02T08:41:12.752Z",
-         *      "fbId": null,
          *      "coordinates": []
          *  }
          *
          *
-         * @method getStylist
+         * @method getStylistById
          * @instance
          */
 
@@ -193,12 +192,12 @@ var AdminHandler = function(db){
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/stylist/`__
+         * __URL: `/admin/stylist/`__
          *
          * This __method__ allows add stylist by _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/stylist/
+         *         http://projects.thinkmobiles.com:8871/admin/stylist/
          *
          * @example Body example:
          * {
@@ -225,7 +224,7 @@ var AdminHandler = function(db){
          * @example Response example:
          *
          *  Response status: 200
-         * {}
+         * {"success": "Stylist created successfully"}
          *
          * @method getStylist
          * @instance
@@ -249,7 +248,7 @@ var AdminHandler = function(db){
 
         body.password = getEncryptedPass(password);
 
-        business.addStylistProfile(body, function(err){
+        user.addStylistProfile(body, function(err){
 
             if (err){
                 return next(err);
@@ -271,10 +270,34 @@ var AdminHandler = function(db){
 
     this.approveStylist = function(req, res, next){
 
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/stylist/approve/:id`__
+         *
+         * This __method__ allows approve stylist by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/stylist/approve/563342cf1480ea7c109dc385
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Stylist approved successfully"}
+         *
+         * @method approveStylist
+         * @instance
+         */
+
         var sId = req.params.id;
 
-        Stylist
-            .findOneAndUpdate({_id: sId, approved: false}, {approved: true}, function(err, resultModel){
+        User
+            .findOneAndUpdate({_id: sId, approved: false, role: CONSTANTS.USER_ROLE.STYLIST}, {approved: true}, function(err, resultModel){
                 if (err){
                     return next(err);
                 }
@@ -287,13 +310,38 @@ var AdminHandler = function(db){
 
     this.getRequestedService = function(req, res, next){
 
-        var page = (req.params.page >= 1) ? req.params.page : 1;
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/services/requested`__
+         *
+         * __Query params: page, limit__
+         *
+         * This __method__ allows get requested services for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/services/requested?page=1&limit=20
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * @method getRequestedService
+         * @instance
+         */
+
+        var page = (req.query.page >= 1) ? req.query.page : 1;
+        var limit = (req.query.limit) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_SERVICES;
 
         Services
             .find({}, {__v: 0})
             .populate({path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'})
-            .skip(CONSTANTS.LIMIT.REQUESTED_SERVICES * (page - 1))
-            .limit(CONSTANTS.LIMIT.REQUESTED_SERVICES)
+            .skip(limit * (page - 1))
+            .limit(limit)
             .exec(function(err, resultModel){
 
                 if (err){
@@ -306,6 +354,35 @@ var AdminHandler = function(db){
     };
 
     this.approveService = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/service/approve/`__
+         *
+         * This __method__ allows approve service by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/service/approve
+         *
+         * @example Body example:
+         * {
+         *  "serviceId": "563342cf1480ea7c109dc385",
+         *  "stylistId": "563342cf1480ea7c109dc385"
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *  {"success": "Service approved successfully"}
+         *
+         * @method approveService
+         * @instance
+         */
 
         var body = req.body;
         var serviceId = body.serviceId;
@@ -329,6 +406,35 @@ var AdminHandler = function(db){
     };
 
     this.addService = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/service/`__
+         *
+         * This __method__ allows create service by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/service/
+         *
+         * @example Body example:
+         * {
+         *  "name": "Manicure",
+         *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         * {"success": "Stylist created successfully"}
+         *
+         * @method addStylist
+         * @instance
+         */
 
         var body = req.body;
         var serviceModel;
@@ -370,8 +476,44 @@ var AdminHandler = function(db){
 
     this.getServices = function(req, res, next){
 
-        ServiceType
-            .find({}, {__v: 0})
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/service/`__
+         *
+         * This __method__ allows get services by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/service/
+         *
+         * @example Body example:
+         * {
+         *  "name": "Manicure",
+         *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         * {"success": "Stylist created successfully"}
+         *
+         * @method addStylist
+         * @instance
+         */
+
+        var id = req.params.id;
+        var findObj = {};
+        var findType = 'find';
+
+        if (id){
+            findObj._id = id;
+        }
+
+        ServiceType[findType](findObj, {__v: 0})
             .exec(function(err, resultModel){
 
                 if (err){

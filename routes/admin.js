@@ -8,7 +8,7 @@ module.exports = function(db){
     var sessionHandler = new SessionHandler();
 
     router.post('/services', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.addService);
-    router.get('/services', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getServices);
+    router.get('/services/:id?', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getServices);
     router.put('/services/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateService);
     router.delete('/services/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeService);
 
@@ -17,7 +17,7 @@ module.exports = function(db){
     router.get('/stylist/approve/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveStylist);
     router.post('/stylist', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.createStylist);
 
-    router.get('/services/:page?', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getRequestedService);
+    router.get('/services/requested', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getRequestedService);
     router.post('/services/approve', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveService);
 
     return router;
