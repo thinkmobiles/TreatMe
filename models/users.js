@@ -59,7 +59,9 @@ module.exports = function (db) {
             delete user.salonInfo;
         }
 
-        avatarName = user.personalInfo.avatar || '';
+        if (user.personalInfo) {
+            avatarName = user.personalInfo.avatar || '';
+        }
 
         if (avatarName) {
             avatarUrl = imageHandler.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
