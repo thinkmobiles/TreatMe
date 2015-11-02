@@ -11,10 +11,10 @@ var Session = function () {
         req.session.role = role;
 
         if (typeof isNew === 'boolean' && isNew) {
-            return res.status(201).send({success: 'User created successful'});
+            return res.status(201).send({success: 'User created successful', id: userId});
         }
 
-        res.status(200).send({success: "Login successful"});
+        res.status(200).send({success: "Login successful", id: userId});
     };
 
     this.kill = function (req, res, next) {

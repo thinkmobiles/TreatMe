@@ -73,6 +73,8 @@ module.exports = function (db) {
             delete user.loc;
         }
 
+        delete user.password;
+
         return user;
     };
 

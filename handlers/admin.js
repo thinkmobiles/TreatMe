@@ -28,8 +28,27 @@ var AdminHandler = function(db){
         return shaSum.digest('hex');
     }
 
+    function getStylistById(sId, callback){
 
-    this.getStylistByCriterion = function(criterion, page, limit, callback){
+        User
+            .findOne({_id: sId}, {token: 0, forgotToken: 0, __v: 0, confirmed: 0}, function(err, resultModel){
+
+                if (err){
+                    return callback(err);
+                }
+
+                if (!resultModel){
+                    err = new Error('User not found');
+                    err.status = 404;
+                    return callback(err);
+                }
+
+                callback(null, resultModel);
+
+            });
+    }
+
+    this.getStylistByCriterion = function(criterion, page, limit, sId, callback){
 
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
 
@@ -47,6 +66,8 @@ var AdminHandler = function(db){
             });
     };
 
+
+
     this.getStylistList = function(req, res, next){
 
         /**
@@ -58,7 +79,7 @@ var AdminHandler = function(db){
          *
          * __URL: `/stylist/`__
          *
-         * __Query params: page, limit, status
+         * __Query params: page, limit, status__
          *
          * This __method__ allows get stylist list by some sriterion for _Admin_
          *
@@ -68,6 +89,16 @@ var AdminHandler = function(db){
          * @example Response example:
          *
          *  Response status: 200
+         *
+         * [
+         *       {
+         *           "_id": "563342cf1480ea7c109dc385",
+         *           "personalInfo": {
+         *               "firstName": "Misha",
+         *               "lastName": "Vashkeba"
+         *           }
+         *       }
+         *  ]
          *
          *
          * @method getStylistList
@@ -97,21 +128,108 @@ var AdminHandler = function(db){
 
     this.getStylistById = function(req, res, next){
 
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/stylist/:id`__
+         *
+         * This __method__ allows get stylist by id for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/stylist/563342cf1480ea7c109dc385
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "_id": "563342cf1480ea7c109dc385",
+         *      "email": "vashkebam1991@gmail.com",
+         *      "role": "Stylist",
+         *      "salonInfo": {
+         *          "businessRole": "Employee"
+         *      },
+         *      "personalInfo": {
+         *          "firstName": "Misha",
+         *          "lastName": "Vashkeba",
+         *          "phone": "+380968571460",
+         *          "profession": "Uborschyk"
+         *      },
+         *      "approved": false,
+         *      "creationDate": "2015-11-02T08:41:12.752Z",
+         *      "fbId": null,
+         *      "coordinates": []
+         *  }
+         *
+         *
+         * @method getStylist
+         * @instance
+         */
+
         var sId = req.params.id;
 
-        business.getStylistById(sId, {salonInfo: true, personalInfo: true}, function(err, resultModel){
-
+        getStylistById(sId, function(err, resultUser){
             if (err){
                 return next(err);
             }
 
-            res.status(200).send(resultModel);
+           res.status(200).send(resultUser);
 
         });
+
 
     };
 
     this.createStylist = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/stylist/`__
+         *
+         * This __method__ allows add stylist by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/stylist/
+         *
+         * @example Body example:
+         * {
+         *    "email":"vashm@mail.ua",
+         *    "personalInfo": {
+         *      "firstName": "Misha",
+         *      "lastName": "Vashkeba",
+         *      "profession": "Uborschyk",
+         *      "phoneNumber": "01"
+         *    },
+         *    "salonInfo": {
+         *      "salonName": "Name",
+         *      "businessRole": "Dybil",
+         *      "phoneNumber": "02",
+         *      "email": "test@test.com",
+         *      "address": "fdsghjkl;jhgf",
+         *      "licenseNumber": "03",
+         *      "city": "Uzh",
+         *     "zipCode": "88001",
+         *     "country": "Ukraine"
+         *   }
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         * {}
+         *
+         * @method getStylist
+         * @instance
+         */
 
         var body = req.body;
         var password = passGen(12, false);

@@ -45,11 +45,15 @@ var BusinessHandler = function (app, db) {
             projectionObj.salonInfo = 1;
         }
 
-        Business
-            .findOne({_id: sId}, projectionObj, function(err, resultModel){
+        User
+            .findOne({_id: ObjectId(sId)}, projectionObj, function(err, resultModel){
 
                 if (err){
                     return callback(err);
+                }
+
+                if (!stylistModel){
+                    return callback(null, []);
                 }
 
                 stylistModel = resultModel.toJSON();

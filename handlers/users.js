@@ -87,7 +87,7 @@ var UserHandler = function (app, db) {
          *      "success": "User created successful. For using your account you must verify it. Please check email."
          *  }
          *
-         * @param {string} [fbId] - FaceBook Id for signing User
+         * @param {string} [fbId] - FaceBook Id for signup User
          * @param {string} [email] - `User` email
          * @param {string} password - `User` password
          * @param {string} firstName - `User` firstName
@@ -454,6 +454,7 @@ var UserHandler = function (app, db) {
         var email;
         var password;
         var role;
+        var findObj;
 
         if (options.fbId) {
 
@@ -483,12 +484,18 @@ var UserHandler = function (app, db) {
             email = options.email;
             password = getEncryptedPass(options.password);
 
+            if (options.role && options.role === CONSTANTS.USER_ROLE.ADMIN){
+                findObj = {email: email, password: password, role: options.role};
+            } else {
+                findObj = {email: email, password: password}
+            }
+
             if (!validator.isEmail(email)) {
                 return next(badRequests.InvalidEmail());
             }
 
             User
-                .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, userModel) {
+                .findOneAndUpdate(findObj, {forgotToken: ''}, function (err, userModel) {
                     var token;
 
                     if (err) {
@@ -496,7 +503,11 @@ var UserHandler = function (app, db) {
                     }
 
                     if (!userModel) {
-                        return next(badRequests.SignInError());
+                        if (!options.role){
+                            return next(badRequests.SignInError());
+                        }
+
+                        return next(badRequests.AccessError());
                     }
 
                     token = userModel.get('token');
