@@ -44,7 +44,8 @@ module.exports = function (db) {
                 default: 'Point'
             },
             coordinates: [Number]
-        }
+        },
+        createdAt: {type: Date, default: Date.now}
 
     }, {
         collection: 'Users'
