@@ -68,8 +68,10 @@ module.exports = function (db) {
             user.personalInfo.avatar = avatarUrl;
         }
 
-        user.coordinates = user.loc.coordinates;
-        delete user.loc;
+        if (user.loc){
+            user.coordinates = user.loc.coordinates;
+            delete user.loc;
+        }
 
         return user;
     };
