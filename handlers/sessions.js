@@ -57,6 +57,30 @@ var Session = function () {
         } else {
             next(badRequests.AccessError({'message': 'Only Admin does have permissions for do this'}));
         }
+    };
+
+    this.clientOrStylist = function(req, res, next){
+        if (req.session && (req.session.role === CONSTANTS.USER_ROLE.CLIENT || req.session.role === CONSTANTS.USER_ROLE.STYLIST)){
+            next();
+        } else {
+            next(badRequests.AccessError({'message': 'Only Client or Stylist does have permissions for do this'}));
+        }
+    };
+
+    this.clientOrAdmin = function(req, res, next){
+        if (req.session && (req.session.role === CONSTANTS.USER_ROLE.CLIENT || req.session.role === CONSTANTS.USER_ROLE.ADMIN)){
+            next();
+        } else {
+            next(badRequests.AccessError({'message': 'Only Client or Admin does have permissions for do this'}));
+        }
+    };
+
+    this.stylistOrAdmin = function(req, res, next){
+        if (req.session && (req.session.role === CONSTANTS.USER_ROLE.STYLIST || req.session.role === CONSTANTS.USER_ROLE.ADMIN)){
+            next();
+        } else {
+            next(badRequests.AccessError({'message': 'Only Stylist or Admin does have permissions for do this'}));
+        }
     }
 
 

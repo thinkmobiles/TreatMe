@@ -1151,23 +1151,38 @@ var UserHandler = function (app, db) {
             });
     };
 
-    this.getGalleryPhotoes = function(req, res, next){
+    this.getGalleryPhotos = function(req, res, next){
         var userId = req.params.id;
-        var findObj = {
-            clientId : userId
-        };
+        var findObj = {};
         var populateArray = [
             {path: 'appointment', select: 'bookingDate'},
             {path: 'appointment.serviceType', select: 'name'}
         ];
 
         if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
+            findObj.clientId = req.session.uId;
             populateArray.push({path: 'appointment.stylist', select: 'salonInfo.salonName personalInfo.firstName personalInfo.lastName personalInfo.avatar'});
         }
 
         if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+            if (!userId){
+                return next(badRequests.NotEnParams({reqParams: 'id'}));
+            }
+
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(userId)){
+                return next(badRequests.InvalidValue({value: userId, param: 'id'}));
+            }
+
+            findObj.clientId = userId;
             findObj.stylistId = req.session.uId;
             populateArray.push({path: 'appointment.client', select: 'personalInfo.firstName personalInfo.lastName'});
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+            populateArray.push(
+                {path: 'appointment.stylist', select: 'personalInfo.firstName personalInfo.lastName'},
+                {path: 'appointment.client', select: 'personalInfo.firstName personalInfo.lastName'}
+            );
         }
 
         Gallery
@@ -1179,7 +1194,9 @@ var UserHandler = function (app, db) {
                 }
 
                 galleryModelsArray.map(function(model){
-                    return model.url = imageHandler.computeUrl(model._id, CONSTANTS.BUCKET.IMAGES);
+                    model.url = image.computeUrl(model._id, CONSTANTS.BUCKET.IMAGES);
+
+                    return model;
                 });
 
                 res.status(200).send(galleryModelsArray);
@@ -1225,8 +1242,9 @@ var UserHandler = function (app, db) {
             },
 
             function(cb){
-                imageHandler.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, cb);
+                image.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, cb);
             }
+
         ], function(err){
             if (err){
                 return next(err);
