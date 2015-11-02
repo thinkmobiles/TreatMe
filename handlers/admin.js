@@ -8,10 +8,11 @@
 var CONSTANTS = require('../constants');
 var badRequests = require('../helpers/badRequests');
 var ImageHandler = require('./image');
-var UserHandler = require('./business');
+var UserHandler = require('./user');
 var passGen = require('password-generator');
 var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
+var ObjectId = mongoose.Types.ObjectId;
 
 var AdminHandler = function(db){
 
@@ -50,10 +51,13 @@ var AdminHandler = function(db){
 
     this.getStylistByCriterion = function(criterion, page, limit, callback){
 
+        var resultArray = [];
+        var obj;
+
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
 
         User
-            .find(criterion, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'salonInfo.salonName': 1})
+            .find(criterion, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'salonInfo': 1, 'createdAt': 1})
             .skip(limit * (page - 1))
             .limit(CONSTANTS.LIMIT.REQUESTED_STYLISTS)
             .exec(function(err, resultModel){
@@ -61,7 +65,19 @@ var AdminHandler = function(db){
                     return callback(err);
                 }
 
-                callback(null, resultModel);
+                for (var i = resultModel.length; i--; ){
+
+                        obj = {
+                            _id: resultModel[i]._id,
+                            personalInfo: resultModel[i].personalInfo,
+                            salonInfo: resultModel[i].salonInfo.salonName || null,
+                            createdAt: resultModel[i].createdAt
+                        };
+
+                    resultArray.push(obj);
+                }
+
+                callback(null, resultArray);
 
             });
     };
@@ -294,18 +310,84 @@ var AdminHandler = function(db){
          * @instance
          */
 
-        var sId = req.params.id;
+        var body = req.body;
+        var stylistIds;
+        var ids;
+
+        if (!body.ids){
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        }
+
+        ids = body.ids;
+
+        stylistIds = ids.map(function(id){
+           return new ObjectId(id);
+        });
 
         User
-            .findOneAndUpdate({_id: sId, approved: false, role: CONSTANTS.USER_ROLE.STYLIST}, {approved: true}, function(err, resultModel){
+            .update({_id: {$in: stylistIds}, approved: false, role: CONSTANTS.USER_ROLE.STYLIST}, {approved: true}, {multi: true}, function(err, resultModel){
                 if (err){
                     return next(err);
                 }
 
-                res.status(200).send({success: 'Stylist approved successfully'});
+                res.status(200).send({success: 'Stylists approved successfully'});
             });
 
 
+    };
+
+    this.removeStylist = function(req, res, next){
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/stylist/`__
+         *
+         * This __method__ allows delete stylist by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/stylist/
+         *
+         * {
+         *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc385]
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Stylists deleted successfully"}
+         *
+         * @method approveStylist
+         * @instance
+         */
+
+
+        var body = req.body;
+        var ids;
+        var stylistIds;
+
+        if (body.ids){
+            ids = body.ids;
+        }
+
+        stylistIds = ids.map(function(id){
+            return new ObjectId(id);
+        });
+
+        User.remove({_id: {$in: stylistIds}, role: CONSTANTS.USER_ROLE.STYLIST, approved: false}, function(err){
+
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Stylists deleted successfully'});
+
+        });
     };
 
     this.getRequestedService = function(req, res, next){
@@ -430,7 +512,7 @@ var AdminHandler = function(db){
          * @example Response example:
          *
          *  Response status: 200
-         * {"success": "Stylist created successfully"}
+         * {"success": "Service created successfully"}
          *
          * @method addStylist
          * @instance
@@ -483,25 +565,30 @@ var AdminHandler = function(db){
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/admin/service/`__
+         * __URL: `/admin/service/:id?`__
          *
          * This __method__ allows get services by _Admin_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/admin/service/
          *
-         * @example Body example:
-         * {
-         *  "name": "Manicure",
-         *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
-         * }
+         *         __or__
+         *
+         *         http://projects.thinkmobiles.com:8871/admin/service/563757004397730a2be12f0a
          *
          * @example Response example:
          *
          *  Response status: 200
-         * {"success": "Stylist created successfully"}
          *
-         * @method addStylist
+         * [
+         *   {
+         *       "_id": "563757004397730a2be12f0a",
+         *       "name": "Manicure",
+         *       "logo": "http://localhost:8871/uploads/development/images/563757004397730a2be12f09.png"
+         *       }
+         * ]
+         *
+         * @method getServices
          * @instance
          */
 
@@ -536,6 +623,39 @@ var AdminHandler = function(db){
 
     this.updateService = function(req, res, next){
 
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/service/:id`__
+         *
+         * This __method__ allows update service by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/service/562f8a8a91f7274b0daed414
+         *
+         *
+         * {
+         *      "name": "Pedicurerrrrrrrr",
+         *      "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1..." (Base64)
+         * }
+         *
+         * @param {string} [name] - service name
+         * @param {string} [logo] - service logo
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Service updated successfully"}
+         *
+         * @method updateService
+         * @instance
+         */
+
         var sId = req.params.id;
         var body = req.body;
         var updateObj = {};
@@ -562,6 +682,30 @@ var AdminHandler = function(db){
     };
 
     this.removeService = function(req, res, next){
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/service/:id`__
+         *
+         * This __method__ allows remove service by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/service/562f8a8a91f7274b0daed414
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Service removed successfully"}
+         *
+         * @method removeService
+         * @instance
+         */
 
         var sId = req.params.id;
 

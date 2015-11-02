@@ -14,8 +14,9 @@ module.exports = function(db){
 
     router.get('/stylist', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistList);
     router.get('/stylist/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistById);
-    router.get('/stylist/approve/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveStylist);
+    router.post('/stylist/approve/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveStylist);
     router.post('/stylist', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.createStylist);
+    router.delete('/stylist', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeStylist);
 
     router.get('/services/requested', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getRequestedService);
     router.post('/services/approve', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveService);

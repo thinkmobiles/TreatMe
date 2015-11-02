@@ -109,6 +109,7 @@ var UserHandler = function (app, db) {
          * @param {string} password - `User` password
          * @param {string} firstName - `User` firstName
          * @param {string} lastName - `User` lastName
+         * @param {string} phone - `User` phone
          * @param {string} role - `User` role (Stylist or Client)
          *
          * @method signUp
@@ -134,18 +135,29 @@ var UserHandler = function (app, db) {
 
             password = getEncryptedPass(body.password);
 
-            user = new User({email: body.email, password: password, role: CONSTANTS.USER_ROLE.ADMIN, approved: true});
+            User.findOne({email: body.email, password: password, role: CONSTANTS.USER_ROLE.ADMIN, approved: true}, function(err, result){
 
-            user
-                .save(function(err){
+                if (err){
+                    return next(err);
+                }
 
-                    if (err){
-                        return next(err);
-                    }
+                if (result){
+                    return next(badRequests.EmailInUse());
+                }
 
-                    session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.ADMIN);
+                user = new User({email: body.email, password: password, role: CONSTANTS.USER_ROLE.ADMIN, approved: true});
 
-                });
+                user
+                    .save(function(err){
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.ADMIN);
+
+                    });
+            });
 
         } else {
             if (body.fbId){
