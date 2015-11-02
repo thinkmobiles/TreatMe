@@ -65,13 +65,15 @@ define([
                 data = {
                     email      : stateModelUpdate.email,
                     password   : stateModelUpdate.password,
-                    rememberMe : stateModelUpdate.rememberMe
+                    rememberMe : stateModelUpdate.rememberMe,
+                    role : 'Admin'
                 }
             } else {
                 currentUrl += "/"+this.token;
                 data = {
                     password   : stateModelUpdate.password,
-                    rememberMe : stateModelUpdate.rememberMe
+                    rememberMe : stateModelUpdate.rememberMe,
+                    role : 'Admin'
                 }
             }
 
@@ -89,10 +91,10 @@ define([
                 dataType : 'json',
                 data     : data,
                 success: function (res) {
-                    var userInfo = res.user.profile;
+                    var userInfo = {};
                     userInfo.authorized = true;
-                    userInfo.userId  = res.user.id;
-                    userInfo.avatar  = res.user.avatar.url;
+                    userInfo.userId  = res.id;
+                    userInfo.role  = 'Admin';
 
                     $('body').addClass('loggedState');
 
@@ -109,7 +111,6 @@ define([
                 error: function (err) {
                     App.sessionData.set({
                         authorized : false,
-                        companyId  : null,
                         userId     : null
                     });
 

@@ -40,7 +40,7 @@ define([
                     alert('Your message was sent successfully');
                 },
                 error : function (xhr){
-                    self.errorNotification(xhr);
+                    self.handleErrorResponse(xhr);
                 }
             });
         },

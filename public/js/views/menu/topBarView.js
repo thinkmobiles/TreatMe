@@ -33,7 +33,7 @@ define([
 
             $.ajax({
                 url  : "/signOut",
-                type : "POST",
+                type : "GET",
 
                 success: function () {
                     $('body').removeClass('loggedState');
@@ -47,7 +47,7 @@ define([
                     App.router.navigate("login", {trigger: true});
                 },
                 error: function (err) {
-                    self.errorNotification(err);
+                    self.handleErrorResponse(err);
                 }
             });
         },

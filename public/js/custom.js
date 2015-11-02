@@ -19,9 +19,9 @@ define([],function () {
         }
 
         if (!err) {
-            sessionInfo = data.profile;
+            sessionInfo = data;
             sessionInfo.authorized = true;
-            sessionInfo.userId  = data.id;
+            sessionInfo.userId  = data._id;
 
             App.sessionData.set(sessionInfo);
 
