@@ -10,7 +10,7 @@ module.exports = function (db) {
     var Appointment = new Schema({
         client: {
             type: ObjectId,
-            ref: 'Client'
+            ref: 'User'
         },
         clientLoc: {
             type: {
@@ -39,7 +39,7 @@ module.exports = function (db) {
         rateComment: String,
         stylist: {
             type: ObjectId,
-            ref: 'Business'
+            ref: 'User'
         },
         bookingDate: Date
 

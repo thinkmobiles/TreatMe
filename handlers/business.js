@@ -16,7 +16,8 @@ var ObjectId = mongoose.Types.ObjectId;
 var BusinessHandler = function (app, db) {
 
     var self = this;
-    var Business = db.model('Business');
+    //var Business = db.model('Business');
+    var User = db.model('User');
     var Appointment = db.model('Appointment');
     var ServiceType = db.model('ServiceType');
     var Services = db.model('Service');
@@ -45,7 +46,7 @@ var BusinessHandler = function (app, db) {
             projectionObj.salonInfo = 1;
         }
 
-        Business
+        User
             .findOne({_id: sId}, projectionObj, function(err, resultModel){
 
                 if (err){
@@ -68,7 +69,7 @@ var BusinessHandler = function (app, db) {
 
     this.addStylistProfile = function(createObj, callback){
 
-        var businessModel = new Business(createObj);
+        var businessModel = new User(createObj);
 
         businessModel
             .save(function(err){
@@ -139,7 +140,7 @@ var BusinessHandler = function (app, db) {
 
             fbId = options.fbId;
 
-            Business
+            User
                 .findOne({fbId: fbId}, function (err, businessModel) {
                     if (err) {
                         return next(err);
@@ -165,7 +166,7 @@ var BusinessHandler = function (app, db) {
                 return next(badRequests.InvalidEmail());
             }
 
-            Business
+            User
                 .findOneAndUpdate({email: email, password: password}, {forgotToken: ''}, function (err, businessModel) {
                     var token;
 
@@ -297,7 +298,7 @@ var BusinessHandler = function (app, db) {
                 token: token
             };
 
-            businessModel = new Business(createObj);
+            businessModel = new User(createObj);
 
             businessModel
                 .save(function (err) {
@@ -315,7 +316,7 @@ var BusinessHandler = function (app, db) {
                         email: body.email,
                         password: password,
                         token: token
-                    }, CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
+                    }, CONSTANTS.USER_ROLE.STYLIST.toLowerCase());
 
                     res.status(200).send({success: 'Business created successful. For using your account you must verify it. Please check email.'});
 
@@ -329,7 +330,7 @@ var BusinessHandler = function (app, db) {
         var token = req.params.token;
         var uId;
 
-        Business
+        User
             .findOneAndUpdate({token: token}, {
                 $set: {
                     token: '',
@@ -347,7 +348,7 @@ var BusinessHandler = function (app, db) {
 
                 uId = userModel.get('_id');
 
-                session.register(req, res, uId, true, CONSTANTS.USER_STATUS.BUSINESS);
+                session.register(req, res, uId, true, CONSTANTS.USER_ROLE.STYLIST);
 
             });
 
@@ -408,7 +409,7 @@ var BusinessHandler = function (app, db) {
         body.email = email;
         body.forgotToken = forgotToken;
 
-        Business
+        User
             .findOneAndUpdate(
             {
                 email: email
@@ -431,7 +432,7 @@ var BusinessHandler = function (app, db) {
                         email: result.email,
                         forgotToken: result.forgotToken
                     },
-                    CONSTANTS.USER_STATUS.BUSINESS.toLowerCase());
+                    CONSTANTS.USER_ROLE.STYLIST.toLowerCase());
 
                 res.status(200).send({success: 'Check your email'});
 
@@ -442,7 +443,7 @@ var BusinessHandler = function (app, db) {
     this.confirmForgotPass = function(req, res, next){
         var forgotToken = req.params.forgotToken;
 
-        Business
+        User
             .findOneAndUpdate({forgotToken: forgotToken}, {forgotToken: ''}, function(err){
 
                 if (err){
@@ -501,7 +502,7 @@ var BusinessHandler = function (app, db) {
 
         encryptedPassword = getEncryptedPass(body.password);
 
-        Business
+        User
             .findOneAndUpdate({forgotToken: forgotToken}, {password: encryptedPassword, forgotToken: ''}, function(err){
 
                 if (err){
@@ -599,7 +600,7 @@ var BusinessHandler = function (app, db) {
             return next(badRequests.NotEnParams());
         }
 
-        Business
+        User
             .findOne({_id: uId}, {personalInfo: 1}, function(err, resultModel){
 
                 if (err){
@@ -695,7 +696,7 @@ var BusinessHandler = function (app, db) {
         var body = req.body;
         var currentSalonDetails;
 
-        Business
+        User
             .findOne({_id: uId}, {salonInfo: 1}, function(err, resultModel){
 
                 if (err){
@@ -849,7 +850,7 @@ var BusinessHandler = function (app, db) {
 
         var uId = req.session.uId;
 
-        Business
+        User
             .findOne({_id: uId}, {salonInfo: 1}, function(err, resultModel){
 
                 if (err){
@@ -914,7 +915,7 @@ var BusinessHandler = function (app, db) {
 
         imageString = body.avatar;
 
-        Business
+        User
             .findOne({_id: uId}, {'personalInfo.avatar': 1}, function(err, resultModel){
 
                 if (err){
@@ -944,7 +945,7 @@ var BusinessHandler = function (app, db) {
                         },
 
                         function(cb){
-                            Business
+                            User
                                 .findOneAndUpdate({_id: uId}, {'personalInfo.avatar': imageName}, cb);
                         }
 
@@ -1077,7 +1078,7 @@ var BusinessHandler = function (app, db) {
         });
     };
 
-    this.getBusinessAppointmentById = function(req, res, next){
+    /*this.getBusinessAppointmentById = function(req, res, next){
         var appointmentId = req.params.id;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
@@ -1153,7 +1154,7 @@ var BusinessHandler = function (app, db) {
 
                 res.status(200).send(appointmentModelsArray);
             });
-    };
+    };*/
 
     this.startAppointmentById = function(req, res, next){
         var stylistId = req.session.uId;

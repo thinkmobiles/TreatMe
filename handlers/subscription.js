@@ -11,23 +11,22 @@ var CONSTANTS = require('../constants');
 var SubscriptionsHandler = function (db) {
 
     var SubscriptionType = db.model('SubscriptionType');
-    var Business = db.model('Business');
+    var User = db.model('User');
 
-    this.getSubscriptionTypes = function(req, res, next){
+    function getSubscriptionTypes(callback){
         SubscriptionType
             .find({}, {__v: 0}, function(err, subscriptionModels){
-            if (err){
-                return next(err);
-            }
-            res.status(200).send(subscriptionModels);
-        });
-    };
+                if (err){
+                    return callback(err);
+                }
+                callback(null, subscriptionModels);
+            });
+    }
 
-    this.getSubscriptionTypeById = function(req, res, next){
-        var subscriptionId = req.params.id;
+    function getSubscriptionTypeById(subscriptionId, callback){
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){
-            return next(badRequests.InvalidValue({value: subscriptionId, param: 'id'}));
+            return callback(badRequests.InvalidValue({value: subscriptionId, param: 'id'}));
         }
 
         SubscriptionType
@@ -35,25 +34,47 @@ var SubscriptionsHandler = function (db) {
                 var resultObj;
 
                 if (err){
-                    return next(err);
+                    return callback(err);
                 }
 
                 if(!subscriptionModel){
-                    return next(badRequests.DatabaseError());
+                    return callback(badRequests.DatabaseError());
                 }
 
                 resultObj = subscriptionModel.toJSON();
 
-                Business.count({}, function(err, stylistCount){
+                User.count({role : CONSTANTS.USER_ROLE.STYLIST}, function(err, stylistCount){
                     if (err){
-                        return next(err);
+                        return callback(err);
                     }
 
                     resultObj.salonsCount = stylistCount;
 
-                    res.status(200).send(resultObj);
+                    callback(null, resultObj);
                 });
             })
+    }
+
+    this.getSubscriptionTypes = function(req, res, next){
+        var subscriptionId = req.params.id;
+
+        if (subscriptionId){
+            getSubscriptionTypeById(subscriptionId, function(err, result){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(result);
+            })
+        } else {
+            getSubscriptionTypes(function(err, result){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(result);
+            })
+        }
     };
 
     this.createSubscriptionType = function(req, res, next){

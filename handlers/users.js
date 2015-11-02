@@ -24,6 +24,7 @@ var UserHandler = function (app, db) {
 
     var self = this;
     var User = db.model('User');
+    var Gallery = db.model('Gallery');
     var Appointment = db.model('Appointment');
     var ServiceType = db.model('ServiceType');
     var Services = db.model('Service');
@@ -35,6 +36,185 @@ var UserHandler = function (app, db) {
         var shaSum = crypto.createHash('sha256');
         shaSum.update(pass);
         return shaSum.digest('hex');
+    }
+
+    function getAllUserAppointments(userId, role, appointmentStatus, callback){
+        var findObj = {};
+        var projectionObj;
+        var populateArray = [
+            {path: 'serviceType', select: 'name'}
+        ];
+
+        if (role === CONSTANTS.USER_ROLE.CLIENT){
+            findObj.client = userId;
+            projectionObj = {
+                __v: 0,
+                client: 0,
+                clientLoc: 0,
+                requestDate: 0,
+                status: 0
+            };
+            populateArray.push({path: 'stylist', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
+        }
+
+        if (role === CONSTANTS.USER_ROLE.STYLIST){
+            findObj.stylist = userId;
+            projectionObj = {
+                __v: 0,
+                stylist: 0,
+                clientLoc: 0,
+                requestDate: 0,
+                status: 0
+            };
+            populateArray.push({path: 'client', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
+        }
+
+        if (role === CONSTANTS.USER_ROLE.ADMIN){
+            if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.PENDING){
+                findObj.status = {$in : [CONSTANTS.STATUSES.APPOINTMENT.CREATED, CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED]}
+            }
+
+            if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.BOOKED){
+                findObj.status = {$in : [
+                    CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
+                    CONSTANTS.STATUSES.APPOINTMENT.BEGINS,
+                    CONSTANTS.STATUSES.APPOINTMENT.SUCCEEDED,
+                    CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_CLIENT,
+                    CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_STYLIST
+                ]}
+            }
+
+            projectionObj = {
+                __v: 0,
+                clientLoc: 0,
+                requestDate: 0
+            };
+
+            populateArray.push(
+                {path: 'client', select: 'personalInfo.firstName personalInfo.lastName'},
+                {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}
+            );
+        }
+
+        Appointment
+            .find(findObj, projectionObj)
+            .populate(populateArray)
+            .sort({bookingDate: 1})
+            .exec(function(err, appointmentModelsArray){
+                var avatarName;
+
+                if (err){
+                    return callback(err);
+                }
+
+                appointmentModelsArray.map(function(appointmentModel){
+
+                    if (role === CONSTANTS.USER_ROLE.CLIENT){
+                        avatarName = appointmentModel.get('stylist.personalInfo.avatar');
+
+                        if (avatarName){
+                            appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                        }
+                    } else {
+                        avatarName = appointmentModel.get('client.personalInfo.avatar');
+
+                        if (avatarName){
+                            appointmentModel.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                        }
+                    }
+                });
+
+                callback(null, appointmentModelsArray);
+            });
+    }
+
+    function getUserAppointmentById(userId, appointmentId, role, callback){
+        var populateArray = [{path: 'serviceType', select: 'name'}];
+        var projectionObj;
+        var findObj = {_id: appointmentId};
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return callback(badRequests.InvalidValue({value: appointmentId, param: 'id'}));
+        }
+
+        if (role === CONSTANTS.USER_ROLE.CLIENT){
+            findObj.client = userId;
+            projectionObj = {
+                __v: 0,
+                client: 0,
+                clientLoc: 0,
+                requestDate: 0,
+                startDate: 0,
+                endDate: 0,
+                cancellationReason: 0,
+                rate: 0,
+                rateComment: 0
+            };
+            populateArray.push({path: 'stylist', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
+        }
+
+        if (role === CONSTANTS.USER_ROLE.STYLIST){
+            findObj.stylist = userId;
+            projectionObj = {
+                __v: 0,
+                stylist: 0,
+                clientLoc: 0,
+                requestDate: 0,
+                startDate: 0,
+                endDate: 0,
+                cancellationReason: 0,
+                rate: 0,
+                rateComment: 0
+            };
+            populateArray.push({path: 'client', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
+        }
+
+        if (role === CONSTANTS.USER_ROLE.ADMIN){
+            projectionObj = {
+                __v: 0,
+                clientLoc: 0,
+                status: 0,
+                startDate: 0,
+                endDate: 0,
+                cancellationReason: 0,
+                rate: 0,
+                rateComment: 0,
+                stylist: 0
+
+            };
+            populateArray.push({path: 'client', select: 'personalInfo.firstName personalInfo.lastName personalInfo.avatar personalInfo.phone'});
+        }
+
+        Appointment
+            .findOne(findObj, projectionObj)
+            .populate(populateArray)
+            .exec(function(err, appointmentModel){
+                var avatarName;
+
+                if (err){
+                    return callback(err);
+                }
+
+                if (!appointmentModel){
+                    return callback(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                if (role === CONSTANTS.USER_ROLE.CLIENT){
+                    avatarName = appointmentModel.get('stylist.personalInfo.avatar');
+
+                    if (avatarName){
+                        appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                    }
+                } else {
+                    avatarName = appointmentModel.get('client.personalInfo.avatar');
+
+                    if (avatarName){
+                        appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                    }
+                }
+
+                callback(null, appointmentModel);
+            });
     }
 
     this.signUp = function (req, res, next) {
@@ -882,6 +1062,208 @@ var UserHandler = function (app, db) {
                             res.status(200).send({success: 'Avatar removed successfully'});
                         });
                     });
+            });
+    };
+
+    this.updateLocation = function (req, res, next) {
+        var userId = req.session.uId;
+        var body = req.body;
+        var longitude;
+        var latitude;
+        var coordinates;
+        var updateObj;
+
+        if (!body.coordinates) {
+            return next(badRequests.NotEnParams({reqParams: 'coordinates'}))
+        }
+
+        coordinates = body.coordinates;
+
+        if (!Array.isArray(coordinates) || coordinates.length !== 2 || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
+            return next(badRequests.InvalidValue({value: coordinates, param: 'coordinates'}));
+        }
+
+        longitude = coordinates[0];
+        latitude = coordinates[1];
+
+        if (longitude < -180 || longitude > 180 || latitude < -90 || latitude > 90) {
+            return next(badRequests.InvalidValue({message: 'Longitude must be within (-180; 180). Latitude must be within (-90; 90) '}));
+        }
+
+        updateObj = {
+            loc: {
+                type: 'Point',
+                coordinates: coordinates
+            }
+        };
+
+        User
+            .findOneAndUpdate({_id: userId}, updateObj, function (err, userModel) {
+                if (err) {
+                    return next(err);
+                }
+
+                if (!userModel) {
+                    return next(badRequests.DatabaseError());
+                }
+
+                res.status(200).send({success: 'Coordinates updated successfully'});
+            });
+    };
+
+    this.getGalleryPhotoes = function(req, res, next){
+        var userId = req.params.id;
+        var findObj = {
+            clientId : userId
+        };
+        var populateArray = [
+            {path: 'appointment', select: 'bookingDate'},
+            {path: 'appointment.serviceType', select: 'name'}
+        ];
+
+        if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
+            populateArray.push({path: 'appointment.stylist', select: 'salonInfo.salonName personalInfo.firstName personalInfo.lastName personalInfo.avatar'});
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+            findObj.stylistId = req.session.uId;
+            populateArray.push({path: 'appointment.client', select: 'personalInfo.firstName personalInfo.lastName'});
+        }
+
+        Gallery
+            .find(findObj)
+            .populate(populateArray)
+            .exec(function(err, galleryModelsArray){
+                if (err){
+                    return next(err);
+                }
+
+                galleryModelsArray.map(function(model){
+                    return model.url = imageHandler.computeUrl(model._id, CONSTANTS.BUCKET.IMAGES);
+                });
+
+                res.status(200).send(galleryModelsArray);
+            });
+    };
+
+    this.removePhotoFromGallery = function(req, res, next){
+        var userId = req.session.uId;
+        var imageName = req.params.id;
+        var findObj = {_id: imageName};
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(imageName)){
+            return next(badRequests.InvalidValue({value: imageName, param: 'id'}));
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
+            findObj.clientId = userId;
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+            findObj.stylistId = userId;
+        }
+
+        async.waterfall([
+
+            function(cb){
+                Gallery
+                    .findOne(findObj, function(err, imageModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!imageModel){
+                            return cb(badRequests.NotFound({target: 'image'}));
+                        }
+
+                        cb(null, imageModel);
+                    });
+            },
+
+            function(imageModel, cb){
+                imageModel.remove(cb);
+            },
+
+            function(cb){
+                imageHandler.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, cb);
+            }
+        ], function(err){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Photo was removed from gallery'});
+        });
+    };
+
+    this.getAppointments = function(req, res, next){
+        var appointmentId = req.query.id;
+        var appointmentStatus;
+        var userId = req.session.uId;
+
+        if (appointmentId){
+            getUserAppointmentById(userId, appointmentId, req.session.role, function(err, result){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(result);
+            });
+        } else {
+            if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+                appointmentStatus = req.query.status;
+
+                if (!appointmentStatus){
+                    return next(badRequests.NotEnParams({reqParams: 'status'}));
+                }
+            }
+
+            getAllUserAppointments(userId, req.session.role, appointmentStatus, function(err, result){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(result);
+            });
+        }
+    };
+
+    this.cancelByUser = function(req, res, next){
+        var userId = req.session.uId;
+        var appointmentId = req.body.appointmentId;
+        var cancellationReason = req.body.cancellationReason;
+        var findObj = {_id: appointmentId};
+        var updateObj;
+
+        if (!appointmentId || !cancellationReason){
+            return next(badRequests.NotEnParams({reqParams: 'appointmentId and cancellationReason'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
+            findObj.client = userId;
+            updateObj = {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_CLIENT, cancellationReason: cancellationReason}};
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+            findObj.stylist = userId;
+            updateObj = {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_STYLIST, cancellationReason: cancellationReason}};
+        }
+
+        Appointment
+            .findOneAndUpdate(findObj, updateObj, function(err, appointmentModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                res.status(200).send({success: 'Appointment was canceled successfully'});
             });
     };
 
