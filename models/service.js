@@ -12,8 +12,7 @@ module.exports = function (db) {
             ref: 'User'
         },
         serviceId: String,
-        name: String,
-        price: String,
+        price: Number,
         approved: {
             type: Boolean,
             default: false

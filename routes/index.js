@@ -44,10 +44,13 @@ module.exports = function (app, db) {
     app.put('/salon', sessionHandler.authenticatedUser, sessionHandler.isStylist, user.updateSalonInfo);
     app.put('/coordinates', sessionHandler.authenticatedUser, user.updateLocation);
 
+    app.get('/service/:stylistId?', sessionHandler.authenticatedUser, sessionHandler.stylistOrAdmin, user.getStylistServices);
+    app.get('/service/request/:serviceId', sessionHandler.authenticatedUser, sessionHandler.isStylist, user.sendRequestForService);
+
     app.get('/gallery/:id?', sessionHandler.authenticatedUser, user.getGalleryPhotos);
     app.delete('/gallery/:id', sessionHandler.authenticatedUser, sessionHandler.clientOrStylist, user.removePhotoFromGallery);
 
-    app.get('/appointment', sessionHandler.authenticatedUser, user.getAppointments); //can accept query ?id=123 [&status=Pending //or Booked] status for admin only
+    app.get('/appointment', sessionHandler.authenticatedUser, user.getAppointments); //can accept query ?id=123 [&status=Pending //or Booked &page=2&limit=20] status for admin only
     app.post('/appointment/cancel', sessionHandler.authenticatedUser, sessionHandler.clientOrStylist, user.cancelByUser);
 
 

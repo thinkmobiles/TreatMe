@@ -38,7 +38,7 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
-    function getAllUserAppointments(userId, role, appointmentStatus, callback){
+    function getAllUserAppointments(userId, role, appointmentStatus, page, limit, callback){
         var findObj = {};
         var projectionObj;
         var populateArray = [
@@ -100,6 +100,8 @@ var UserHandler = function (app, db) {
             .find(findObj, projectionObj)
             .populate(populateArray)
             .sort({bookingDate: 1})
+            .skip(limit * (page -1))
+            .limit(limit)
             .exec(function(err, appointmentModelsArray){
                 var avatarName;
 
@@ -241,7 +243,7 @@ var UserHandler = function (app, db) {
                             return callback(err);
                         }
 
-                        callback(null);
+                        callback(null, userModel._id);
 
                     });
 
@@ -1270,6 +1272,8 @@ var UserHandler = function (app, db) {
 
     this.getAppointments = function(req, res, next){
         var appointmentId = req.query.id;
+        var page = (req.query.page >= 1) ? req.query.page : 1;
+        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_APPOINTMENTS;
         var appointmentStatus;
         var userId = req.session.uId;
 
@@ -1290,7 +1294,7 @@ var UserHandler = function (app, db) {
                 }
             }
 
-            getAllUserAppointments(userId, req.session.role, appointmentStatus, function(err, result){
+            getAllUserAppointments(userId, req.session.role, appointmentStatus, page, limit, function(err, result){
                 if (err){
                     return next(err);
                 }
@@ -1337,6 +1341,128 @@ var UserHandler = function (app, db) {
 
                 res.status(200).send({success: 'Appointment was canceled successfully'});
             });
+    };
+
+    this.getStylistServices = function(req, res, next){
+        var role = req.session.role;
+        var uId;
+
+        if (role === CONSTANTS.USER_ROLE.STYLIST){
+            uId = req.session.uId;
+        } else {
+            if (!req.params.stylistId){
+                return next(badRequests.NotEnParams({reqParams: 'stylistId'}));
+            }
+
+            uId = req.params.stylistId;
+        }
+
+        var ind;
+        var allId;
+        var stylistId;
+        var serviceArray = [];
+        var serviceObj;
+
+        ServiceType.find({}, function(err, allServiceModels){
+
+            if (err){
+                return next(err);
+            }
+
+            Services
+                .find({stylist: uId}, function(err, stylistServiceModel){
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    allId = (_.pluck(allServiceModels, '_id')).toStringObjectIds();
+
+                    stylistId = (_.pluck(stylistServiceModel, 'serviceId')).toStringObjectIds();
+
+                    for (var i = 0, n = allServiceModels.length; i < n; i++){
+                        ind = stylistId.indexOf(allId[i]);
+
+                        if (ind !== -1){
+                            serviceObj = {
+                                id: stylistServiceModel[ind].serviceId,
+                                name: stylistServiceModel[ind].name,
+                                status: stylistServiceModel[ind].approved ? 'approved' : 'pending'
+                            };
+
+                            serviceArray.push(serviceObj);
+                        } else {
+                            serviceObj = {
+                                id: allServiceModels[i]._id,
+                                name: allServiceModels[i].name,
+                                status: 'new'
+                            };
+
+                            serviceArray.push(serviceObj);
+                        }
+
+                    }
+
+                    res.status(200).send(serviceArray);
+
+                });
+
+        });
+
+    };
+
+    this.sendRequestForService = function(req, res, next){
+
+        var uId = req.session.uId;
+        var serviceId = req.params.serviceId;
+        var serviceModel;
+        var name;
+        var createObj;
+
+        ServiceType.findOne({_id: serviceId}, {name: 1}, function(err, resultModel){
+
+            if (err){
+                return next(err);
+            }
+
+            if (!resultModel){
+                return next(badRequests.DatabaseError());
+            }
+
+            name = resultModel.get('name');
+
+            Services
+                .findOne({stylist: ObjectId(uId), name: name}, function(err, resultModel){
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    if (resultModel){
+                        return res.status(200).send({success: 'You have already requested this service'});
+                    }
+
+                    createObj = {
+                        name: name,
+                        stylist: ObjectId(uId),
+                        serviceId: serviceId
+                    };
+
+                    serviceModel = new Services(createObj);
+
+                    serviceModel
+                        .save(function(err){
+
+                            if (err){
+                                return next(err);
+                            }
+
+                            res.status(200).send({success: 'request succeed'});
+
+                        });
+
+                });
+        });
     };
 
 };
