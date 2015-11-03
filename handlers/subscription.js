@@ -11,23 +11,33 @@ var CONSTANTS = require('../constants');
 var SubscriptionsHandler = function (db) {
 
     var SubscriptionType = db.model('SubscriptionType');
-    var Business = db.model('Business');
+    var User = db.model('User');
+    var imageHandler = new ImageHandler();
 
-    this.getSubscriptionTypes = function(req, res, next){
+    function getSubscriptionTypes(callback){
         SubscriptionType
             .find({}, {__v: 0}, function(err, subscriptionModels){
-            if (err){
-                return next(err);
-            }
-            res.status(200).send(subscriptionModels);
-        });
-    };
+                if (err){
+                    return callback(err);
+                }
 
-    this.getSubscriptionTypeById = function(req, res, next){
-        var subscriptionId = req.params.id;
+                subscriptionModels.map(function(model){
+
+                    if (model.logo){
+                        model.logo = imageHandler.computeUrl(model.logo, CONSTANTS.BUCKET.IMAGES);
+                    }
+
+                    return model;
+                });
+
+                callback(null, subscriptionModels);
+            });
+    }
+
+    function getSubscriptionTypeById(subscriptionId, callback){
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){
-            return next(badRequests.InvalidValue({value: subscriptionId, param: 'id'}));
+            return callback(badRequests.InvalidValue({value: subscriptionId, param: 'id'}));
         }
 
         SubscriptionType
@@ -35,59 +45,94 @@ var SubscriptionsHandler = function (db) {
                 var resultObj;
 
                 if (err){
-                    return next(err);
+                    return callback(err);
                 }
 
                 if(!subscriptionModel){
-                    return next(badRequests.DatabaseError());
+                    return callback(badRequests.DatabaseError());
                 }
 
                 resultObj = subscriptionModel.toJSON();
+                resultObj.logo = imageHandler.computeUrl(resultObj.logo, CONSTANTS.BUCKET.IMAGES);
 
-                Business.count({}, function(err, stylistCount){
+                User.count({role : CONSTANTS.USER_ROLE.STYLIST}, function(err, stylistCount){
                     if (err){
-                        return next(err);
+                        return callback(err);
                     }
 
                     resultObj.salonsCount = stylistCount;
 
-                    res.status(200).send(resultObj);
+                    callback(null, resultObj);
                 });
             })
+    }
+
+    this.getSubscriptionTypes = function(req, res, next){
+        var subscriptionId = req.params.id;
+
+        if (subscriptionId){
+            getSubscriptionTypeById(subscriptionId, function(err, result){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(result);
+            })
+        } else {
+            getSubscriptionTypes(function(err, result){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(result);
+            })
+        }
     };
 
     this.createSubscriptionType = function(req, res, next){
         var body = req.body;
         var subscriptionTypeModel;
         var saveObj;
+        var logoName = imageHandler.createImageName();
+        var imageString;
 
-        if (!body.name || !body.price){
-            return next(badRequests.NotEnParams({reqParams: 'name and price'}));
+        if (!body.name || !body.price || !body.image){
+            return next(badRequests.NotEnParams({reqParams: 'name and price and image'}));
         }
+
+        imageString = body.image;
 
         saveObj = {
             name: body.name,
-            price: body.price
+            price: body.price,
+            logo: logoName
         };
 
-        subscriptionTypeModel = new SubscriptionType(saveObj);
-        subscriptionTypeModel
-            .save(function(err){
-                if (err){
-                    return next(err);
-                }
+        imageHandler.uploadImage(imageString, logoName, CONSTANTS.BUCKET.IMAGES, function(err){
+            if (err){
+                return next(err);
+            }
 
-                res.status(200).send({success: 'New subscription created successfully'});
-            })
+            subscriptionTypeModel = new SubscriptionType(saveObj);
+            subscriptionTypeModel
+                .save(function(err){
+                    if (err){
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'New subscription created successfully'});
+                })
+        });
     };
 
     this.updateSubscriptionType = function(req, res, next){
         var body = req.body;
         var subscriptionId = req.params.id;
         var updateObj = {};
+        var newLogoName;
 
-        if (!body.name && !body.price){
-            return next(badRequests.NotEnParams({reqParams: 'name or price'}));
+        if (!body.name && !body.price && !body.image){
+            return next(badRequests.NotEnParams({reqParams: 'name or price or image'}));
         }
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){
@@ -101,18 +146,66 @@ var SubscriptionsHandler = function (db) {
         if (body.price){
             updateObj.price = body.price;
         }
-        SubscriptionType
-            .findOneAndUpdate({_id: subscriptionId}, updateObj, function(err, subscriptionTypeModel){
-                if (err){
-                    return next(err);
+
+        if (body.image){
+            newLogoName = imageHandler.createImageName();
+            updateObj.logo = newLogoName;
+        }
+
+        async.waterfall([
+
+            function(cb){
+                SubscriptionType
+                    .findOneAndUpdate({_id: subscriptionId}, updateObj, function(err, subscriptionTypeModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!subscriptionTypeModel){
+                            return cb(badRequests.NotFound({target: 'Subscription'}));
+                        }
+
+                        cb(null, subscriptionTypeModel);
+                    });
+            },
+
+            function(subscriptionTypeModel, cb){
+                if (!newLogoName){
+                    return cb(null, null);
                 }
 
-                if (!subscriptionTypeModel){
-                    return next(badRequests.NotFound({target: 'Subscription'}));
+                var oldLogoName = subscriptionTypeModel.get('logo');
+
+                imageHandler.uploadImage(body.image, newLogoName, CONSTANTS.BUCKET.IMAGES, function(err){
+                    if (err){
+                        return cb(err);
+                    }
+
+                    cb(null, oldLogoName);
+                })
+            },
+
+            function(oldLogoName, cb){
+                if (!oldLogoName){
+                    return cb()
                 }
 
-                res.status(200).send({success: 'Subscription updated successfully'});
-            });
+                imageHandler.deleteImage(oldLogoName, CONSTANTS.BUCKET.IMAGES, function(err){
+                    if (err){
+                        return cb(err);
+                    }
+
+                    cb();
+                })
+            }
+
+        ], function(err){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Subscription updated successfully'});
+        });
     };
 
 };

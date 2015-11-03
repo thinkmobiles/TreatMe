@@ -13,12 +13,15 @@ module.exports = {
     STATUSES:{
         APPOINTMENT:{
             CREATED: 'Created',
-            SCHEDULED: 'Scheduled',
+            SUSPENDED: 'Suspended',
             CONFIRMED: 'Confirmed',
             BEGINS: 'Begins',
             SUCCEEDED: 'Succeeded',
             CANCEL_BY_CLIENT: 'Cancel by client',
-            CANCEL_BY_STYLIST: 'Cancel by stylist'
+            CANCEL_BY_STYLIST: 'Cancel by stylist',
+            //for admin
+            PENDING: 'Pending',
+            BOOKED: 'Booked'
         }
     },
     LIMIT: {

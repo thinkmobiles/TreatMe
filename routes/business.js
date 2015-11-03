@@ -26,12 +26,12 @@ module.exports = function(app, db){
     router.get('/services', sessionHandler.authenticatedUser, businessHandler.getBusinessService);
     router.get('/services/:id', sessionHandler.authenticatedUser, businessHandler.sendRequestForService);
 
-    router.post('/appointment/cancel', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.cancelByStylist);
-    router.get('/appointment', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getAllStylistAppointments);
-    router.get('/appointment/start/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.startAppointmentById);
-    router.get('/appointment/finish/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.finishAppointmentById);
-    router.get('/appointment/accept/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.acceptAppointmentById);
-    router.get('/appointment/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getBusinessAppointmentById);
+    //router.post('/appointment/cancel', sessionHandler.authenticatedUser, sessionHandler.isStylist, businessHandler.cancelByStylist);
+    //router.get('/appointment', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getAllStylistAppointments);
+    router.get('/appointment/start/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, businessHandler.startAppointmentById);
+    router.get('/appointment/finish/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, businessHandler.finishAppointmentById);
+    router.get('/appointment/accept/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, businessHandler.acceptAppointmentById);
+    //router.get('/appointment/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getBusinessAppointmentById);
 
     return router;
 };

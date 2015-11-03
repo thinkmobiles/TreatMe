@@ -16,6 +16,7 @@ module.exports = function (db) {
         confirmed: {type: Date},
         creationDate: {type:Date, default: Date.now},
         approved: {type: Boolean, default: false},
+        suspend: {type: Boolean, default: false},
         role: {type: String, match: /^Stylist$|^Client$|^Admin$/},
         personalInfo: {
             firstName: String,

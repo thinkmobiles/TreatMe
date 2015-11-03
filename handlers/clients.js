@@ -20,7 +20,7 @@ var ClientsHandler = function (app, db) {
     var ObjectId = mongoose.Types.ObjectId;
 
 
-    this.updateProfile = function (req, res, next) {
+  /*  this.updateProfile = function (req, res, next) {
         var clientId = req.session.uId;
         var options = req.body;
 
@@ -307,6 +307,162 @@ var ClientsHandler = function (app, db) {
             });
     };
 
+
+
+    this.getAllClientAppointments = function(req, res, next){
+        var clientId = req.session.uId;
+
+        Appointment
+            .find({client: clientId}, {__v: 0, client: 0, clientLoc: 0, stylist: 0, requestDate: 0, status: 0})
+            .populate({path: 'serviceType', select: 'name'})
+            .sort({bookingDate: 1})
+            .exec(function(err, appointmentModelsArray){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(appointmentModelsArray);
+            });
+    };
+
+    this.getClientAppointmentById = function(req, res, next){
+        var appointmentId = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'id'}));
+        }
+
+        Appointment
+            .findOne({_id: appointmentId}, {__v: 0, client: 0, clientLoc: 0})
+            .populate({path:'stylist', select: 'personalInfo.firstName personalInfo.lastName personalInfo.profession personalInfo.avatar salonInfo.salonName salonInfo.phoneNumber salonInfo.address loc'})
+            .populate({path: 'serviceType', select: 'name'})
+            .exec(function(err, appointmentModel){
+                var stylistAvatarName;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                stylistAvatarName = appointmentModel.get('stylist.personalInfo.avatar');
+
+                if (stylistAvatarName){
+                    appointmentModel.stylist.personalInfo.avatar = imageHandler.computeUrl(stylistAvatarName, CONSTANTS.BUCKET.IMAGES);
+                }
+
+                res.status(200).send(appointmentModel);
+            });
+    };
+
+    this.cancelByClient = function(req, res, next){
+        var clientId = req.session.uId;
+        var appointmentId = req.body.appointmentId;
+        var cancellationReason = req.body.cancellationReason;
+
+        if (!appointmentId || !cancellationReason){
+            return next(badRequests.NotEnParams({reqParams: 'appointmentId and cancellationReason'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
+            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
+        }
+
+        Appointment
+            .findOneAndUpdate({_id: appointmentId, client: clientId}, {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_CLIENT, cancellationReason: cancellationReason}}, function(err, appointmentModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!appointmentModel){
+                    return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                res.status(200).send({success: 'Appointment was canceled by client successfully'});
+            });
+    };
+
+    this.removePhotoFromGallery = function(req, res, next){
+        var clientId = req.session.uId;
+        var imageName = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(imageName)){
+            return next(badRequests.InvalidValue({value: imageName, param: 'id'}));
+        }
+
+        async.waterfall([
+
+            function(cb){
+                Gallery
+                    .findOne({_id: imageName, clientId: clientId}, function(err, imageModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!imageModel){
+                            return cb(badRequests.NotFound({target: 'image'}));
+                        }
+
+                        cb(null, imageModel);
+                    });
+            },
+
+            function(imageModel, cb){
+                imageModel.remove(cb);
+            },
+
+            function(cb){
+                imageHandler.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, cb);
+            }
+        ], function(err){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Photo was removed from gallery'});
+        });
+    };
+
+    this.getGalleryPhotoes = function(req, res, next){
+        var clientId = req.session.uId;
+
+        Gallery
+            .find({clientId: clientId})
+            .populate([
+                {path: 'appointment', select: 'bookingDate'},
+                {path: 'appointment.serviceType', select: 'name'},
+                {path: 'appointment.stylist', select: 'salonInfo.salonName personalInfo.firstName personalInfo.lastName personalInfo.avatar '}
+            ])
+            .exec(function(err, galleryModelsArray){
+                if (err){
+                    return next(err);
+                }
+
+                galleryModelsArray.map(function(model){
+                    return model.url = imageHandler.computeUrl(model._id, CONSTANTS.BUCKET.IMAGES);
+                });
+
+                res.status(200).send(galleryModelsArray);
+            });
+    };*/
+
+    this.getActiveSubscriptions = function(req, res, next){
+        var clientId = req.session.uId;
+
+        Subscription
+            .find({client: clientId, expirationDate: {$gte: new Date()}})
+            .populate({path: 'subscriptionType', select: 'name price'})
+            .exec(function(err, subscriptionModelsArray){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(subscriptionModelsArray);
+            });
+    };
+
     this.createAppointment = function(req, res, next){
         var body = req.body;
         var appointmentModel;
@@ -404,81 +560,6 @@ var ClientsHandler = function (app, db) {
         });
     };
 
-    this.getAllClientAppointments = function(req, res, next){
-        var clientId = req.session.uId;
-
-        Appointment
-            .find({client: clientId}, {__v: 0, client: 0, clientLoc: 0, stylist: 0, requestDate: 0, status: 0})
-            .populate({path: 'serviceType', select: 'name'})
-            .sort({bookingDate: 1})
-            .exec(function(err, appointmentModelsArray){
-                if (err){
-                    return next(err);
-                }
-
-                res.status(200).send(appointmentModelsArray);
-            });
-    };
-
-    this.getClientAppointmentById = function(req, res, next){
-        var appointmentId = req.params.id;
-
-        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
-            return next(badRequests.InvalidValue({value: appointmentId, param: 'id'}));
-        }
-
-        Appointment
-            .findOne({_id: appointmentId}, {__v: 0, client: 0, clientLoc: 0})
-            .populate({path:'stylist', select: 'personalInfo.firstName personalInfo.lastName personalInfo.profession personalInfo.avatar salonInfo.salonName salonInfo.phoneNumber salonInfo.address loc'})
-            .populate({path: 'serviceType', select: 'name'})
-            .exec(function(err, appointmentModel){
-                var stylistAvatarName;
-
-                if (err){
-                    return next(err);
-                }
-
-                if (!appointmentModel){
-                    return next(badRequests.NotFound({target: 'Appointment'}));
-                }
-
-                stylistAvatarName = appointmentModel.get('stylist.personalInfo.avatar');
-
-                if (stylistAvatarName){
-                    appointmentModel.stylist.personalInfo.avatar = imageHandler.computeUrl(stylistAvatarName, CONSTANTS.BUCKET.IMAGES);
-                }
-
-                res.status(200).send(appointmentModel);
-            });
-    };
-
-    this.cancelByClient = function(req, res, next){
-        var clientId = req.session.uId;
-        var appointmentId = req.body.appointmentId;
-        var cancellationReason = req.body.cancellationReason;
-
-        if (!appointmentId || !cancellationReason){
-            return next(badRequests.NotEnParams({reqParams: 'appointmentId and cancellationReason'}));
-        }
-
-        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
-            return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
-        }
-
-        Appointment
-            .findOneAndUpdate({_id: appointmentId, client: clientId}, {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_CLIENT, cancellationReason: cancellationReason}}, function(err, appointmentModel){
-                if (err){
-                    return next(err);
-                }
-
-                if (!appointmentModel){
-                    return next(badRequests.NotFound({target: 'Appointment'}));
-                }
-
-                res.status(200).send({success: 'Appointment was canceled by client successfully'});
-            });
-    };
-
     this.rateAppointmentById = function(req, res, next){
         var clientId = req.session.uId;
         var body = req.body;
@@ -570,85 +651,6 @@ var ClientsHandler = function (app, db) {
                             res.status(200).send({success: 'Your photo was added to gallery'});
                         });
                     });
-            });
-    };
-
-    this.getActiveSubscriptions = function(req, res, next){
-        var clientId = req.session.uId;
-
-        Subscription
-            .find({client: clientId, expirationDate: {$gte: new Date()}})
-            .populate({path: 'subscriptionType', select: 'name price'})
-            .exec(function(err, subscriptionModelsArray){
-                if (err){
-                    return next(err);
-                }
-
-                res.status(200).send(subscriptionModelsArray);
-            });
-    };
-
-    this.removePhotoFromGallery = function(req, res, next){
-        var clientId = req.session.uId;
-        var imageName = req.params.id;
-
-        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(imageName)){
-            return next(badRequests.InvalidValue({value: imageName, param: 'id'}));
-        }
-
-        async.waterfall([
-
-            function(cb){
-                Gallery
-                    .findOne({_id: imageName, clientId: clientId}, function(err, imageModel){
-                        if (err){
-                            return cb(err);
-                        }
-
-                        if (!imageModel){
-                            return cb(badRequests.NotFound({target: 'image'}));
-                        }
-
-                        cb(null, imageModel);
-                    });
-            },
-
-            function(imageModel, cb){
-                imageModel.remove(cb);
-            },
-
-            function(cb){
-                imageHandler.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, cb);
-            }
-        ], function(err){
-            if (err){
-                return next(err);
-            }
-
-            res.status(200).send({success: 'Photo was removed from gallery'});
-        });
-    };
-
-    this.getGalleryPhotoes = function(req, res, next){
-        var clientId = req.session.uId;
-
-        Gallery
-            .find({clientId: clientId})
-            .populate([
-                {path: 'appointment', select: 'bookingDate'},
-                {path: 'appointment.serviceType', select: 'name'},
-                {path: 'appointment.stylist', select: 'salonInfo.salonName personalInfo.firstName personalInfo.lastName personalInfo.avatar '}
-            ])
-            .exec(function(err, galleryModelsArray){
-                if (err){
-                    return next(err);
-                }
-
-                galleryModelsArray.map(function(model){
-                    return model.url = imageHandler.computeUrl(model._id, CONSTANTS.BUCKET.IMAGES);
-                });
-
-                res.status(200).send(galleryModelsArray);
             });
     };
 

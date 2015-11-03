@@ -7,7 +7,8 @@ module.exports = function (db) {
 
     var SubscriptionType = new Schema({
         name: String,
-        price: String
+        price: String,
+        logo: String
     }, {
         collection: 'SubscriptionTypes'
     });
