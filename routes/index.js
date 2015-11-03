@@ -47,7 +47,7 @@ module.exports = function (app, db) {
     app.get('/gallery/:id?', sessionHandler.authenticatedUser, user.getGalleryPhotos);
     app.delete('/gallery/:id', sessionHandler.authenticatedUser, sessionHandler.clientOrStylist, user.removePhotoFromGallery);
 
-    app.get('/appointment', sessionHandler.authenticatedUser, user.getAppointments); //can accept query ?id=123 [&status=Pending //or Booked] status for admin only
+    app.get('/appointment', sessionHandler.authenticatedUser, user.getAppointments); //can accept query ?id=123 [&status=Pending //or Booked &page=2&limit=20] status for admin only
     app.post('/appointment/cancel', sessionHandler.authenticatedUser, sessionHandler.clientOrStylist, user.cancelByUser);
 
 

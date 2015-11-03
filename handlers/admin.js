@@ -24,6 +24,7 @@ var AdminHandler = function(db){
     var Services = db.model('Service');
     var ServiceType = db.model('ServiceType');
     var User = db.model('User');
+    var Appointment = db.model('Appointment');
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
@@ -740,7 +741,58 @@ var AdminHandler = function(db){
                     });
 
             });
-    }
+    };
+
+    this.removeAppointments = function(req, res, next){
+        var arrayOfId = req.body.appointments;
+
+        if (!arrayOfId || !arrayOfId.length){
+            return next(badRequests.NotEnParams({reqParams: 'arrayOfId and action'}))
+        }
+
+        arrayOfId.map(function(id){
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(id)){
+                return next(badRequests.InvalidValue({value: id, param: 'arrayOfId'}));
+            }
+
+            return ObjectId(id);
+        });
+
+        Appointment
+            .remove({_id: {$in: arrayOfId}}, function(err){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Appointments was removed successfully'});
+            });
+    };
+
+    this.suspendAppointments = function(req, res, next){
+        var arrayOfId = req.body.appointments;
+
+        if (!arrayOfId || !arrayOfId.length){
+            return next(badRequests.NotEnParams({reqParams: 'arrayOfId and action'}))
+        }
+
+        arrayOfId.map(function(id){
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(id)){
+                return next(badRequests.InvalidValue({value: id, param: 'arrayOfId'}));
+            }
+
+            return ObjectId(id);
+        });
+
+        Appointment
+            .update({_id: {$in: arrayOfId}}, {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}, function(err){
+                if (err){
+                    return next(err);
+                }
+
+
+                res.status(200).send({success: 'Appointments was removed successfully'});
+            });
+    };
 
 };
 

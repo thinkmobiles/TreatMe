@@ -21,5 +21,8 @@ module.exports = function(db){
     router.get('/services/requested', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getRequestedService);
     router.post('/services/approve', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveService);
 
+    router.put('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendAppointments);
+    router.delete('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeAppointments);
+
     return router;
 };

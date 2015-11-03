@@ -26,7 +26,8 @@ module.exports = {
     },
     LIMIT: {
         REQUESTED_SERVICES: 20,
-        REQUESTED_STYLISTS: 20
+        REQUESTED_STYLISTS: 20,
+        REQUESTED_APPOINTMENTS: 20
     }
 };
 
