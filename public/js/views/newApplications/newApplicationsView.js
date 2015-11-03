@@ -32,6 +32,10 @@ define([
                     self.render();
                 }
             });
+            //self.collection.on('reset', self.render, self);
+            self.collection.on('remove', function () {
+                console.log('fire event remove')
+            }, this);
         },
 
         render: function () {
@@ -75,6 +79,7 @@ define([
 
             self.collection.approve(data, function () {
                 self.initialize();
+                console.log('approve')
             })
         },
 
@@ -102,6 +107,7 @@ define([
 
             self.collection.deleteRequest(data, function () {
                 self.initialize();
+                console.log('removed')
             })
         },
 

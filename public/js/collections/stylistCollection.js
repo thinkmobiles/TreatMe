@@ -23,14 +23,15 @@ define([
                         return coll;
                     }
                 })
-            }
 
-            //this.fetch({
-            //    reset: true,
-            //    success: function(coll){
-            //        return coll;
-            //    }
-            //});
+            } else {
+                this.fetch({
+                    reset: true,
+                    success: function(coll){
+                        return coll;
+                    }
+                });
+            }
         },
 
         approve: function (data, callback) {
