@@ -221,19 +221,33 @@ var UserHandler = function (app, db) {
 
     this.addStylistProfile = function(createObj, callback){
 
-        var userModel = new User(createObj);
+        var email = createObj.email;
 
-        userModel
-            .save(function(err){
+        User
+            .findOne({email: email, role: CONSTANTS.USER_ROLE.STYLIST}, {_id: 1}, function(err, resultModel){
 
                 if (err){
                     return callback(err);
                 }
 
-                callback(null);
+                if (resultModel){
+                    return callback(badRequests.EmailInUse());
+                }
+
+                var userModel = new User(createObj);
+
+                userModel
+                    .save(function(err){
+
+                        if (err){
+                            return callback(err);
+                        }
+
+                        callback(null);
+
+                    });
 
             });
-
     };
 
     this.signUp = function (req, res, next) {
