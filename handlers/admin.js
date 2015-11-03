@@ -272,6 +272,7 @@ var AdminHandler = function(db){
 
         body.password = getEncryptedPass(password);
         body.approved = true;
+        body.role = CONSTANTS.USER_ROLE.STYLIST;
 
         user.addStylistProfile(body, function(err){
 
@@ -292,6 +293,7 @@ var AdminHandler = function(db){
         });
 
     };
+
 
     this.approveStylist = function(req, res, next){
 
