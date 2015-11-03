@@ -17,15 +17,16 @@ define([
 
         events: {
             'click #buttonLogout'   : 'logout',
-            'click #profileTop'     : 'showPofile',
             'click #middleTopBar'   : 'showWantForm',
             'click #leftTopBar'     : 'showContactUsForm'
         },
 
         initialize: function () {
+
+            App.Breadcrumbs = new Backbone.Collection();
+
+            this.listenTo(App.Breadcrumbs, 'reset', this.renderBreadcrumbs);
             this.listenTo(App.sessionData, 'change:authorized', this.render);
-            this.listenTo(App.sessionData, 'change:first_name change:last_name change:avatar', this.renderUser);
-            this.listenTo(App.Badge,       'change:pendingUsers', this.updatePendingUsersBadge);
         },
 
         logout: function () {
@@ -64,11 +65,18 @@ define([
             return this;
         },
 
-        renderUser: function () {
-            var authorized = App.sessionData.get('authorized');
-            var user = App.sessionData.get('first_name') +' '+ App.sessionData.get('last_name');
+        renderBreadcrumbs: function () {
+            var collection = App.Breadcrumbs;
+            var container = this.$el.find('#breadcrumbContainer');
+            var items = collection.toJSON();
+            var links = _.map(items, function ( item ) {
+                return '<a href="' + item.path + '" class="breadcrumb">' + item.name + '</a>';
+            });
+            var htmlContent = links.join('<span class="breadcrumbSeparator">&gt;</span>');
 
-            this.$el.find('.userName').html(user);
+            container.html(htmlContent);
+
+            return this;
         }
 
     });
