@@ -792,16 +792,10 @@ var AdminHandler = function(db){
         var arrayOfId = req.body.appointments;
 
         if (!arrayOfId || !arrayOfId.length){
-            return next(badRequests.NotEnParams({reqParams: 'arrayOfId and action'}))
+            return next(badRequests.NotEnParams({reqParams: 'arrayOfId'}))
         }
 
-        arrayOfId.map(function(id){
-            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(id)){
-                return next(badRequests.InvalidValue({value: id, param: 'arrayOfId'}));
-            }
-
-            return ObjectId(id);
-        });
+        arrayOfId = arrayOfId.toObjectId();
 
         Appointment
             .remove({_id: {$in: arrayOfId}}, function(err){
@@ -817,16 +811,10 @@ var AdminHandler = function(db){
         var arrayOfId = req.body.appointments;
 
         if (!arrayOfId || !arrayOfId.length){
-            return next(badRequests.NotEnParams({reqParams: 'arrayOfId and action'}))
+            return next(badRequests.NotEnParams({reqParams: 'arrayOfId'}))
         }
 
-        arrayOfId.map(function(id){
-            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(id)){
-                return next(badRequests.InvalidValue({value: id, param: 'arrayOfId'}));
-            }
-
-            return ObjectId(id);
-        });
+        arrayOfId = arrayOfId.toObjectId();
 
         Appointment
             .update({_id: {$in: arrayOfId}}, {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}, function(err){
@@ -834,8 +822,68 @@ var AdminHandler = function(db){
                     return next(err);
                 }
 
+                res.status(200).send({success: 'Appointments was suspended successfully'});
+            });
+    };
 
-                res.status(200).send({success: 'Appointments was removed successfully'});
+    this.bookAppointment = function(req, res, next){
+        var clientId = req.body.clientId;
+        var stylistId = req.body.stylistId;
+        var serviceTypeId = req.body.serviceTypeId;
+        var bookingDate = req.body.bookingDate;
+        var appointmentModel;
+        var saveObj;
+
+        if (!clientId || !stylistId || !serviceTypeId || !bookingDate){
+            return next(badRequests.NotEnParams({reqParams: 'clientId and stylistId and serviceTypeId and bookingDate'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
+            return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)){
+            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(serviceTypeId)){
+            return next(badRequests.InvalidValue({value: serviceTypeId, param: 'serviceTypeId'}));
+        }
+
+        saveObj = {
+            client: ObjectId(clientId),
+            clientLoc : {type: 'Point', coordinates: [0, 0]},
+            serviceType: ObjectId(serviceTypeId),
+            status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
+            stylist: ObjectId(stylistId),
+            bookingDate: bookingDate
+        };
+
+        appointmentModel = new Appointment(saveObj);
+
+        Appointment
+            .findOne({stylist: stylistId, bookingDate: bookingDate}, function(err, someModel){
+                var error;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (someModel){
+                    error = new Error('Stylist already have an appointment for this time');
+                    error.status = 400;
+
+                    return next(error);
+                }
+
+                appointmentModel
+                    .save(function(err){
+                        if (err){
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: 'Appointment booked successfully'});
+                    });
             });
     };
 

@@ -100,7 +100,7 @@ var UserHandler = function (app, db) {
             .find(findObj, projectionObj)
             .populate(populateArray)
             .sort({bookingDate: 1})
-            .skip(page * limit)
+            .skip(limit * (page -1))
             .limit(limit)
             .exec(function(err, appointmentModelsArray){
                 var avatarName;

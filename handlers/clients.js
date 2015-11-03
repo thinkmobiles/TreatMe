@@ -15,6 +15,7 @@ var ClientsHandler = function (app, db) {
     var Appointment = db.model('Appointment');
     var Gallery = db.model('Gallery');
     var Subscription = db.model('Subscription');
+    var SubscriptionType = db.model('SubscriptionType');
     var session = new SessionHandler();
     var imageHandler = new ImageHandler(db);
     var ObjectId = mongoose.Types.ObjectId;
@@ -449,17 +450,95 @@ var ClientsHandler = function (app, db) {
     };*/
 
     this.getActiveSubscriptions = function(req, res, next){
+        var subscriptionId = req.params.id;
         var clientId = req.session.uId;
+        var findObj = {expirationDate: {$gte: new Date()}};
+        var populateArray = [{path: 'subscriptionType', select: 'name price logo'}];
+        var sortParam = req.query.sort || 'Date';
+        var sortType = req.query.sortType || 'DESC';
+        var sortObj = {};
+
+        if (subscriptionId){
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){
+                return next(badRequests.InvalidValue({value: subscriptionId, param: 'id'}));
+            }
+
+            findObj._id = subscriptionId;
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
+            findObj.client = clientId
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+            if (sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Package'){
+                return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+            }
+
+            if (sortType !== CONSTANTS.SORT_TYPE.ASC && sortType !== CONSTANTS.SORT_TYPE.DESC){
+                return next(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
+            }
+
+            if (sortObj === 'Date'){
+                sortObj.purchaseDate = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            }
+
+            if (sortObj === 'Name'){
+                sortObj.client = {};
+                sortObj.client.personalInfo = {};
+
+                sortObj.client.personalInfo.firstName = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            }
+
+            if (sortObj === 'Package'){
+                sortObj.subscriptionType = {};
+
+                sortObj.subscriptionType.name = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            }
+
+            populateArray.push({path: 'client', select: 'personalInfo.firstName personalInfo.lastName'});
+
+        }
 
         Subscription
-            .find({client: clientId, expirationDate: {$gte: new Date()}})
-            .populate({path: 'subscriptionType', select: 'name price'})
-            .exec(function(err, subscriptionModelsArray){
-                if (err){
+            .find(findObj)
+            .populate(populateArray)
+            .sort(sortObj)
+            .exec(function (err, subscriptionModelsArray) {
+                if (err) {
                     return next(err);
                 }
 
-                res.status(200).send(subscriptionModelsArray);
+                if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+                    return res.status(200).send(subscriptionModelsArray);
+                } else {
+                    SubscriptionType.find({}, function(err, subscriptionTypeModels){
+                        var subscriptionIdArray;
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        subscriptionIdArray = subscriptionModelsArray.map(function(model){
+                            return model._id.toString();
+                        });
+
+                        subscriptionTypeModels.map(function(model){
+                            var typeId = model._id.toString();
+                            model.havePackage = false;
+
+                            if (subscriptionIdArray.indexOf(typeId) !== -1){
+                                model.havePackage = true;
+                            }
+
+                            model.logo = imageHandler.computeUrl(model.logo, CONSTANTS.BUCKET.IMAGES);
+
+                            return model;
+                        });
+
+                        res.status(200).send(subscriptionTypeModels);
+                    });
+                }
             });
     };
 
@@ -469,9 +548,10 @@ var ClientsHandler = function (app, db) {
         var saveObj;
         var clientId;
         var clientLoc;
+        var locationAddress = req.body.location;
 
         if (!body.clientId || !body.serviceType || !body.bookingDate){
-            return next(badRequests.NotEnParams({}));
+            return next(badRequests.NotEnParams({reqParams: 'clientId and serviceType and bookingDate'}));
         }
 
         clientId = body.clientId;
@@ -499,6 +579,12 @@ var ClientsHandler = function (app, db) {
 
                         clientLoc = clientModel.get('loc');
 
+                        if (locationAddress){
+                            //TODO: convert address to coordinates for CMS
+                            //var coordinates = locationAddress to coordinates
+                            //clientLoc.coordinates = coordinates;
+                        }
+
                         if (!clientLoc || !clientLoc.coordinates.length){
                             return cb(badRequests.UnknownGeoLocation());
                         }
@@ -510,13 +596,14 @@ var ClientsHandler = function (app, db) {
             function(cb){
                 Appointment
                     .findOne({client: clientId, bookingDate: body.bookingDate}, function(err, model){
+                        var error;
+
                         if (err){
                             return cb(err);
                         }
 
                         if (model){
-                            var error = new Error('You already have an appointment for this time');
-
+                            error = new Error('Client already have an appointment for this time');
                             error.status = 400;
 
                             return cb(error);
