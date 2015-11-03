@@ -34,31 +34,42 @@ var AdminHandler = function (db) {
 
     function getStylistById(sId, callback) {
 
-        User
-            .findOne({_id: sId}, {
-                fbId: 0,
-                token: 0,
-                forgotToken: 0,
-                __v: 0,
-                confirmed: 0
-            }, function (err, resultModel) {
+        var userObj;
 
-                if (err) {
+        User
+            .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0}, function(err, resultModel){
+
+                if (err){
                     return callback(err);
                 }
 
-                if (!resultModel) {
+                if (!resultModel){
                     err = new Error('User not found');
                     err.status = 404;
                     return callback(err);
                 }
 
-                callback(null, resultModel);
+                Services
+                    .find({stylist: ObjectId(sId), approved: true}, {price: 1, _id: 0, serviceId: 1})
+                    .populate({path: 'serviceId', select: '-_id name'})
+                    .exec(function(err, serviceModels){
 
+                        if (err){
+                            return callback(err);
+                        }
+
+                        userObj = resultModel.toJSON();
+
+                        if (serviceModels.length){
+                            userObj.approvedServices = serviceModels;
+                        }
+
+                        callback(null, userObj);
+                    });
             });
     }
 
-    this.getStylistByCriterion = function (criterion, page, limit, callback) {
+    this.getStylistByCriterion = function(criterion, page, limit, callback){
 
         var resultArray = [];
         var obj;
@@ -66,22 +77,29 @@ var AdminHandler = function (db) {
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
 
         User
-            .find(criterion, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'salonInfo': 1, 'createdAt': 1})
+            .find(criterion, {
+                'personalInfo.firstName': 1,
+                'personalInfo.lastName': 1,
+                'salonInfo': 1,
+                'createdAt': 1,
+                approved: 1
+            })
             .skip(limit * (page - 1))
             .limit(CONSTANTS.LIMIT.REQUESTED_STYLISTS)
-            .exec(function (err, resultModel) {
-                if (err) {
+            .exec(function(err, resultModel){
+                if (err){
                     return callback(err);
                 }
 
-                for (var i = resultModel.length; i--;) {
+                for (var i = resultModel.length; i--; ){
 
-                    obj = {
-                        _id: resultModel[i]._id,
-                        personalInfo: resultModel[i].personalInfo,
-                        salonInfo: resultModel[i].salonInfo.salonName || {},
-                        createdAt: resultModel[i].createdAt
-                    };
+                        obj = {
+                            _id: resultModel[i]._id,
+                            personalInfo: resultModel[i].personalInfo,
+                            salonInfo: resultModel[i].salonInfo.salonName || {},
+                            createdAt: resultModel[i].createdAt,
+                            approved:  resultModel[i].approved
+                        };
 
                     resultArray.push(obj);
                 }
@@ -91,8 +109,7 @@ var AdminHandler = function (db) {
             });
     };
 
-
-    this.getStylistList = function (req, res, next) {
+    this.getStylistList = function(req, res, next){
 
         /**
          * __Type__ __`GET`__
@@ -300,6 +317,7 @@ var AdminHandler = function (db) {
 
             services = services.map(function (service) {
 
+                service.serviceId = ObjectId(service.serviceId);
                 service.stylist = uId;
                 service.approved = true;
 
@@ -475,15 +493,8 @@ var AdminHandler = function (db) {
         ids = body.ids.toObjectId();
 
         User
-            .update({_id: {$in: ids}, role: CONSTANTS.USER_ROLE.STYLIST}, {
-                $set: {
-                    suspend: {
-                        isSuspend: true,
-                        from: Date.now()
-                    }
-                }
-            }, {multi: true})
-            .exec(function (err) {
+            .update({_id: {$in: ids}, role: CONSTANTS.USER_ROLE.STYLIST}, {$set: {suspend: {isSuspend: true, from: Date.now()}}}, {multi: true})
+            .exec(function(err){
 
                 if (err) {
                     return next(err);

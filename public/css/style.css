@@ -1562,3 +1562,26 @@ div#ui-datepicker-div.ui-datepicker .ui-widget-header a.ui-datepicker-next-hover
 .docClick {
   background-color: crimson;
 }
+.list {
+  width: 80%;
+  float: right;
+}
+.list table thead tr th,
+.list table tbody tr td {
+  width: 16%;
+}
+.list table thead tr th:first-child,
+.list table tr td:first-child {
+  width: 8%;
+}
+.list table tr:nth-child(even) {
+  background-color: #98c0ff;
+  height: 30px;
+}
+.buttons {
+  width: 80%;
+  float: right;
+}
+.buttons a {
+  float: right;
+}
