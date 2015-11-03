@@ -24,6 +24,7 @@ var AdminHandler = function(db){
     var Services = db.model('Service');
     var ServiceType = db.model('ServiceType');
     var User = db.model('User');
+    var Appointment = db.model('Appointment');
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
@@ -247,7 +248,14 @@ var AdminHandler = function(db){
          *      "city": "Uzh",
          *     "zipCode": "88001",
          *     "country": "Ukraine"
-         *   }
+         *   },
+         *   services: [{
+         *      serviceId: 563342cf1480ea7c109dc385,
+         *      price: 20
+         *   }, {
+         *      serviceId: 563342cf1480ea7c109dc386,
+         *      price: 25
+         *   }]
          * }
          *
          * @example Response example:
@@ -255,7 +263,7 @@ var AdminHandler = function(db){
          *  Response status: 200
          * {"success": "Stylist created successfully"}
          *
-         * @method getStylist
+         * @method createStylist
          * @instance
          */
 
@@ -264,6 +272,7 @@ var AdminHandler = function(db){
         var mailOptions;
         var personal = body.personalInfo;
         var salon = body.salonInfo;
+        var services;
 
 
         if (!body.email || !personal.firstName || !personal.lastName || !personal.profession || !personal.phoneNumber
@@ -276,26 +285,49 @@ var AdminHandler = function(db){
         }
 
         body.password = getEncryptedPass(password);
+        body.approved = true;
+        body.role = CONSTANTS.USER_ROLE.STYLIST;
 
-        user.addStylistProfile(body, function(err){
+        services = body.services;
+
+        delete body.services;
+
+        user.addStylistProfile(body, function(err, uId){
 
             if (err){
                 return next(err);
             }
 
-            mailOptions = {
-                name: body.personalInfo.firstName,
-                email: body.email,
-                password: password
-            };
+            services = services.map(function(service){
 
-            mailer.adminCreateStylist(mailOptions);
+                service.stylist = uId;
+                service.approved = true;
 
-            res.status(200).send({success: 'Stylist created successfully'});
+                return service;
+            });
+
+            Services.create(services, function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                mailOptions = {
+                    name: body.personalInfo.firstName,
+                    email: body.email,
+                    password: password
+                };
+
+                mailer.adminCreateStylist(mailOptions);
+
+                res.status(200).send({success: 'Stylist created successfully'});
+
+            });
 
         });
 
     };
+
 
     this.approveStylist = function(req, res, next){
 
@@ -328,21 +360,16 @@ var AdminHandler = function(db){
          */
 
         var body = req.body;
-        var stylistIds;
         var ids;
 
         if (!body.ids){
             return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
 
-        ids = body.ids;
-
-        stylistIds = ids.map(function(id){
-           return new ObjectId(id);
-        });
+        ids = body.ids.toObjectId();
 
         User
-            .update({_id: {$in: stylistIds}, approved: false, role: CONSTANTS.USER_ROLE.STYLIST}, {approved: true}, {multi: true}, function(err, resultModel){
+            .update({_id: {$in: ids}, approved: false, role: CONSTANTS.USER_ROLE.STYLIST}, {approved: true}, {multi: true}, function(err){
                 if (err){
                     return next(err);
                 }
@@ -386,17 +413,14 @@ var AdminHandler = function(db){
 
         var body = req.body;
         var ids;
-        var stylistIds;
 
-        if (body.ids){
-            ids = body.ids;
+        if (!body.ids){
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
 
-        stylistIds = ids.map(function(id){
-            return new ObjectId(id);
-        });
+        ids = body.ids.toObjectId();
 
-        User.remove({_id: {$in: stylistIds}, role: CONSTANTS.USER_ROLE.STYLIST, approved: false}, function(err){
+        User.remove({_id: {$in: ids}, role: CONSTANTS.USER_ROLE.STYLIST, approved: false}, function(err){
 
             if (err){
                 return next(err);
@@ -405,6 +429,58 @@ var AdminHandler = function(db){
             res.status(200).send({success: 'Stylists deleted successfully'});
 
         });
+    };
+
+    this.suspendStylists = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/stylist/suspend`__
+         *
+         * This __method__ allows suspend stylist by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/stylist/suspend
+         *
+         * {
+         *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc385]
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Stylists suspended successfully"}
+         *
+         * @method suspendStylist
+         * @instance
+         */
+
+        var body = req.body;
+        var ids;
+
+        if (!body.ids){
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        }
+
+        ids = body.ids.toObjectId();
+
+        User
+            .update({_id: {$in: ids}, role: CONSTANTS.USER_ROLE.STYLIST}, {$set: {suspend: {isSuspend: true, from: Date.now()}}}, {multi: true})
+            .exec(function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+
+                res.status(200).send({success: 'Stylists suspended successfully'});
+            });
     };
 
     this.getRequestedService = function(req, res, next){
@@ -531,7 +607,7 @@ var AdminHandler = function(db){
          *  Response status: 200
          * {"success": "Service created successfully"}
          *
-         * @method addStylist
+         * @method addService
          * @instance
          */
 
@@ -745,7 +821,106 @@ var AdminHandler = function(db){
                     });
 
             });
-    }
+    };
+
+    this.removeAppointments = function(req, res, next){
+        var arrayOfId = req.body.appointments;
+
+        if (!arrayOfId || !arrayOfId.length){
+            return next(badRequests.NotEnParams({reqParams: 'arrayOfId'}))
+        }
+
+        arrayOfId = arrayOfId.toObjectId();
+
+        Appointment
+            .remove({_id: {$in: arrayOfId}}, function(err){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Appointments was removed successfully'});
+            });
+    };
+
+    this.suspendAppointments = function(req, res, next){
+        var arrayOfId = req.body.appointments;
+
+        if (!arrayOfId || !arrayOfId.length){
+            return next(badRequests.NotEnParams({reqParams: 'arrayOfId'}))
+        }
+
+        arrayOfId = arrayOfId.toObjectId();
+
+        Appointment
+            .update({_id: {$in: arrayOfId}}, {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}, function(err){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Appointments was suspended successfully'});
+            });
+    };
+
+    this.bookAppointment = function(req, res, next){
+        var clientId = req.body.clientId;
+        var stylistId = req.body.stylistId;
+        var serviceTypeId = req.body.serviceTypeId;
+        var bookingDate = req.body.bookingDate;
+        var appointmentModel;
+        var saveObj;
+
+        if (!clientId || !stylistId || !serviceTypeId || !bookingDate){
+            return next(badRequests.NotEnParams({reqParams: 'clientId and stylistId and serviceTypeId and bookingDate'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
+            return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)){
+            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(serviceTypeId)){
+            return next(badRequests.InvalidValue({value: serviceTypeId, param: 'serviceTypeId'}));
+        }
+
+        saveObj = {
+            client: ObjectId(clientId),
+            clientLoc : {type: 'Point', coordinates: [0, 0]},
+            serviceType: ObjectId(serviceTypeId),
+            status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
+            stylist: ObjectId(stylistId),
+            bookingDate: bookingDate
+        };
+
+        appointmentModel = new Appointment(saveObj);
+
+        Appointment
+            .findOne({stylist: stylistId, bookingDate: bookingDate}, function(err, someModel){
+                var error;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (someModel){
+                    error = new Error('Stylist already have an appointment for this time');
+                    error.status = 400;
+
+                    return next(error);
+                }
+
+                appointmentModel
+                    .save(function(err){
+                        if (err){
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: 'Appointment booked successfully'});
+                    });
+            });
+    };
 
 };
 

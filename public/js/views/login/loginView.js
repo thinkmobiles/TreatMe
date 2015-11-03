@@ -1,6 +1,4 @@
-/**
- * Created by andrey on 17.07.15.
- */
+'use strict';
 
 define([
     'text!templates/login/loginTemplate.html',
@@ -8,8 +6,7 @@ define([
 
 ], function (LoginTemplate, validation) {
 
-    var View;
-    View = Backbone.View.extend({
+    var View = Backbone.View.extend({
 
         el : '#wrapper',
 
@@ -34,7 +31,6 @@ define([
 
         setDefaultData: function () {
             var defaultData = {
-                rememberMe  : false,
                 email       : '',
                 password    : '',
                 errorObject : false
@@ -55,8 +51,7 @@ define([
 
             var stateModelUpdate = {
                 errorObject: false,
-                password   : thisEl.find("#loginPass").val().trim(),
-                rememberMe : thisEl.find('#rememberMe').prop('checked')
+                password   : thisEl.find("#loginPass").val().trim()
             };
 
             if (!this.token){
@@ -65,14 +60,12 @@ define([
                 data = {
                     email      : stateModelUpdate.email,
                     password   : stateModelUpdate.password,
-                    rememberMe : stateModelUpdate.rememberMe,
                     role : 'Admin'
                 }
             } else {
                 currentUrl += "/"+this.token;
                 data = {
                     password   : stateModelUpdate.password,
-                    rememberMe : stateModelUpdate.rememberMe,
                     role : 'Admin'
                 }
             }
@@ -149,4 +142,3 @@ define([
     return View;
 
 });
-
