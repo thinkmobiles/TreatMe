@@ -48,6 +48,7 @@ module.exports = function (db) {
             },
             coordinates: [Number]
         },
+        activeSubscriptions: [String],
         createdAt: {type: Date, default: Date.now}
 
     }, {

@@ -18,7 +18,7 @@ module.exports = function(app, db){
     router.post('/passwordChange/:forgotToken', clientsHandler.changePassword);*/
 
     //router.get('/gallery', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.getGalleryPhotoes);
-    router.get('/subscriptions/:id?', sessionHandler.authenticatedUser, sessionHandler.clientOrAdmin, clientsHandler.getActiveSubscriptions);
+    router.get('/subscriptions', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.getActiveSubscriptions);
     //router.get('/appointment', sessionHandler.authenticatedUser, clientsHandler.getAllClientAppointments);
     //router.get('/appointment/:id', sessionHandler.authenticatedUser, clientsHandler.getClientAppointmentById);
 
