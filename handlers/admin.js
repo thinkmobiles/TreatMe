@@ -324,21 +324,16 @@ var AdminHandler = function(db){
          */
 
         var body = req.body;
-        var stylistIds;
         var ids;
 
         if (!body.ids){
             return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
 
-        ids = body.ids;
-
-        stylistIds = ids.map(function(id){
-           return new ObjectId(id);
-        });
+        ids = body.ids.toObjectId();
 
         User
-            .update({_id: {$in: stylistIds}, approved: false, role: CONSTANTS.USER_ROLE.STYLIST}, {approved: true}, {multi: true}, function(err, resultModel){
+            .update({_id: {$in: ids}, approved: false, role: CONSTANTS.USER_ROLE.STYLIST}, {approved: true}, {multi: true}, function(err){
                 if (err){
                     return next(err);
                 }
@@ -382,17 +377,14 @@ var AdminHandler = function(db){
 
         var body = req.body;
         var ids;
-        var stylistIds;
 
-        if (body.ids){
-            ids = body.ids;
+        if (!body.ids){
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
 
-        stylistIds = ids.map(function(id){
-            return new ObjectId(id);
-        });
+        ids = body.ids.toObjectId();
 
-        User.remove({_id: {$in: stylistIds}, role: CONSTANTS.USER_ROLE.STYLIST, approved: false}, function(err){
+        User.remove({_id: {$in: ids}, role: CONSTANTS.USER_ROLE.STYLIST, approved: false}, function(err){
 
             if (err){
                 return next(err);
@@ -401,6 +393,58 @@ var AdminHandler = function(db){
             res.status(200).send({success: 'Stylists deleted successfully'});
 
         });
+    };
+
+    this.suspendStylists = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/stylist/suspend`__
+         *
+         * This __method__ allows suspend stylist by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/stylist/suspend
+         *
+         * {
+         *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc385]
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Stylists suspended successfully"}
+         *
+         * @method suspendStylist
+         * @instance
+         */
+
+        var body = req.body;
+        var ids;
+
+        if (!body.ids){
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        }
+
+        ids = body.ids.toObjectId();
+
+        User
+            .update({_id: {$in: ids}, role: CONSTANTS.USER_ROLE.STYLIST}, {$set: {suspend: {isSuspend: true, from: Date.now()}}}, {multi: true})
+            .exec(function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+
+                res.status(200).send({success: 'Stylists suspended successfully'});
+            });
     };
 
     this.getRequestedService = function(req, res, next){
