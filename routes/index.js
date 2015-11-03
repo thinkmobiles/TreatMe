@@ -31,6 +31,8 @@ module.exports = function (app, db) {
     app.post('/signUp', user.signUp);
     app.post('/signIn', user.signIn);
     app.get('/signOut', user.signOut);
+
+    app.put('/profile/:userId?', sessionHandler.authenticatedUser, user.updateUserProfile);
     
     app.get('/confirm/:token', user.confirmRegistration);
     app.get('/passwordChange', user.confirmForgotPass);

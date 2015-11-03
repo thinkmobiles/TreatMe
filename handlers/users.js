@@ -753,6 +753,123 @@ var UserHandler = function (app, db) {
         }
     };
 
+    this.updateUserProfile = function (req, res, next) {
+
+        var role = req.session.role;
+        var uId;
+        var body = req.body;
+        var personalInfo;
+        var salonInfo = {};
+        var userObj;
+
+        if (role === CONSTANTS.USER_ROLE.ADMIN){
+            if (!req.params.userId){
+                return next(badRequests.NotEnParams({reqParams: 'userId'}));
+            }
+
+            uId = req.params.userId;
+
+        } else {
+            uId = req.session.uId;
+        }
+
+        User
+            .findOne({_id: uId}, {personalInfo: 1, salonInfo: 1, role: 1}, function (err, resultModel) {
+
+                if (err) {
+                    return next(err);
+                }
+
+                if (!resultModel) {
+                    return next(badRequests.DatabaseError());
+                }
+
+                userObj = resultModel.toJSON();
+
+                personalInfo = userObj.personalInfo;
+
+                if (body.personalInfo.firstName) {
+                    personalInfo.firstName = body.personalInfo.firstName;
+                }
+
+                if (body.personalInfo.lastName) {
+                    personalInfo.lastName = body.personalInfo.lastName;
+                }
+
+                if (body.personalInfo.profession && (resultModel.role === CONSTANTS.USER_ROLE.STYLIST)) {
+                    personalInfo.profession = body.personalInfo.profession;
+                }
+
+                if (body.personalInfo.phone) {
+                    personalInfo.phone = body.personalInfo.phone;
+                }
+
+                if (body.personalInfo.facebookURL && (resultModel.role === CONSTANTS.USER_ROLE.STYLIST)) {
+                    personalInfo.facebookURL = body.personalInfo.facebookURL;
+                }
+
+                if (resultModel.role = CONSTANTS.USER_ROLE.STYLIST) {
+
+                    salonInfo = userObj.salonInfo;
+
+                    if (body.salonInfo.salonName){
+                        salonInfo.salonName = body.salonInfo.salonName;
+                    }
+
+                    if (body.salonInfo.yourBusinessRole){
+                        salonInfo.yourBusinessRole = body.salonInfo.yourBusinessRole;
+                    }
+
+                    if (body.salonInfo.phone){
+                        salonInfo.phone = body.salonInfo.phone;
+                    }
+
+                    if (body.salonInfo.email){
+                        salonInfo.email = body.salonInfo.email;
+                    }
+
+                    if (body.salonInfo.address){
+                        salonInfo.address = body.salonInfo.address;
+                    }
+
+                    if (body.salonInfo.state){
+                        salonInfo.state = body.salonInfo.state;
+                    }
+
+                    if (body.salonInfo.zipCode){
+                        salonInfo.zipCode = body.salonInfo.zipCode;
+                    }
+
+                    if (body.salonInfo.phone){
+                        salonInfo.phone = body.salonInfo.phone;
+                    }
+
+                    if (body.salonInfo.licenseNumber){
+                        salonInfo.licenseNumber = body.salonInfo.licenseNumber;
+                    }
+
+                    if (body.salonInfo.city){
+                        salonInfo.city = body.salonInfo.city;
+                    }
+
+                    if (body.salonInfo.country){
+                        salonInfo.country = body.salonInfo.country;
+                    }
+                }
+
+                resultModel
+                    .update({personalInfo: personalInfo, salonInfo: salonInfo}, function(err){
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: resultModel.role + 'updated successfully'});
+
+                    });
+
+            });
+    };
 
     this.updatePersonalInfo = function(req, res, next){
 
@@ -803,10 +920,6 @@ var UserHandler = function (app, db) {
         var role = req.session.role;
         var body = req.body;
         var personalInfo;
-
-        if (!body){
-            return next(badRequests.NotEnParams());
-        }
 
 
         User
