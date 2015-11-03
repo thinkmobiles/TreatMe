@@ -8,10 +8,11 @@
 var CONSTANTS = require('../constants');
 var badRequests = require('../helpers/badRequests');
 var ImageHandler = require('./image');
-var UserHandler = require('./user');
+var UserHandler = require('./users');
 var passGen = require('password-generator');
 var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
+var mongoose = require('mongoose');
 var ObjectId = mongoose.Types.ObjectId;
 
 var AdminHandler = function(db){
@@ -70,7 +71,7 @@ var AdminHandler = function(db){
                         obj = {
                             _id: resultModel[i]._id,
                             personalInfo: resultModel[i].personalInfo,
-                            salonInfo: resultModel[i].salonInfo.salonName || null,
+                            salonInfo: resultModel[i].salonInfo.salonName || {},
                             createdAt: resultModel[i].createdAt
                         };
 
@@ -123,7 +124,7 @@ var AdminHandler = function(db){
 
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
-        var statusRegExp = /^requested&|^all$/;
+        var statusRegExp = /^requested$|^all$/;
         var status = req.query.status;
 
         if (!statusRegExp.test(status)){

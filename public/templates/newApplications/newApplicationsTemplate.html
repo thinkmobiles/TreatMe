@@ -1,5 +1,3 @@
-New Applications ...
-
 <div>
     <div class="buttons">
         <button id="acceptSelectedBtn">Accept</button>
@@ -11,7 +9,7 @@ New Applications ...
         <table>
             <thead>
             <tr>
-                <th></th>
+                <th><input type="checkbox" class="checkAll"></th>
                 <th>Date</th>
                 <th>Stylist Name</th>
                 <th>Salon Name</th>
@@ -22,12 +20,12 @@ New Applications ...
             <tbody>
                 <% _.forEach(users, function (user) {%>
                 <tr data-id="<%= user._id%>">
-                    <td></td>
+                    <td><input type="checkbox"></td>
                     <td><%= user.createdAt %></td>
                     <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
                     <td><%= user.salonInfo.salonName %></td>
-                    <td><button>Accept</button></td>
-                    <td><button>Delete</button></td>
+                    <td><button id="acceptCurrentBtn">Accept</button></td>
+                    <td><button id="removeCurrentBtn">Delete</button></td>
                 </tr>
                 <%});%>
             </tbody>
