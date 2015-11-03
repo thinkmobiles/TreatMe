@@ -1439,9 +1439,8 @@ var UserHandler = function (app, db) {
                     }
 
                     createObj = {
-                        name: name,
                         stylist: ObjectId(uId),
-                        serviceId: serviceId
+                        serviceId: ObjectId(serviceId)
                     };
 
                     serviceModel = new Services(createObj);

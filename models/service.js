@@ -11,8 +11,11 @@ module.exports = function (db) {
             type: ObjectId,
             ref: 'User'
         },
-        serviceId: String,
-        price: Number,
+        serviceId: {
+            type: ObjectId,
+            ref: 'ServiceType'
+        },
+        price: {type: Number, default: 0},
         approved: {
             type: Boolean,
             default: false

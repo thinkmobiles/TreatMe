@@ -33,6 +33,8 @@ var AdminHandler = function(db){
 
     function getStylistById(sId, callback){
 
+        var userObj;
+
         User
             .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0}, function(err, resultModel){
 
@@ -46,8 +48,23 @@ var AdminHandler = function(db){
                     return callback(err);
                 }
 
-                callback(null, resultModel);
+                Services
+                    .find({stylist: ObjectId(sId), approved: true}, {price: 1, _id: 0, serviceId: 1})
+                    .populate({path: 'serviceId', select: '-_id name'})
+                    .exec(function(err, serviceModels){
 
+                        if (err){
+                            return callback(err);
+                        }
+
+                        userObj = resultModel.toJSON();
+
+                        if (serviceModels.length){
+                            userObj.approvedServices = serviceModels;
+                        }
+
+                        callback(null, userObj);
+                    });
             });
     }
 
@@ -294,6 +311,7 @@ var AdminHandler = function(db){
 
             services = services.map(function(service){
 
+                service.serviceId = ObjectId(service.serviceId);
                 service.stylist = uId;
                 service.approved = true;
 
