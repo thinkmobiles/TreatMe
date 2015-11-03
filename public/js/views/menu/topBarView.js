@@ -72,7 +72,8 @@ define([
             var links = _.map(items, function ( item ) {
                 return '<a href="' + item.path + '" class="breadcrumb">' + item.name + '</a>';
             });
-            var htmlContent = links.join('<span class="breadcrumbSeparator">&gt;</span>');
+            //var htmlContent = links.join('<span class="breadcrumbSeparator">&gt;</span>');
+            var htmlContent = links.join('<span class="breadcrumbSeparator"> </span>');
 
             container.html(htmlContent);
 
