@@ -27,6 +27,8 @@ module.exports = function(db){
         var arr = this.map(function (_objectId) {
             if (_objectId instanceof ObjectId) {
                 return _objectId.toString();
+            } else if(typeof _objectId === 'string'){
+                return _objectId;
             } else {
                 throw new Error({ message: 'Incorrect value for ObjectId' });
             }

@@ -7,6 +7,9 @@ module.exports = function(db){
     var admin = new AdminHandler(db);
     var sessionHandler = new SessionHandler();
 
+    router.get('/services/requested', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getRequestedService);
+    router.post('/services/approve', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveService);
+
     // CRUD Services
     router.post('/services', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.addService);
     router.get('/services/:id?', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getServices);
@@ -21,9 +24,6 @@ module.exports = function(db){
 
     router.post('/stylist/approve/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveStylist);
     router.post('/stylist/suspend/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendStylists);
-
-    router.get('/services/requested', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getRequestedService);
-    router.post('/services/approve', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveService);
 
     router.post('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendAppointments);
