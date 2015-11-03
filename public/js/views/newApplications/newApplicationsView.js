@@ -10,27 +10,27 @@ define([
 
     View = Backbone.View.extend({
 
-        el : '#wrapper',
+        el: '#wrapper',
 
-        mainTemplate : _.template(MainTemplate),
+        mainTemplate: _.template(MainTemplate),
 
         events: {
-            "click #acceptCurrentBtn": "acceptStylist"
+            "click #acceptCurrentBtn, #acceptSelectedBtn": "acceptStylist",
+            "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest",
+            "click .checkAll": "checkAll"
         },
 
         initialize: function () {
             var self = this;
 
-            self.collection = [];
-
-            $.ajax({
-                type: 'GET',
-                url: '/admin/stylist?status=requested',
-                success: function (data) {
-                    self.collection = new StylistCollection(data);
-                    self.render(); //TODO: use collection on reset !
-                },
-                error  : self.handleErrorResponse
+            self.collection = new StylistCollection();
+            self.collection.fetch({
+                reset: true,
+                data: { status: 'requested' },
+                success: function (coll) {
+                    self.collection = coll;
+                    self.render();
+                }
             });
         },
 
@@ -44,7 +44,7 @@ define([
             return this;
         },
 
-        afterRender: function (){
+        afterRender: function () {
             var navContainer = $('.sidebar-menu');
 
             navContainer.find('.active').removeClass('active');
@@ -54,6 +54,7 @@ define([
         acceptStylist: function (e) {
             var el = e.target;
             var self = this;
+            var checkboxes;
             var data = {
                 ids: []
             };
@@ -62,21 +63,55 @@ define([
                 data.ids.push($(el).closest('tr').attr('data-id'));
                 data = JSON.stringify(data);
 
-                $.ajax({
-                    type: 'POST',
-                    dataType : 'json',
-                    contentType: 'application/json',
-                    url: '/admin/stylist/approve',
-                    data: data,
-                    success: function () {
-                        alert('Approve');
-                        self.initialize();
+            } else if (el.id === 'acceptSelectedBtn') {
+                checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
 
-                    },
-                    error  : self.handleErrorResponse
-                })
+                $(checkboxes).each(function( index, element ) {
+                    data.ids.push($(element).closest('tr').attr('data-id'));
+                });
+
+                data = JSON.stringify(data);
             }
 
+            self.collection.approve(data, function () {
+                self.initialize();
+            })
+        },
+
+        deleteRequest: function (e) {
+            var el = e.target;
+            var self = this;
+            var checkboxes;
+            var data = {
+                ids: []
+            };
+
+            if (el.id === 'removeCurrentBtn') {
+                data.ids.push($(el).closest('tr').attr('data-id'));
+                data = JSON.stringify(data);
+
+            } else if (el.id === 'removeSelectedBtn') {
+                checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
+
+                $(checkboxes).each(function( index, element ) {
+                    data.ids.push($(element).closest('tr').attr('data-id'));
+                });
+
+                data = JSON.stringify(data);
+            }
+
+            self.collection.deleteRequest(data, function () {
+                self.initialize();
+            })
+        },
+
+        checkAll: function () {
+            var state = $('.checkAll').prop('checked');
+            var checkboxes = $(':checkbox:not(\'.checkAll\')');
+
+            state
+                ? checkboxes.prop('checked', true)
+                : checkboxes.prop('checked', false);
         }
 
     });

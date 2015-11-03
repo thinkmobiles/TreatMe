@@ -59,7 +59,13 @@ var AdminHandler = function(db){
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
 
         User
-            .find(criterion, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'salonInfo': 1, 'createdAt': 1})
+            .find(criterion, {
+                'personalInfo.firstName': 1,
+                'personalInfo.lastName': 1,
+                'salonInfo': 1,
+                'createdAt': 1,
+                approved: 1
+            })
             .skip(limit * (page - 1))
             .limit(CONSTANTS.LIMIT.REQUESTED_STYLISTS)
             .exec(function(err, resultModel){
@@ -73,7 +79,8 @@ var AdminHandler = function(db){
                             _id: resultModel[i]._id,
                             personalInfo: resultModel[i].personalInfo,
                             salonInfo: resultModel[i].salonInfo.salonName || {},
-                            createdAt: resultModel[i].createdAt
+                            createdAt: resultModel[i].createdAt,
+                            approved:  resultModel[i].approved
                         };
 
                     resultArray.push(obj);
@@ -83,8 +90,6 @@ var AdminHandler = function(db){
 
             });
     };
-
-
 
     this.getStylistList = function(req, res, next){
 
