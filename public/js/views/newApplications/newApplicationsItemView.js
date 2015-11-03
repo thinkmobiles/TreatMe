@@ -2,7 +2,7 @@
 
 define([
     'models/stylistModel',
-    'text!templates/stylists/itemTemplate.html'
+    'text!templates/newApplications/itemTemplate.html'
 ], function (StylistModel, MainTemplate) {
 
     var View = Backbone.View.extend({
@@ -20,7 +20,7 @@ define([
 
             if (!userId) {
                 this.model = new StylistModel();
-                App.Breadcrumbs.reset([{name: 'New Applications', path: '#stylists'}, {name: 'Add Application', path: '#stylists/add'}]);
+                App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/add'}]);
                 return this.render();
             }
             console.log('Need Fetch ...'); //TODO: ...
@@ -106,9 +106,9 @@ define([
                     },
                     error: self.handleModelError
                     /*error: function (model, response, options) {
-                        var errMessage = response.responseJSON.error;
-                        self.handleError(errMessage);
-                    }*/
+                     var errMessage = response.responseJSON.error;
+                     self.handleError(errMessage);
+                     }*/
                 });
             });
         }

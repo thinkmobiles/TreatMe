@@ -38,7 +38,7 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
-    function getAllUserAppointments(userId, role, appointmentStatus, callback){
+    function getAllUserAppointments(userId, role, appointmentStatus, page, limit, callback){
         var findObj = {};
         var projectionObj;
         var populateArray = [
@@ -100,6 +100,8 @@ var UserHandler = function (app, db) {
             .find(findObj, projectionObj)
             .populate(populateArray)
             .sort({bookingDate: 1})
+            .skip(limit * (page -1))
+            .limit(limit)
             .exec(function(err, appointmentModelsArray){
                 var avatarName;
 
@@ -1270,6 +1272,8 @@ var UserHandler = function (app, db) {
 
     this.getAppointments = function(req, res, next){
         var appointmentId = req.query.id;
+        var page = (req.query.page >= 1) ? req.query.page : 1;
+        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_APPOINTMENTS;
         var appointmentStatus;
         var userId = req.session.uId;
 
@@ -1290,7 +1294,7 @@ var UserHandler = function (app, db) {
                 }
             }
 
-            getAllUserAppointments(userId, req.session.role, appointmentStatus, function(err, result){
+            getAllUserAppointments(userId, req.session.role, appointmentStatus, page, limit, function(err, result){
                 if (err){
                     return next(err);
                 }
