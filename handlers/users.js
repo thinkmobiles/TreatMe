@@ -241,7 +241,7 @@ var UserHandler = function (app, db) {
                             return callback(err);
                         }
 
-                        callback(null);
+                        callback(null, userModel._id);
 
                     });
 

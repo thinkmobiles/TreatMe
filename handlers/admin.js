@@ -242,7 +242,14 @@ var AdminHandler = function(db){
          *      "city": "Uzh",
          *     "zipCode": "88001",
          *     "country": "Ukraine"
-         *   }
+         *   },
+         *   services: [{
+         *      serviceId: 563342cf1480ea7c109dc385,
+         *      price: 20
+         *   }, {
+         *      serviceId: 563342cf1480ea7c109dc386,
+         *      price: 25
+         *   }]
          * }
          *
          * @example Response example:
@@ -259,6 +266,7 @@ var AdminHandler = function(db){
         var mailOptions;
         var personal = body.personalInfo;
         var salon = body.salonInfo;
+        var services;
 
 
         if (!body.email || !personal.firstName || !personal.lastName || !personal.profession || !personal.phoneNumber
@@ -274,21 +282,41 @@ var AdminHandler = function(db){
         body.approved = true;
         body.role = CONSTANTS.USER_ROLE.STYLIST;
 
-        user.addStylistProfile(body, function(err){
+        services = body.services;
+
+        delete body.services;
+
+        user.addStylistProfile(body, function(err, uId){
 
             if (err){
                 return next(err);
             }
 
-            mailOptions = {
-                name: body.personalInfo.firstName,
-                email: body.email,
-                password: password
-            };
+            services = services.map(function(service){
 
-            mailer.adminCreateStylist(mailOptions);
+                service.stylist = uId;
+                service.approved = true;
 
-            res.status(200).send({success: 'Stylist created successfully'});
+                return service;
+            });
+
+            Services.create(services, function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                mailOptions = {
+                    name: body.personalInfo.firstName,
+                    email: body.email,
+                    password: password
+                };
+
+                mailer.adminCreateStylist(mailOptions);
+
+                res.status(200).send({success: 'Stylist created successfully'});
+
+            });
 
         });
 
