@@ -23,7 +23,11 @@ define([
         initialize: function () {
             var self = this;
 
-            self.collection = new StylistCollection();
+            self.collection = new StylistCollection({ status: 'requested' });
+            self.collection.on('remove', self.reRender, self);
+
+
+
             self.collection.fetch({
                 reset: true,
                 data: { status: 'requested' },
@@ -32,10 +36,7 @@ define([
                     self.render();
                 }
             });
-            //self.collection.on('reset', self.render, self);
-            self.collection.on('remove', function () {
-                console.log('fire event remove')
-            }, this);
+
         },
 
         render: function () {
@@ -59,27 +60,32 @@ define([
             var el = e.target;
             var self = this;
             var checkboxes;
+            var modelId;
+            var models = [];
             var data = {
                 ids: []
             };
 
             if (el.id === 'acceptCurrentBtn') {
-                data.ids.push($(el).closest('tr').attr('data-id'));
+                modelId = $(el).closest('tr').attr('data-id');
+                data.ids.push(modelId);
+                models.push(self.collection.get(modelId));
                 data = JSON.stringify(data);
 
             } else if (el.id === 'acceptSelectedBtn') {
                 checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
 
                 $(checkboxes).each(function( index, element ) {
-                    data.ids.push($(element).closest('tr').attr('data-id'));
+                    modelId = $(element).closest('tr').attr('data-id');
+                    models.push(self.collection.get(modelId));
+                    data.ids.push(modelId);
                 });
 
                 data = JSON.stringify(data);
             }
 
             self.collection.approve(data, function () {
-                self.initialize();
-                console.log('approve')
+                self.collection.remove(models)
             })
         },
 
@@ -87,27 +93,31 @@ define([
             var el = e.target;
             var self = this;
             var checkboxes;
+            var modelId;
+            var models = [];
             var data = {
                 ids: []
             };
 
             if (el.id === 'removeCurrentBtn') {
-                data.ids.push($(el).closest('tr').attr('data-id'));
+                modelId = $(el).closest('tr').attr('data-id');
+                data.ids.push(modelId);
+                models.push(self.collection.get(modelId));
                 data = JSON.stringify(data);
 
             } else if (el.id === 'removeSelectedBtn') {
                 checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
 
                 $(checkboxes).each(function( index, element ) {
-                    data.ids.push($(element).closest('tr').attr('data-id'));
+                    modelId = $(element).closest('tr').attr('data-id');
+                    data.ids.push(modelId);
                 });
 
                 data = JSON.stringify(data);
             }
 
             self.collection.deleteRequest(data, function () {
-                self.initialize();
-                console.log('removed')
+                self.collection.remove(models);
             })
         },
 
@@ -118,6 +128,18 @@ define([
             state
                 ? checkboxes.prop('checked', true)
                 : checkboxes.prop('checked', false);
+        },
+
+        reRender: function () {
+            console.log('fire event remove');
+            var self = this;
+            var $el = self.$el;
+            var users = self.collection.toJSON();
+
+            $el.html('');
+            $el.html(self.mainTemplate({users: users}));
+
+            return this;
         }
 
     });
