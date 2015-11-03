@@ -250,7 +250,7 @@ var AdminHandler = function(db){
          *  Response status: 200
          * {"success": "Stylist created successfully"}
          *
-         * @method getStylist
+         * @method createStylist
          * @instance
          */
 
@@ -271,6 +271,7 @@ var AdminHandler = function(db){
         }
 
         body.password = getEncryptedPass(password);
+        body.approved = true;
 
         user.addStylistProfile(body, function(err){
 
@@ -526,7 +527,7 @@ var AdminHandler = function(db){
          *  Response status: 200
          * {"success": "Service created successfully"}
          *
-         * @method addStylist
+         * @method addService
          * @instance
          */
 
