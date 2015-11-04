@@ -71,25 +71,12 @@ var AdminHandler = function (db) {
             });
     }
 
-    this.getStylistByCriterion = function(criterion, page, sort, limit, callback){
+    this.getStylistByCriterion = function(criterion, page, sortObj, limit, callback){
 
         var resultArray = [];
         var obj;
-        var sortObj;
 
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
-
-        if (sort === 'desc'){
-            sortObj = {
-                'personalInfo.firstName': -1,
-                'personalInfo.lastName': -1
-            }
-        } else {
-            sortObj = {
-                'personalInfo.firstName': 1,
-                'personalInfo.lastName': 1
-            }
-        }
 
         User
             .find(criterion, {
@@ -101,7 +88,7 @@ var AdminHandler = function (db) {
             })
             .sort(sortObj)
             .skip(limit * (page - 1))
-            .limit(CONSTANTS.LIMIT.REQUESTED_STYLISTS)
+            .limit(limit)
             .exec(function(err, resultModel){
                 if (err){
                     return callback(err);
@@ -120,21 +107,23 @@ var AdminHandler = function (db) {
                     resultArray.push(obj);
                 }
 
-                callback(null, resultArray);
+                callback(null, resultArray.reverse());
 
             });
     };
 
-    this.getCountByCriterion = function(req, res, next){
+    function getCountByCriterion(role, status, callback){
 
         var findObj = {
-            role: req.query.role
+            role: role
         };
 
-        if (req.query.role === CONSTANTS.USER_ROLE.STYLIST){
-            if (req.query.status === 'requested'){
+        if (!callback && typeof status === 'function'){
+            callback = status;
+        } else {
+            if (status === 'requested'){
                 findObj.approved = false;
-            } else if (req.query.status === 'approved') {
+            } else if (status === 'approved') {
                 findObj.approved = true;
             }
         }
@@ -143,12 +132,41 @@ var AdminHandler = function (db) {
             .count(findObj, function(err, resultCount){
 
                 if (err){
-                    return next(err);
+                    return callback(err);
                 }
 
-                res.status(200).send({count: resultCount});
+                callback(null, resultCount);
 
             });
+    };
+
+    this.getStylistCount = function(req, res, next){
+
+        var status = req.query.status;
+
+        getCountByCriterion(CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
+
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({count: resultCount});
+
+        });
+    };
+
+    this.getClientCount = function(req, res, next){
+
+
+        getCountByCriterion(CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
+
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({count: resultCount});
+
+        });
     };
 
     this.getStylistList = function(req, res, next){
@@ -191,17 +209,28 @@ var AdminHandler = function (db) {
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var statusRegExp = /^requested$|^all$/;
-        var sortRegExp = /^asc$|^desc$/;
-        var sort = req.query.sort;
+        var sort = req.query.sort || 'name';
+        var order = (req.query.order === '1') ? 1 : -1;
+        var sortObj = {};
+
         var status = req.query.status;
 
         if (!statusRegExp.test(status)) {
             status = 'all';
         }
 
-        if (!sortRegExp.test(sort)){
-            sort = 'desc';
+
+
+        if (sort === 'salon'){
+            sortObj['salonInfo.salonName'] =  order;
+        } else if (sort === 'status'){
+            sortObj['approved'] = order;
+        } else {
+            sortObj['personalInfo.firstName'] = order;
+            sortObj['personalInfo.lastName'] = order;
+
         }
+
 
         var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
 
@@ -209,7 +238,7 @@ var AdminHandler = function (db) {
             criterion.approved = false
         }
 
-        self.getStylistByCriterion(criterion, page, sort, limit, function (err, result) {
+        self.getStylistByCriterion(criterion, page, sortObj, limit, function (err, result) {
 
             if (err) {
                 return next(err);
