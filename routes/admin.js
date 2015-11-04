@@ -31,11 +31,12 @@ module.exports = function(db){
     router.post('/activate/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.activateUsers);
 
     // CRUD Clients
-    router.get('/client', /*sessionHandler.authenticatedUser, sessionHandler.isAdmin,*/ admin.getClientList);
+    router.get('/client', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientList);
     router.get('/client/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientById);
     router.put('/client', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateClient);
     router.post('/client', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.createClient);
-    router.delete('/client', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeClient);
+
+    router.delete('/user/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeUserById);
 
     router.post('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendAppointments);
