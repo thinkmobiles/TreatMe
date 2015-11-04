@@ -774,12 +774,6 @@ var UserHandler = function (app, db) {
                         return next(badRequests.UnconfirmedEmail());
                     }
 
-                    /*if (options.role === CONSTANTS.USER_ROLE.CLIENT){
-                        role = CONSTANTS.USER_ROLE.CLIENT;
-                    } else {
-                        role = CONSTANTS.USER_ROLE.STYLIST;
-                    }*/
-
                     session.register(req, res, userModel._id, false, role);
                 });
         }
