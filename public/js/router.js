@@ -18,6 +18,7 @@ define([
             "newApplications/add"       :  "newApplicationDetails",
             "newApplications/:id"       :  "newApplicationDetails",
             "stylists"                  :  "stylists",
+            "stylists/page/:page"       :  "stylists",
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
             "clients"                   :  "clients",
