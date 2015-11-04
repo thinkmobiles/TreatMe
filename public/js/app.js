@@ -23,13 +23,7 @@ define([
         App.sessionData = new Backbone.Model({
             authorized  : false,
             user        : null,
-            role        : null,
-            company     : null
-        });
-
-        App.Badge = new Backbone.Model({
-            pendingUsers:  0,
-            notifications: 0
+            role        : null
         });
 
         App.Collections = {};
