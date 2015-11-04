@@ -22,6 +22,8 @@ module.exports = function(db){
     router.post('/stylist', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.createStylist);
     router.delete('/stylist', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeStylist);
 
+    router.get('/count', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getCountByCriterion);
+
     router.post('/stylist/approve/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveStylist);
     router.post('/stylist/suspend/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendStylists);
 
