@@ -15,6 +15,7 @@ define([
             "signup"                    :  "signup",
             "dashboard"                 :  "dashboard",
             "newApplications"           :  "newApplications",
+            "newApplications/add"       :  "newApplicationDetails",
             "stylists"                  :  "stylists",
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
@@ -112,6 +113,10 @@ define([
 
         newApplications: function () {
             this.loadWrapperView('newApplications', null, REDIRECT.whenNOTAuthorized);
+        },
+
+        newApplicationDetails: function (id) {
+            this.loadWrapperView('newApplications', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
         stylists: function () {

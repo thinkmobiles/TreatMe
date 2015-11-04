@@ -38,12 +38,13 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
-    function getAllUserAppointments(userId, role, appointmentStatus, callback){
+    function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, sortType, callback){
         var findObj = {};
         var projectionObj;
         var populateArray = [
             {path: 'serviceType', select: 'name'}
         ];
+        var sortObj = {};
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
             findObj.client = userId;
@@ -70,11 +71,45 @@ var UserHandler = function (app, db) {
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
+            if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Service') {
+                return callback(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+            }
+
+            if (sortType !== CONSTANTS.SORT_TYPE.ASC && sortType !== CONSTANTS.SORT_TYPE.DESC) {
+                return callback(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
+            }
+
+            if (sortParam === 'Name' || !sortParam) {
+                sortObj['client.personalInfo.firstName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+                sortObj['client.personalInfo.lastName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            }
+
+            if (sortParam === 'Service') {
+                sortObj['serviceType.name'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            }
+
+            projectionObj = {
+                __v: 0,
+                clientLoc: 0
+            };
+
             if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.PENDING){
+                if (sortParam === 'Date') {
+                    sortObj.requestDate = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+                }
+
+                projectionObj.bookingDate = 0;
+
                 findObj.status = {$in : [CONSTANTS.STATUSES.APPOINTMENT.CREATED, CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED]}
             }
 
             if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.BOOKED){
+                if (sortParam === 'Date') {
+                    sortObj.bookingDate = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+                }
+
+                projectionObj.requestDate = 0;
+
                 findObj.status = {$in : [
                     CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
                     CONSTANTS.STATUSES.APPOINTMENT.BEGINS,
@@ -83,12 +118,6 @@ var UserHandler = function (app, db) {
                     CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_STYLIST
                 ]}
             }
-
-            projectionObj = {
-                __v: 0,
-                clientLoc: 0,
-                requestDate: 0
-            };
 
             populateArray.push(
                 {path: 'client', select: 'personalInfo.firstName personalInfo.lastName'},
@@ -99,7 +128,9 @@ var UserHandler = function (app, db) {
         Appointment
             .find(findObj, projectionObj)
             .populate(populateArray)
-            .sort({bookingDate: 1})
+            .sort(sortObj)
+            .skip(limit * (page -1))
+            .limit(limit)
             .exec(function(err, appointmentModelsArray){
                 var avatarName;
 
@@ -740,17 +771,128 @@ var UserHandler = function (app, db) {
                         return next(badRequests.UnconfirmedEmail());
                     }
 
-                    /*if (options.role === CONSTANTS.USER_ROLE.CLIENT){
-                        role = CONSTANTS.USER_ROLE.CLIENT;
-                    } else {
-                        role = CONSTANTS.USER_ROLE.STYLIST;
-                    }*/
-
                     session.register(req, res, userModel._id, false, role);
                 });
         }
     };
 
+    this.updateUserProfile = function (req, res, next) {
+
+        var role = req.session.role;
+        var uId;
+        var body = req.body;
+        var personalInfo;
+        var salonInfo = {};
+        var userObj;
+
+        if (role === CONSTANTS.USER_ROLE.ADMIN){
+            if (!req.params.userId){
+                return next(badRequests.NotEnParams({reqParams: 'userId'}));
+            }
+
+            uId = req.params.userId;
+
+        } else {
+            uId = req.session.uId;
+        }
+
+        User
+            .findOne({_id: uId}, {personalInfo: 1, salonInfo: 1, role: 1}, function (err, resultModel) {
+
+                if (err) {
+                    return next(err);
+                }
+
+                if (!resultModel) {
+                    return next(badRequests.DatabaseError());
+                }
+
+                userObj = resultModel.toJSON();
+
+                personalInfo = userObj.personalInfo;
+
+                if (body.personalInfo.firstName) {
+                    personalInfo.firstName = body.personalInfo.firstName;
+                }
+
+                if (body.personalInfo.lastName) {
+                    personalInfo.lastName = body.personalInfo.lastName;
+                }
+
+                if (body.personalInfo.profession && (resultModel.role === CONSTANTS.USER_ROLE.STYLIST)) {
+                    personalInfo.profession = body.personalInfo.profession;
+                }
+
+                if (body.personalInfo.phone) {
+                    personalInfo.phone = body.personalInfo.phone;
+                }
+
+                if (body.personalInfo.facebookURL && (resultModel.role === CONSTANTS.USER_ROLE.STYLIST)) {
+                    personalInfo.facebookURL = body.personalInfo.facebookURL;
+                }
+
+                if (resultModel.role = CONSTANTS.USER_ROLE.STYLIST) {
+
+                    salonInfo = userObj.salonInfo;
+
+                    if (body.salonInfo.salonName){
+                        salonInfo.salonName = body.salonInfo.salonName;
+                    }
+
+                    if (body.salonInfo.yourBusinessRole){
+                        salonInfo.yourBusinessRole = body.salonInfo.yourBusinessRole;
+                    }
+
+                    if (body.salonInfo.phone){
+                        salonInfo.phone = body.salonInfo.phone;
+                    }
+
+                    if (body.salonInfo.email){
+                        salonInfo.email = body.salonInfo.email;
+                    }
+
+                    if (body.salonInfo.address){
+                        salonInfo.address = body.salonInfo.address;
+                    }
+
+                    if (body.salonInfo.state){
+                        salonInfo.state = body.salonInfo.state;
+                    }
+
+                    if (body.salonInfo.zipCode){
+                        salonInfo.zipCode = body.salonInfo.zipCode;
+                    }
+
+                    if (body.salonInfo.phone){
+                        salonInfo.phone = body.salonInfo.phone;
+                    }
+
+                    if (body.salonInfo.licenseNumber){
+                        salonInfo.licenseNumber = body.salonInfo.licenseNumber;
+                    }
+
+                    if (body.salonInfo.city){
+                        salonInfo.city = body.salonInfo.city;
+                    }
+
+                    if (body.salonInfo.country){
+                        salonInfo.country = body.salonInfo.country;
+                    }
+                }
+
+                resultModel
+                    .update({personalInfo: personalInfo, salonInfo: salonInfo}, function(err){
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: resultModel.role + 'updated successfully'});
+
+                    });
+
+            });
+    };
 
     this.updatePersonalInfo = function(req, res, next){
 
@@ -801,10 +943,6 @@ var UserHandler = function (app, db) {
         var role = req.session.role;
         var body = req.body;
         var personalInfo;
-
-        if (!body){
-            return next(badRequests.NotEnParams());
-        }
 
 
         User
@@ -1270,6 +1408,10 @@ var UserHandler = function (app, db) {
 
     this.getAppointments = function(req, res, next){
         var appointmentId = req.query.id;
+        var sortParam = req.query.sort;
+        var sortType = req.query.sortType || 'DESC';
+        var page = (req.query.page >= 1) ? req.query.page : 1;
+        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_APPOINTMENTS;
         var appointmentStatus;
         var userId = req.session.uId;
 
@@ -1290,7 +1432,7 @@ var UserHandler = function (app, db) {
                 }
             }
 
-            getAllUserAppointments(userId, req.session.role, appointmentStatus, function(err, result){
+            getAllUserAppointments(userId, req.session.role, appointmentStatus, page, limit, sortParam, sortType, function(err, result){
                 if (err){
                     return next(err);
                 }
@@ -1439,9 +1581,8 @@ var UserHandler = function (app, db) {
                     }
 
                     createObj = {
-                        name: name,
                         stylist: ObjectId(uId),
-                        serviceId: serviceId
+                        serviceId: ObjectId(serviceId)
                     };
 
                     serviceModel = new Services(createObj);

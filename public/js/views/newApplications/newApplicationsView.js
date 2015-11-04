@@ -10,28 +10,33 @@ define([
 
     View = Backbone.View.extend({
 
-        el : '#wrapper',
+        el: '#wrapper',
 
-        mainTemplate : _.template(MainTemplate),
+        mainTemplate: _.template(MainTemplate),
 
         events: {
-            "click #acceptCurrentBtn": "acceptStylist"
+            "click #acceptCurrentBtn, #acceptSelectedBtn": "acceptStylist",
+            "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest",
+            "click .checkAll": "checkAll"
         },
 
         initialize: function () {
             var self = this;
 
-            self.collection = [];
+            self.collection = new StylistCollection({ status: 'requested' });
+            self.collection.on('remove', self.reRender, self);
 
-            $.ajax({
-                type: 'GET',
-                url: '/admin/stylist?status=requested',
-                success: function (data) {
-                    self.collection = new StylistCollection(data);
-                    self.render(); //TODO: use collection on reset !
-                },
-                error  : self.handleErrorResponse
+
+
+            self.collection.fetch({
+                reset: true,
+                data: { status: 'requested' },
+                success: function (coll) {
+                    self.collection = coll;
+                    self.render();
+                }
             });
+
         },
 
         render: function () {
@@ -44,7 +49,7 @@ define([
             return this;
         },
 
-        afterRender: function (){
+        afterRender: function () {
             var navContainer = $('.sidebar-menu');
 
             navContainer.find('.active').removeClass('active');
@@ -54,29 +59,87 @@ define([
         acceptStylist: function (e) {
             var el = e.target;
             var self = this;
+            var checkboxes;
+            var modelId;
+            var models = [];
             var data = {
                 ids: []
             };
 
             if (el.id === 'acceptCurrentBtn') {
-                data.ids.push($(el).closest('tr').attr('data-id'));
+                modelId = $(el).closest('tr').attr('data-id');
+                data.ids.push(modelId);
+                models.push(self.collection.get(modelId));
                 data = JSON.stringify(data);
 
-                $.ajax({
-                    type: 'POST',
-                    dataType : 'json',
-                    contentType: 'application/json',
-                    url: '/admin/stylist/approve',
-                    data: data,
-                    success: function () {
-                        alert('Approve');
-                        self.initialize();
+            } else if (el.id === 'acceptSelectedBtn') {
+                checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
 
-                    },
-                    error  : self.handleErrorResponse
-                })
+                $(checkboxes).each(function( index, element ) {
+                    modelId = $(element).closest('tr').attr('data-id');
+                    models.push(self.collection.get(modelId));
+                    data.ids.push(modelId);
+                });
+
+                data = JSON.stringify(data);
             }
 
+            self.collection.approve(data, function () {
+                self.collection.remove(models)
+            })
+        },
+
+        deleteRequest: function (e) {
+            var el = e.target;
+            var self = this;
+            var checkboxes;
+            var modelId;
+            var models = [];
+            var data = {
+                ids: []
+            };
+
+            if (el.id === 'removeCurrentBtn') {
+                modelId = $(el).closest('tr').attr('data-id');
+                data.ids.push(modelId);
+                models.push(self.collection.get(modelId));
+                data = JSON.stringify(data);
+
+            } else if (el.id === 'removeSelectedBtn') {
+                checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
+
+                $(checkboxes).each(function( index, element ) {
+                    modelId = $(element).closest('tr').attr('data-id');
+                    data.ids.push(modelId);
+                });
+
+                data = JSON.stringify(data);
+            }
+
+            self.collection.deleteRequest(data, function () {
+                self.collection.remove(models);
+            })
+        },
+
+        checkAll: function () {
+            var state = $('.checkAll').prop('checked');
+            var checkboxes = $(':checkbox:not(\'.checkAll\')');
+
+            state
+                ? checkboxes.prop('checked', true)
+                : checkboxes.prop('checked', false);
+        },
+
+        reRender: function () {
+            console.log('fire event remove');
+            var self = this;
+            var $el = self.$el;
+            var users = self.collection.toJSON();
+
+            $el.html('');
+            $el.html(self.mainTemplate({users: users}));
+
+            return this;
         }
 
     });
