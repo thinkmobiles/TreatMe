@@ -44,6 +44,7 @@ var UserHandler = function (app, db) {
         var populateArray = [
             {path: 'serviceType', select: 'name'}
         ];
+        var sortObj = {};
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
             findObj.client = userId;
@@ -70,25 +71,21 @@ var UserHandler = function (app, db) {
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
-            if (sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Service') {
-                return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+            if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Service') {
+                return callback(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
             }
 
             if (sortType !== CONSTANTS.SORT_TYPE.ASC && sortType !== CONSTANTS.SORT_TYPE.DESC) {
-                return next(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
+                return callback(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
             }
 
-            if (sortObj === 'Name') {
-                sortObj.client = {};
-                sortObj.client.personalInfo = {};
-
-                sortObj.client.personalInfo.firstName = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            if (sortParam === 'Name' || !sortParam) {
+                sortObj['client.personalInfo.firstName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+                sortObj['client.personalInfo.lastName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
             }
 
-            if (sortObj === 'Service') {
-                sortObj.serviceType = {};
-
-                sortObj.serviceType.name = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            if (sortParam === 'Service') {
+                sortObj['serviceType.name'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
             }
 
             projectionObj = {
@@ -97,7 +94,7 @@ var UserHandler = function (app, db) {
             };
 
             if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.PENDING){
-                if (sortObj === 'Date') {
+                if (sortParam === 'Date') {
                     sortObj.requestDate = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
                 }
 
@@ -107,7 +104,7 @@ var UserHandler = function (app, db) {
             }
 
             if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.BOOKED){
-                if (sortObj === 'Date') {
+                if (sortParam === 'Date') {
                     sortObj.bookingDate = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
                 }
 
@@ -1410,7 +1407,7 @@ var UserHandler = function (app, db) {
 
     this.getAppointments = function(req, res, next){
         var appointmentId = req.query.id;
-        var sortParam = req.query.sort || 'Date';
+        var sortParam = req.query.sort;
         var sortType = req.query.sortType || 'DESC';
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_APPOINTMENTS;

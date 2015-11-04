@@ -1063,13 +1063,13 @@ var AdminHandler = function (db) {
     };
 
     this.getClientPackages = function (req, res, next) {
-        var sortParam = req.query.sort || 'Date';
+        var sortParam = req.query.sort;
         var sortType = req.query.sortType || 'DESC';
         var page = (req.query.page >= 1) ? req.query.page : 1;
-        var limit = (req.query.page >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
+        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
 
-        if (sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Package') {
+        if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Package') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
@@ -1077,21 +1077,17 @@ var AdminHandler = function (db) {
             return next(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
         }
 
-        if (sortObj === 'Date') {
+        if (sortParam === 'Date' || !sortParam) {
             sortObj.purchaseDate = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
         }
 
-        if (sortObj === 'Name') {
-            sortObj.client = {};
-            sortObj.client.personalInfo = {};
-
-            sortObj.client.personalInfo.firstName = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+        if (sortParam === 'Name') {
+            sortObj['client.personalInfo.firstName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj['client.personalInfo.lastName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
         }
 
-        if (sortObj === 'Package') {
-            sortObj.subscriptionType = {};
-
-            sortObj.subscriptionType.name = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+        if (sortParam === 'Package') {
+            sortObj['subscriptionType.name'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
         }
 
         Subscription
@@ -1245,6 +1241,68 @@ var AdminHandler = function (db) {
                         res.status(200).send({success: 'Subscription type was removed successfully'});
                     });
             });
+    };
+
+    this.getClientList = function(req, res, next){
+        var sortParam = req.query.sort;
+        var sortType = req.query.sortType || 'DESC';
+        var page = (req.query.page >= 1) ? req.query.page : 1;
+        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
+        var sortObj = {};
+
+        if (sortParam && sortParam !== 'Name' && sortParam !== 'Email') {
+            return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+        }
+
+        if (sortType !== CONSTANTS.SORT_TYPE.ASC && sortType !== CONSTANTS.SORT_TYPE.DESC) {
+            return next(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
+        }
+
+        if (sortParam === 'Name' || !sortParam) {
+            sortObj['personalInfo.firstName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj['personalInfo.lastName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+        }
+
+        if (sortParam === 'Email') {
+            sortObj.email = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+        }
+
+        User
+            .find({role: CONSTANTS.USER_ROLE.CLIENT}, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
+            .sort(sortObj)
+            .skip(limit * (page - 1))
+            .limit(limit)
+            .exec(function(err, clientModels){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(clientModels);
+            });
+    };
+
+    this.getClientById = function(req, res, next){
+        res.status(400).send('Not implemented yet');
+    };
+
+    this.updateClient = function(req, res, next){
+        res.status(400).send('Not implemented yet');
+    };
+
+    this.createClient = function(req, res, next){
+        res.status(400).send('Not implemented yet');
+    };
+
+    this.removeClient = function(req, res, next){
+        res.status(400).send('Not implemented yet');
+    };
+
+    this.suspendClient = function(req, res, next){
+        res.status(400).send('Not implemented yet');
+    };
+
+    this.activateClient = function(req, res, next){
+        res.status(400).send('Not implemented yet');
     };
 
 };
