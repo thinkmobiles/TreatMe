@@ -1145,7 +1145,6 @@ var UserHandler = function (app, db) {
 
     this.uploadAvatar = function(req, res, next){
 
-
         var body = req.body;
         var userId = req.session.uId;
         var imageName = image.createImageName();
