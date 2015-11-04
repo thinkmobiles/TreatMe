@@ -29,5 +29,14 @@ module.exports = function(db){
     router.put('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendAppointments);
     router.delete('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeAppointments);
 
+    // CRUD Subscriptions
+    router.get('/subscriptionType', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getSubscriptionType);
+    router.post('/subscriptionType', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.addSubscriptionType);
+    router.put('/subscriptionType/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateSubscriptionType);
+    router.delete('/subscriptionType/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeSubscriptionType);
+
+    router.get('/subscriptions', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientPackages);
+    router.delete('/subscriptions', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeSubscriptions);
+
     return router;
 };
