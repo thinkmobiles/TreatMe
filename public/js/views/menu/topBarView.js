@@ -69,10 +69,16 @@ define([
             var collection = App.Breadcrumbs;
             var container = this.$el.find('#breadcrumbContainer');
             var items = collection.toJSON();
-            var links = _.map(items, function ( item ) {
-                return '<a href="' + item.path + '" class="breadcrumb">' + item.name + '</a>';
+            var lastIndex = items.length - 1;
+            var links = _.map(items, function ( item, i ) {
+                var class_ = 'breadcrumb';
+
+                if (i = lastIndex) {
+                    class_ += ' active';
+                }
+
+                return '<a href="' + item.path + '" class="' + class_ + '">' + item.name + '</a>';
             });
-            //var htmlContent = links.join('<span class="breadcrumbSeparator">&gt;</span>');
             var htmlContent = links.join('<span class="breadcrumbSeparator"> </span>');
 
             container.html(htmlContent);
