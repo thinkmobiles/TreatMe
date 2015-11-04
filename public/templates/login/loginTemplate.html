@@ -1,27 +1,28 @@
 <div id="loginDiv" class="welcome-pages">
     <!--title-->
     <div class="loginTitle">
-        <a href="#"><img src="../../images/logo.png" alt=""/></a>
-        <span>treat.me</span>
+        <a href="#"><img src="../../images/logo-min.png" alt=""/></a>
     </div>
     <form id="logInForm" class="welcome-form">
         <h1>Login</h1>
         <div class="form-body">
 
             <!--Email-->
-            <div class="form-field">
-                <input type="email" id="loginEmail" class="<%=errorObject.email ? 'error_input' : ''%>" placeholder="Email">
-                <%if (errorObject.email){%>
+            <div class="inputWrap">
+                <div class="form-field">
+                    <input type="email" id="loginEmail" class="<%=errorObject.email ? 'error_input' : ''%>" placeholder="Email">
+                    <%if (errorObject.email){%>
                     <span class="error_msg"><%=errorObject.email%></span>
-                <%}%>
-            </div>
+                    <%}%>
+                </div>
 
-            <!--Password-->
-            <div class="form-field">
-                <input type="password" id="loginPass" class="<%=errorObject.password ? 'error_input' : ''%>" placeholder="Password">
-                <%if (errorObject.password){%>
+                <!--Password-->
+                <div class="form-field">
+                    <input type="password" id="loginPass" class="<%=errorObject.password ? 'error_input' : ''%>" placeholder="Password">
+                    <%if (errorObject.password){%>
                     <span class="error_msg"><%=errorObject.password%></span>
-                <%}%>
+                    <%}%>
+                </div>
             </div>
 
             <!--submit-->

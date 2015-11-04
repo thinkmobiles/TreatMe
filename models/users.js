@@ -17,7 +17,12 @@ module.exports = function (db) {
         approved: {type: Boolean, default: false},
         suspend: {
             isSuspend: {type: Boolean,  default: false},
-            from: {type: Date, default: Date.now}
+            history: [
+                {
+                    from: {type: Date, default: Date.now},
+                    reason: {type: String, default: ''}
+                }
+            ]
         },
         role: {type: String, match: /^Stylist$|^Client$|^Admin$/},
         personalInfo: {
