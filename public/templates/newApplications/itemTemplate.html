@@ -2,7 +2,7 @@
     <div class="userNameContainer">
         <span>
         <%if (user._id) { %>
-            <%= user.firstName + ' ' + user.lastName%>
+            <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%>
         <% } else { %>
             Add Application
         <% } %>
@@ -11,13 +11,13 @@
 
     <div class="avatar"></div>
 
-    <input type="text" class="firstName" name="firstName" placeholder="First Name"/><br/>
-    <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><br/>
-    <input type="text" class="role" name="role" placeholder="Profession"/><br/>
-    <input type="text" name="salonName" class="salonName" placeholder="Salon Name"/><br/>
-    <input type="text" name="businessRole" class="businessRole" placeholder="Business Role"/><br/>
-    <input type="text" class="phone" name="phone" placeholder="Phone Number"/><br/>
-    <input type="text" class="email" name="email" placeholder="Email"/><br/>
+    <input type="text" class="firstName" name="firstName" placeholder="First Name" value="<%= (user._id) ? user.personalInfo.firstName : ''%>"/><br/>
+    <input type="text" class="lastName" name="lastName" placeholder="Last Name"  value="<%= (user._id) ? user.personalInfo.lastName : ''%>"/><br/>
+    <input type="text" class="role" name="role" placeholder="Profession"  value="<%= (user._id) ? user.role : ''%>"/><br/>
+    <input type="text" name="salonName" class="salonName" placeholder="Salon Name" /><br/>
+    <input type="text" name="businessRole" class="businessRole" placeholder="Business Role"  value="<%= (user._id) ? user.salonInfo.businessRole : ''%>"/><br/>
+    <input type="text" class="phone" name="phone" placeholder="Phone Number" value="<%= (user._id) ? user.personalInfo.phone : ''%>"/><br/>
+    <input type="text" class="email" name="email" placeholder="Email" value="<%= (user._id) ? user.email : ''%>"/><br/>
 
     <!--<input type="text" name="salonNumber" class="salonNumber" placeholder="Salon Number"/><br/>-->
     <!--<input type="text" name="salonEmail" class="salonEmail" placeholder="Salon Email"/><br/>-->
