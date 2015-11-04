@@ -1536,11 +1536,17 @@ var AdminHandler = function (db) {
 
                         avatarName = userModel.get('personalInfo.avatar');
 
-                        if (avatarName){
-                            image.deleteImage(avatarName, CONSTANTS.BUCKET.IMAGES, cb)
-                        } else {
-                            cb();
-                        }
+                        userModel.remove(function(err){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (avatarName){
+                                image.deleteImage(avatarName, CONSTANTS.BUCKET.IMAGES, cb)
+                            } else {
+                                cb();
+                            }
+                        });
                     });
             },
 

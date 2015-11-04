@@ -38,7 +38,7 @@ module.exports = function(db){
     router.put('/client', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateClient);
     router.post('/client', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.createClient);
 
-    router.delete('/user/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeUserById);
+    router.delete('/user/:id', /*sessionHandler.authenticatedUser, sessionHandler.isAdmin,*/ admin.removeUserById);
 
     router.post('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendAppointments);
