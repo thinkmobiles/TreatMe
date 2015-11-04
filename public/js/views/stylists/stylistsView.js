@@ -23,8 +23,6 @@ define([
 
             self.collection = collection;
             collection.on('reset', function () {
-                console.log('>>> reset');
-                console.log(collection);
                 self.render();
             });
         },
@@ -33,8 +31,6 @@ define([
             var self = this;
             var $el = self.$el;
             var users = self.collection.toJSON();
-
-            console.log(users);
 
             $el.html(self.mainTemplate({users: users}));
 
