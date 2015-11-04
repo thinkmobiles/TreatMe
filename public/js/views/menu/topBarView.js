@@ -73,7 +73,7 @@ define([
             var links = _.map(items, function ( item, i ) {
                 var class_ = 'breadcrumb';
 
-                if (i = lastIndex) {
+                if (i === lastIndex) {
                     class_ += ' active';
                 }
 
