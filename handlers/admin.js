@@ -69,25 +69,12 @@ var AdminHandler = function (db) {
             });
     }
 
-    this.getStylistByCriterion = function(criterion, page, sort, limit, callback){
+    this.getStylistByCriterion = function(criterion, page, sortObj, limit, callback){
 
         var resultArray = [];
         var obj;
-        var sortObj;
 
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
-
-        if (sort === 'desc'){
-            sortObj = {
-                'personalInfo.firstName': -1,
-                'personalInfo.lastName': -1
-            }
-        } else {
-            sortObj = {
-                'personalInfo.firstName': 1,
-                'personalInfo.lastName': 1
-            }
-        }
 
         User
             .find(criterion, {
@@ -221,7 +208,7 @@ var AdminHandler = function (db) {
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var statusRegExp = /^requested$|^all$/;
         var sort = req.query.sort || 'name';
-        var order = (req.query.order = '1') ? 1 : -1;
+        var order = (req.query.order === '1') ? 1 : -1;
         var sortObj = {};
 
         var status = req.query.status;
@@ -230,16 +217,17 @@ var AdminHandler = function (db) {
             status = 'all';
         }
 
-        if (sort === 'name'){
-            sortObj.personalInfo.firstName = order;
-            sortObj.personalInfo.lastName = order;
-        } else if (sort === 'salon'){
-            sortObj.salonInfo.salonName = order;
+
+
+        if (sort === 'salon'){
+            sortObj['salonInfo.salonName'] =  order;
         } else if (sort === 'status'){
-            sortObj.approved = order
+            sortObj['approved'] = order;
+        } else {
+            sortObj['personalInfo.firstName'] = order;
+            sortObj['personalInfo.lastName'] = order;
+
         }
-
-
 
 
         var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
