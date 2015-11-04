@@ -366,6 +366,7 @@ th {
 }
 a {
   text-decoration: none;
+  color: inherit;
 }
 a:hover,
 a:focus {
@@ -385,6 +386,7 @@ body {
   width: 100%;
   height: 100%;
   font-family: "Lato";
+  color: #555;
 }
 /*------login--*/
 .welcome-pages {
@@ -444,10 +446,9 @@ body {
 /*---top section-----*/
 .top {
   height: 70px;
-  padding: 30px 0;
-}
-.top button {
+  padding: 30px 0 0 30px;
   text-transform: uppercase;
+  font-weight: 700;
 }
 .logoutBtn {
   float: right;
@@ -480,6 +481,15 @@ body {
   position: absolute;
   right: 50px;
   height: 44px;
+}
+/*   breadcrunbs */
+#breadcrumbContainer {
+  display: inline-block;
+}
+#breadcrumbContainer .breadcrumb {
+  padding-bottom: 10px;
+  border-bottom: 3px solid #2175cc;
+  margin-right: 18px;
 }
 /*-----Nav-------*/
 .leftMenu {
