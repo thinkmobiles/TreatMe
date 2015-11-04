@@ -387,6 +387,7 @@ body {
   height: 100%;
   font-family: "Lato";
   color: #555;
+  text-rendering: geometricPrecision;
 }
 /*------login--*/
 .welcome-pages {
@@ -463,6 +464,7 @@ body {
 }
 .searchBlock {
   padding-left: 33px;
+  margin-top: 30px;
 }
 .searchBlock input.search {
   width: 99%;
@@ -489,6 +491,7 @@ body {
 #breadcrumbContainer .breadcrumb {
   padding-bottom: 10px;
   margin-right: 18px;
+  display: inline-block;
 }
 #breadcrumbContainer .breadcrumb.active {
   border-bottom: 3px solid #2175cc;
@@ -626,5 +629,6 @@ input[type='checkbox']:after {
   z-index: 2;
 }
 input[type=checkbox]:checked:after {
-  background: transparent url("../images/checkbox.png") no-repeat;
+  background: #ffffff url("../images/checkbox.png") no-repeat;
+  border: none;
 }

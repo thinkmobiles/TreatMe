@@ -15,6 +15,8 @@ body{
   height: 100%;
   font-family: "Lato";
   color: #555;
+  text-rendering: geometricPrecision;
+
 }
 /*------login--*/
 .welcome-pages{
@@ -91,6 +93,7 @@ body{
 }
 .searchBlock{
   padding-left: 33px;
+  margin-top: 30px;
   input.search{
     width: 99%;
     height: 44px;
@@ -108,7 +111,6 @@ body{
     position: absolute;
     right: 50px;
     height: 44px;
-
   }
 }
 /*   breadcrunbs */
@@ -117,6 +119,7 @@ body{
   .breadcrumb{
     padding-bottom: 10px;
     margin-right: 18px;
+    display: inline-block;
     &.active{
       border-bottom: 3px solid @mainColor;
     }
@@ -259,7 +262,8 @@ a.addApp {
   }
   input[type=checkbox] {
     &:checked:after {
-      .i('checkbox.png', transparent);
+      .i('checkbox.png', #fff);
+      border: none;
     }
   }
 
