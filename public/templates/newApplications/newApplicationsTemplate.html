@@ -9,7 +9,7 @@
         <table class="table">
             <thead>
             <tr>
-                <th><input type="checkbox" class="checkAll"></th>
+                <th><div class="checkBlock"><input type="checkbox" class="checkAll" id="checkAll"></div></th>
                 <th>Date</th>
                 <th>Stylist Name</th>
                 <th>Salon Name</th>
@@ -20,7 +20,7 @@
             <tbody>
                 <% _.forEach(users, function (user) {%>
                 <tr data-id="<%= user._id%>">
-                    <td><input type="checkbox"></td>
+                    <td><div class="checkBlock"><input type="checkbox" class="check"></div></td>
                     <td><%= new Date(user.createdAt).getDate() + '/' + new Date(user.createdAt).getMonth() + '/' + String.prototype.slice.call(new Date(user.createdAt).getFullYear(),2,4) %></td>
                     <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
                     <td><%= user.salonInfo.salonName %></td>
