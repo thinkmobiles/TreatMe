@@ -1,13 +1,12 @@
 'use strict';
 
 define([
+    'collections/stylistCollection',
     'text!templates/stylists/stylistsTemplate.html'
 
-], function (MainTemplate) {
+], function (StylistCollection, MainTemplate) {
 
-    var View;
-
-    View = Backbone.View.extend({
+    var View = Backbone.View.extend({
 
         el : '#wrapper',
 
@@ -17,14 +16,27 @@ define([
         },
 
         initialize: function () {
-            this.render();
+            var collection = new StylistCollection();
+            var self = this;
+
+            App.Breadcrumbs.reset([{name: 'Stylist List', path: '#stylists'}]);
+
+            self.collection = collection;
+            collection.on('reset', function () {
+                console.log('>>> reset');
+                console.log(collection);
+                self.render();
+            });
         },
 
         render: function () {
             var self = this;
             var $el = self.$el;
+            var users = self.collection.toJSON();
 
-            $el.html(self.mainTemplate());
+            console.log(users);
+
+            $el.html(self.mainTemplate({users: users}));
 
             return this;
         },
