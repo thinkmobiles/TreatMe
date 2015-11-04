@@ -488,8 +488,10 @@ body {
 }
 #breadcrumbContainer .breadcrumb {
   padding-bottom: 10px;
-  border-bottom: 3px solid #2175cc;
   margin-right: 18px;
+}
+#breadcrumbContainer .breadcrumb.active {
+  border-bottom: 3px solid #2175cc;
 }
 /*-----Nav-------*/
 .leftMenu {
@@ -607,3 +609,22 @@ a.addApp {
   text-transform: uppercase;
 }
 /*---------*/
+/*--checkbox--*/
+input[type='checkbox'] {
+  position: relative;
+}
+input[type='checkbox']:after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  top: 4px;
+  left: 4px;
+  border: 1px solid #e0e0e0;
+  display: block;
+  background-color: #fff;
+  z-index: 2;
+}
+input[type=checkbox]:checked:after {
+  background: transparent url("../images/checkbox.png") no-repeat;
+}

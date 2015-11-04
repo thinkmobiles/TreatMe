@@ -116,9 +116,12 @@ body{
   display: inline-block;
   .breadcrumb{
     padding-bottom: 10px;
-    border-bottom: 3px solid @mainColor;
     margin-right: 18px;
+    &.active{
+      border-bottom: 3px solid @mainColor;
+    }
   }
+
 }
 
 /*-----Nav-------*/
@@ -238,4 +241,26 @@ a.addApp {
   text-transform: uppercase;
 }
 /*---------*/
+/*--checkbox--*/
+  input[type='checkbox'] {
+    position: relative;
+    &:after {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      top: 4px;
+      left: 4px;
+      border: 1px solid @grey;
+      display: block;
+      background-color: #fff;
+      z-index: 2;
+    }
+  }
+  input[type=checkbox] {
+    &:checked:after {
+      .i('checkbox.png', transparent);
+    }
+  }
+
 
