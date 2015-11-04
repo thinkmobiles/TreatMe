@@ -16,21 +16,34 @@ define([
         },
 
         initialize: function (options) {
+            var self = this;
             var userId = (options && options.id) ? options.id: null;
+            var model;
 
             if (!userId) {
                 this.model = new StylistModel();
                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/add'}]);
-                return this.render();
+                this.render();
+            } else {
+                App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/' + userId}]);
+                model = new StylistModel({_id: userId});
+                model.fetch({
+                    success: function (model) {
+                        self.model = model;
+                        self.render();
+                    },
+                    error: self.handleModelError
+                });
             }
-            console.log('Need Fetch ...'); //TODO: ...
+
         },
 
         render: function () {
             var self = this;
             var $el = self.$el;
-            var user = {}; //new user
+            var user = self.model.toJSON();
 
+            console.log(user);
             $el.html(self.mainTemplate({user: user}));
 
             return this;
@@ -40,7 +53,7 @@ define([
             var navContainer = $('.sidebar-menu');
 
             navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_stylists').addClass('active')
+            navContainer.find('#nav_new_applications').addClass('active')
         },
 
         prepareSaveData: function (callback) {

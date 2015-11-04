@@ -95,7 +95,7 @@ var AdminHandler = function (db) {
                 'personalInfo.lastName': 1,
                 'salonInfo': 1,
                 'createdAt': 1,
-                approved: 1
+                'approved': 1
             })
             .sort(sortObj)
             .skip(limit * (page - 1))
@@ -540,7 +540,7 @@ var AdminHandler = function (db) {
         });
     };
 
-    this.suspendStylists = function (req, res, next) {
+    this.suspendUsers = function (req, res, next) {
 
         /**
          * __Type__ __`POST`__
@@ -549,9 +549,9 @@ var AdminHandler = function (db) {
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/admin/stylist/suspend`__
+         * __URL: `/admin/suspend`__
          *
-         * This __method__ allows suspend stylist by _Admin_
+         * This __method__ allows suspend users by _Admin_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/admin/stylist/suspend
@@ -564,9 +564,9 @@ var AdminHandler = function (db) {
          *
          *  Response status: 200
          *
-         * {"success": "Stylists suspended successfully"}
+         * {"success": "Users suspended successfully"}
          *
-         * @method suspendStylist
+         * @method suspendUsers
          * @instance
          */
 
@@ -580,7 +580,72 @@ var AdminHandler = function (db) {
         ids = body.ids.toObjectId();
 
         User
-            .update({_id: {$in: ids}, role: CONSTANTS.USER_ROLE.STYLIST}, {$set: {suspend: {isSuspend: true, from: Date.now()}}}, {multi: true})
+            .update({_id: {$in: ids}},
+            {
+                $set: {
+                    suspend: {
+                        isSuspend: true,
+                        history: {
+                            $push: {
+                                from: Date.now(),
+                                reason: 'Suspended by admin'
+                            }
+                        }
+                    }
+                }
+            }, {multi: true})
+            .exec(function (err) {
+
+                if (err) {
+                    return next(err);
+                }
+
+
+                res.status(200).send({success: 'Users suspended successfully'});
+            });
+    };
+
+    this.activateUsers = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/activate`__
+         *
+         * This __method__ allows activate users by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/stylist/suspend
+         *
+         * {
+         *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc385]
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Users activated successfully"}
+         *
+         * @method activateUsers
+         * @instance
+         */
+
+        var body = req.body;
+        var ids;
+
+        if (!body.ids) {
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        }
+
+        ids = body.ids.toObjectId();
+
+        User
+            .update({_id: {$in: ids}}, {$set: {suspend: {isSuspend: false}}}, {multi: true})
             .exec(function(err){
 
                 if (err) {
@@ -588,7 +653,7 @@ var AdminHandler = function (db) {
                 }
 
 
-                res.status(200).send({success: 'Stylists suspended successfully'});
+                res.status(200).send({success: 'Users activated successfully'});
             });
     };
 
@@ -961,7 +1026,7 @@ var AdminHandler = function (db) {
         arrayOfId = arrayOfId.toObjectId();
 
         Appointment
-            .update({_id: {$in: arrayOfId}}, {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}, function (err) {
+            .update({_id: {$in: arrayOfId}}, {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}, {multi: true}, function (err) {
                 if (err) {
                     return next(err);
                 }
@@ -1105,7 +1170,7 @@ var AdminHandler = function (db) {
 
     this.getClientPackages = function (req, res, next) {
         var sortParam = req.query.sort;
-        var sortType = req.query.sortType || 'DESC';
+        var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
@@ -1114,21 +1179,17 @@ var AdminHandler = function (db) {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortType !== CONSTANTS.SORT_TYPE.ASC && sortType !== CONSTANTS.SORT_TYPE.DESC) {
-            return next(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
-        }
-
         if (sortParam === 'Date' || !sortParam) {
-            sortObj.purchaseDate = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj.purchaseDate = order;
         }
 
         if (sortParam === 'Name') {
-            sortObj['client.personalInfo.firstName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
-            sortObj['client.personalInfo.lastName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj['client.personalInfo.firstName'] = order;
+            sortObj['client.personalInfo.lastName'] = order;
         }
 
         if (sortParam === 'Package') {
-            sortObj['subscriptionType.name'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj['subscriptionType.name'] = order;
         }
 
         Subscription
@@ -1286,7 +1347,7 @@ var AdminHandler = function (db) {
 
     this.getClientList = function(req, res, next){
         var sortParam = req.query.sort;
-        var sortType = req.query.sortType || 'DESC';
+        var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
@@ -1295,17 +1356,13 @@ var AdminHandler = function (db) {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortType !== CONSTANTS.SORT_TYPE.ASC && sortType !== CONSTANTS.SORT_TYPE.DESC) {
-            return next(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
-        }
-
         if (sortParam === 'Name' || !sortParam) {
-            sortObj['personalInfo.firstName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
-            sortObj['personalInfo.lastName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj['personalInfo.firstName'] = order;
+            sortObj['personalInfo.lastName'] = order;
         }
 
         if (sortParam === 'Email') {
-            sortObj.email = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj.email = order;
         }
 
         User
@@ -1323,7 +1380,50 @@ var AdminHandler = function (db) {
     };
 
     this.getClientById = function(req, res, next){
-        res.status(400).send('Not implemented yet');
+        var clientId = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
+            return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
+        }
+
+        async.parallel([
+
+                function(cb){
+                    User
+                        .findOne({_id: clientId, role: CONSTANTS.USER_ROLE.CLIENT}, function(err, clientModel){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!clientModel){
+                                return cb(badRequests.DatabaseError());
+                            }
+
+
+                        });
+                },
+
+                function(cb){
+                    Appointment
+                        .find({client: clientId})
+                        .exec(function(err, appointmentModelsArray){
+                            if (err){
+                                return cb(err);
+                            }
+
+
+
+                        });
+                }
+            ],
+
+            function(err, result){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send();
+        });
     };
 
     this.updateClient = function(req, res, next){

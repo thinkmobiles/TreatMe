@@ -29,10 +29,6 @@ module.exports = {
         REQUESTED_STYLISTS: 20,
         REQUESTED_APPOINTMENTS: 20,
         REQUESTED_PACKAGES : 20
-    },
-    SORT_TYPE: {
-        ASC: 'ASC',
-        DESC: 'DESC'
     }
 };
 

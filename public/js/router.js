@@ -16,6 +16,7 @@ define([
             "dashboard"                 :  "dashboard",
             "newApplications"           :  "newApplications",
             "newApplications/add"       :  "newApplicationDetails",
+            "newApplications/:id"       :  "newApplicationDetails",
             "stylists"                  :  "stylists",
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
