@@ -5,7 +5,7 @@ var SessionHandler = require('../handlers/sessions');
 
 module.exports = function(db){
     var admin = new AdminHandler(db);
-    var sessionHandler = new SessionHandler();
+    var sessionHandler = new SessionHandler(db);
 
     router.get('/services/requested', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getRequestedService);
     router.post('/services/approve', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveService);

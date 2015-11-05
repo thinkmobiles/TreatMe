@@ -229,7 +229,6 @@ var AdminHandler = function (db) {
 
         }
 
-
         var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
 
         if (status === 'requested') {
@@ -675,7 +674,7 @@ var AdminHandler = function (db) {
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_SERVICES;
 
         Services
-            .find({}, {__v: 0})
+            .find({approved: false}, {__v: 0})
             .populate({path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'})
             .skip(limit * (page - 1))
             .limit(limit)
