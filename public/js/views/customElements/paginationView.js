@@ -1,6 +1,7 @@
 define([
+    'constants/index',
     'text!templates/customElements/paginationTemplate.html'
-], function (MainTemplate) {
+], function (CONSTANTS, MainTemplate) {
 
     var View;
     View = Backbone.View.extend({
@@ -18,7 +19,7 @@ define([
 
             this.stateModel = new Backbone.Model({
                 count         : 0,
-                onPage        : options.onPage  || 10,
+                onPage        : options.onPage  || CONSTANTS.ITEMS_PER_PAGE,
                 page          : options.page    || 1,
                 padding       : options.padding || 3,
                 url           : options.url     || '',
@@ -55,7 +56,8 @@ define([
 
         count: function () {
             var self = this;
-            var url = '/admin/count?role=Stylist';//TODO: self.stateModel.get('urlPagination') + '/count';
+            //var url = '/admin/count?role=Stylist';//TODO: self.stateModel.get('urlPagination') + '/count';
+            var url = self.collection.url() + '/count';
 
             $.ajax({
                 url   : url,
@@ -75,10 +77,14 @@ define([
         },
 
         getFilters: function () {
+            /*
             return _.extend({
                 //page  : this.stateModel.get('page'),
                 //count : this.stateModel.get('onPage')
             }, this.stateModel.get('data'));
+            */
+
+            return this.stateModel.get('data');
         },
 
         loadPage: function () {
@@ -92,7 +98,7 @@ define([
         },
 
         calculate: function () {
-            var count  = this.stateModel.get('count') || 0;
+            var count  = this.stateModel.get('count') || CONSTANTS.ITEMS_PER_PAGE;
             var onPage = this.stateModel.get('onPage');
             var paddingBefore = this.stateModel.get('padding');
             var paddingAfter  = this.stateModel.get('padding');
@@ -126,6 +132,15 @@ define([
                         data  : 1,
                         clNam : true
                     });
+
+                    if (start > 1) {
+                        pages.push({
+                            html  : "...",
+                            data  : start - 1,
+                            clNam : true
+                        });
+                    }
+
                 }
                 if (steps) {
                     if (page < 2) {
@@ -148,7 +163,7 @@ define([
                     pages.push({
                         html   : start,
                         data   : start,
-                        active : start === page
+                        active : start == page
                     });
                 }
 
@@ -169,6 +184,14 @@ define([
 
                 }
 
+                if (end < allPages) {
+                    pages.push({
+                        html   : '...',
+                        data   : page + 1,
+                        clNam  : true
+                    });
+                }
+
                 if (ends) {
                     pages.push({
                         html   : 'last&gt;&gt;',
@@ -176,12 +199,17 @@ define([
                         clNam  : true
                     });
                 }
+
+                /*if (page > ) {
+
+                }*/
+
                 this.stateModel.set({
                     pages: pages
                 });
             }
 
-            this.loadPage();
+            //this.loadPage();
             this.render();
         },
 

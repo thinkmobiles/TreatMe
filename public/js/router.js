@@ -27,21 +27,6 @@ define([
             "stylistPayments"           :  "stylistPayments",
             "clientPackages"            :  "clientPackages",
             "gallery"                   :  "gallery",
-
-            // "users"                     :  "users",
-
-            /*"settings"                  :  "settings",
-            "newUsers"                  :  "newUsers",
-            ":docType/preview/:id"      :  "forPreview",
-            "templates/:viewType"       :  "templates",
-            "signature/:type/:token"    :  "signature",
-            "documents/:viewType"       :  "documents",
-            "taskList"                  :  "taskList",
-            "userProfile"               :  "userProfile",
-            "forgotPassword"            :  "forgotPassword",
-            "resetPassword/:token"      :  "resetPassword",
-            "confirmEmail(/:token)"     :  "confirmEmail",
-            "help"                      :  "help",*/
             "*any"                      :  "any"
         },
 
@@ -121,8 +106,9 @@ define([
             this.loadWrapperView('newApplications', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
-        stylists: function () {
-            this.loadWrapperView('stylists', null, REDIRECT.whenNOTAuthorized);
+        stylists: function (page) {
+
+            this.loadWrapperView('stylists', {page: page}, REDIRECT.whenNOTAuthorized);
         },
 
         clients: function () {

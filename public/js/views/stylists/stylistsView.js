@@ -1,12 +1,13 @@
 'use strict';
 
 define([
+    'constants/index',
     'collections/stylistCollection',
     'views/customElements/paginationView',
     'text!templates/stylists/stylistsTemplate.html',
     'text!templates/stylists/stylistsListTemplate.html'
 
-], function (StylistCollection, PaginationView, MainTemplate, ListTemplate) {
+], function (CONSTANTS, StylistCollection, PaginationView, MainTemplate, ListTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -18,8 +19,12 @@ define([
         events: {
         },
 
-        initialize: function () {
-            var collection = new StylistCollection();
+        initialize: function (options) {
+            var page = (options && options.page) ? parseInt(options.page) : 1;
+            var collectionParams = {
+                page: page
+            };
+            var collection = new StylistCollection(collectionParams);
             var self = this;
             var paginationOptions;
 
@@ -28,11 +33,11 @@ define([
 
             paginationOptions = {
                 collection    : collection,
-                onPage        : 10,
+                onPage        : CONSTANTS.ITEMS_PER_PAGE,
                 padding       : 2,
-                page          : 1,
+                page          : page,
                 ends          : true,
-                steps         : true,
+                steps         : false,
                 url           : 'stylists/page',
                 urlPagination : collection.url()//,
             };
@@ -54,7 +59,7 @@ define([
         renderList: function () {
             var users = this.collection.toJSON();
 
-            //this.$el.find('.list').html(this.listTemplate({users: users}));
+            this.$el.find('.list').html(this.listTemplate({users: users}));
 
             return this;
         },

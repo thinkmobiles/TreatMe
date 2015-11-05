@@ -1,11 +1,13 @@
 <ul class="pagination">
-    <% for(page in pages) { %>
-    <li class="<% if (pages[page].clNam) {%>arrow<%}%><% if(pages[page].active) { %>active<% } %> item">
+    <% _.forEach(pages, function (page) {%>
+    <li class="<% if (page.clNam) {%>arrow <%}%><% if(page.active) { %>active <% } %>item">
+        <span>
         <% if(urlPagination) { %>
-        <a href="#<%= url %>/<%= pages[page].data %>"><%= pages[page].html %></a>
+            <a href="#<%= url %>/<%= page.data %>"><%= page.html %></a>
         <% } else { %>
-        <a class="goToPage" value="<%= pages[page].data %>"><%= pages[page].html %></a>
+            <a class="goToPage" value="<%= page.data %>"><%= page.html %></a>
         <% } %>
+        </span>
     </li>
-    <% } %>
+    <%});%>
 </ul>
