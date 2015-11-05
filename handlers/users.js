@@ -1100,7 +1100,7 @@ var UserHandler = function (app, db) {
                         return next(err);
                     }
 
-                    res.status(200).send({success: 'Business details updated successful'});
+                    res.status(200).send({success: 'Salon details updated successful'});
 
                 });
 

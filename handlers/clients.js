@@ -161,18 +161,24 @@ var ClientsHandler = function (app, db) {
         var body = req.body;
         var appointmentModel;
         var saveObj;
-        var clientId;
+        var clientId = req.session.uId;
         var clientLoc;
         var locationAddress = req.body.location;
 
-        if (!body.clientId || !body.serviceType || !body.bookingDate) {
+        if (!body.serviceType || !body.bookingDate) {
             return next(badRequests.NotEnParams({reqParams: 'clientId and serviceType and bookingDate'}));
         }
 
-        clientId = body.clientId;
+        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+            if (!body.clientId){
+                return next(badRequests.NotEnParams({reqParams: 'clientId'}));
+            }
 
-        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)) {
-            return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+            clientId = body.clientId;
+
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)) {
+                return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+            }
         }
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(body.serviceType)) {
