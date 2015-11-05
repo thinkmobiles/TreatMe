@@ -129,7 +129,7 @@ define([
             } else {
                 if (ends) {
                     pages.push({
-                        html  : "&lt;&lt;first",
+                        html  : "first",
                         data  : 1,
                         clNam : true
                     });
@@ -146,13 +146,13 @@ define([
                 if (steps) {
                     if (page < 2) {
                         pages.push({
-                            html  : "&lt;&lt;prev",
+                            html  : "prev",
                             data  : 1,
                             clNam : true
                         });
                     } else {
                         pages.push({
-                            html  : "&lt;&lt;prev",
+                            html  : "prev",
                             data  : page - 1,
                             clNam : true
                         });
@@ -171,13 +171,13 @@ define([
                 if (steps) {
                     if (page < allPages) {
                         pages.push({
-                            html  : 'next&gt;&gt;',
+                            html  : 'next',
                             data  : page + 1,
                             clNam : true
                         });
                     } else {
                         pages.push({
-                            html  : 'next&gt;&gt;',
+                            html  : 'next',
                             data  : allPages,
                             clNam : true
                         });
@@ -195,7 +195,7 @@ define([
 
                 if (ends) {
                     pages.push({
-                        html   : 'last&gt;&gt;',
+                        html   : 'last',
                         data   : allPages,
                         clNam  : true
                     });
