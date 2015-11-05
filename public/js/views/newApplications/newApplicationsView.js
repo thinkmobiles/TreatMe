@@ -17,20 +17,20 @@ define([
         events: {
             "click #acceptCurrentBtn, #acceptSelectedBtn": "acceptStylist",
             "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest",
+            "click .date": "sort",
             "click .checkAll": "checkAll"
         },
 
         initialize: function () {
             var self = this;
 
-            self.collection = new StylistCollection({ status: 'requested' });
+            self.collection = new StylistCollection({status: 'requested'});
             self.collection.on('remove', self.reRender, self);
-
 
 
             self.collection.fetch({
                 reset: true,
-                data: { status: 'requested' },
+                data: {status: 'requested'},
                 success: function (coll) {
                     self.collection = coll;
                     self.render();
@@ -75,7 +75,7 @@ define([
             } else if (el.id === 'acceptSelectedBtn') {
                 checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
 
-                $(checkboxes).each(function( index, element ) {
+                $(checkboxes).each(function (index, element) {
                     modelId = $(element).closest('tr').attr('data-id');
                     models.push(self.collection.get(modelId));
                     data.ids.push(modelId);
@@ -108,7 +108,7 @@ define([
             } else if (el.id === 'removeSelectedBtn') {
                 checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
 
-                $(checkboxes).each(function( index, element ) {
+                $(checkboxes).each(function (index, element) {
                     modelId = $(element).closest('tr').attr('data-id');
                     data.ids.push(modelId);
                 });
@@ -132,14 +132,24 @@ define([
 
         reRender: function () {
             console.log('fire event remove');
-            var self = this;
-            var $el = self.$el;
-            var users = self.collection.toJSON();
+            this.initialize();
+            //var self = this;
+            //var $el = self.$el;
+            //var users = self.collection.toJSON();
+            //
+            //$el.html('');
+            //$el.html(self.mainTemplate({users: users}));
+            //
+            //return this;
+        },
 
-            $el.html('');
-            $el.html(self.mainTemplate({users: users}));
+        sort: function (e) {
+            var curElement = $(e.target);
 
-            return this;
+            curElement.hasClass('asc')
+                ? curElement.removeClass('asc')
+                : curElement.addClass('asc')
+
         }
 
     });
