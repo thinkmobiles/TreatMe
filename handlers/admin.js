@@ -209,7 +209,7 @@ var AdminHandler = function (db) {
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var statusRegExp = /^requested$|^all$/;
-        var sort = req.query.sort || 'name';
+        var sort = req.query.sort || 'date';
         var order = (req.query.order === '1') ? 1 : -1;
         var sortObj = {};
 
@@ -228,6 +228,9 @@ var AdminHandler = function (db) {
         } else {
             sortObj['personalInfo.firstName'] = order;
             sortObj['personalInfo.lastName'] = order;
+
+        } else {
+            sortObj['createdAt'] = order;
         }
 
         var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
