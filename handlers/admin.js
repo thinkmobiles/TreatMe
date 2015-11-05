@@ -75,7 +75,6 @@ var AdminHandler = function (db) {
 
     this.getStylistByCriterion = function(criterion, page, sortObj, limit, callback){
 
-
         var resultArray = [];
         var obj;
 
@@ -169,6 +168,37 @@ var AdminHandler = function (db) {
 
     this.getStylistCount = function(req, res, next){
 
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/stylist/count`__
+         *
+         * __Query params: status [requested, approved, all], search_
+         *
+         * This __method__ allows get stylist count by some criterion for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/stylist/count?status=requested
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * [
+         *       {
+         *          count: 3
+         *       }
+         *  ]
+         *
+         *
+         * @method getStylistCount
+         * @instance
+         */
+
         var status = req.query.status;
         var search = req.query.search;
 
@@ -184,6 +214,37 @@ var AdminHandler = function (db) {
     };
 
     this.getClientCount = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/client/count`__
+         *
+         * __Query params: search_
+         *
+         * This __method__ allows get client count by some criterion for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/client/count?search=misha
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * [
+         *       {
+         *          count: 3
+         *       }
+         *  ]
+         *
+         *
+         * @method getClientCount
+         * @instance
+         */
 
         var search = req.query.search;
 
@@ -209,26 +270,39 @@ var AdminHandler = function (db) {
          *
          * __URL: `/admin/stylist/`__
          *
-         * __Query params: page, limit, status__
+         * __Query params: page, limit, status [requested, approved, all], search__
          *
-         * This __method__ allows get stylist list by some sriterion for _Admin_
+         * This __method__ allows get stylist list by some criterion for _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/stylist?page=1&limit=20&status=requested
+         *         http://projects.thinkmobiles.com:8871/admin/stylist?page=1&limit=20&status=requested&search=Banana
          *
          * @example Response example:
          *
          *  Response status: 200
          *
          * [
-         *       {
-         *           "_id": "563342cf1480ea7c109dc385",
-         *           "personalInfo": {
-         *               "firstName": "Misha",
-         *               "lastName": "Vashkeba"
-         *           }
-         *       }
-         *  ]
+         *      {
+         *          "_id": "563b4e0e1886cc5c16c95375",
+         *          "personalInfo": {
+         *              "firstName": "Banana 9 ",
+         *              "lastName": "Orange"
+         *          },
+         *          "salonInfo": {},
+         *          "createdAt": "2015-11-05T12:39:42.779Z",
+         *          "approved": false
+         *      },
+         *      {
+         *          "_id": "563b4e091886cc5c16c95374",
+         *          "personalInfo": {
+         *              "firstName": "Banana 8 ",
+         *              "lastName": "Orange"
+         *          },
+         *          "salonInfo": {},
+         *          "createdAt": "2015-11-05T12:39:37.030Z",
+         *          "approved": false
+         *      }
+         * ]
          *
          *
          * @method getStylistList
@@ -314,22 +388,52 @@ var AdminHandler = function (db) {
          *
          *  Response status: 200
          *
-         *  {
-         *      "_id": "563342cf1480ea7c109dc385",
-         *      "email": "vashkebam1991@gmail.com",
-         *      "role": "Stylist",
-         *      "salonInfo": {
-         *          "businessRole": "Employee"
+         *   {
+         *       "_id": "563b2c9315fd1706214adaae",
+         *       "role": "Stylist",
+         *       "createdAt": "2015-11-05T10:16:51.787Z",
+         *       "activeSubscriptions": [],
+         *       "salonInfo": {
+         *           "licenseNumber": "",
+         *           "country": "",
+         *           "city": "",
+         *           "zipCode": "",
+         *           "state": "",
+         *           "address": "",
+         *           "businessRole": "Employee",
+         *           "email": "",
+         *           "phone": "",
+         *           "salonName": ""
          *      },
          *      "personalInfo": {
-         *          "firstName": "Misha",
+         *          "avatar": "",
+         *          "facebookURL": "",
+         *          "phone": "01",
+         *          "profession": "",
          *          "lastName": "Vashkeba",
-         *          "phone": "+380968571460",
-         *          "profession": "Uborschyk"
+         *          "firstName": "Misha"
          *      },
-         *      "approved": false,
-         *      "creationDate": "2015-11-02T08:41:12.752Z",
-         *      "coordinates": []
+         *      "suspend": {
+         *          "history": [
+         *              {
+         *                  "_id": "563b565abaea58c30ca7dfd8",
+         *                  "reason": "",
+         *                  "from": "2015-11-05T13:15:06.906Z"
+         *              }
+         *          ],
+         *          "isSuspend": true
+         *      },
+         *      "approved": true,
+         *      "email": "vashm@mail.ua",
+         *      "coordinates": [],
+         *      "approvedServices": [
+         *          {
+         *              "serviceId": {
+         *                  "name": "Blowout"
+         *              },
+         *              "price": 15
+         *          }
+         *      ]
          *  }
          *
          *
@@ -588,10 +692,10 @@ var AdminHandler = function (db) {
          * This __method__ allows suspend users by _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/stylist/suspend
+         *         http://projects.thinkmobiles.com:8871/admin/suspend
          *
          * {
-         *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc385]
+         *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc386]
          * }
          *
          * @example Response example:
@@ -619,8 +723,8 @@ var AdminHandler = function (db) {
                 $set: {
                     suspend: {
                         isSuspend: true,
-                        history: {
-                            $push: {
+                        $push: {
+                            history: {
                                 from: Date.now(),
                                 reason: 'Suspended by admin'
                             }
@@ -1010,24 +1114,44 @@ var AdminHandler = function (db) {
 
         var sId = req.params.id;
 
-        ServiceType
-            .findOneAndRemove({_id: sId}, function (err) {
+        async
+            .waterfall([
+                function(cb){
+                    ServiceType
+                        .findOneAndRemove({_id: sId}, function(err, result){
+                            if (err){
+                                return cb(err);
+                            }
 
-                if (err) {
+                            cb(null, result.logo);
+
+                        });
+                },
+
+                function(logo, cb){
+                    image.deleteImage(logo, CONSTANTS.BUCKET.IMAGES, cb);
+                },
+
+                function(cb){
+                    Services
+                        .findOneAndRemove({serviceId: sId}, function (err) {
+
+                            if (err) {
+                                return cb(err);
+                            }
+
+                            cb(null)
+
+                        });
+                }
+
+            ], function(err){
+
+                if (err){
                     return next(err);
                 }
 
-                Services
-                    .findOneAndRemove({serviceId: sId}, function (err) {
-
-                        if (err) {
-                            return next(err);
-                        }
-
-                        res.status(200).send({success: 'Service removed successfully'});
-
-                    });
-
+                res.status(200).send({success: 'Service removed successfully'})
             });
     };
 
@@ -1380,6 +1504,50 @@ var AdminHandler = function (db) {
     };
 
     this.getClientList = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/client/`__
+         *
+         * __Query params: page, limit, search__
+         *
+         * This __method__ allows get client list by some criterion for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/client?page=1&limit=20&search
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * [
+         *     {
+         *         "_id": "5633451985201c7409caa2e2",
+         *         "personalInfo": {
+         *             "lastName": "Petrovich",
+         *             "firstName": "Petya"
+         *         },
+         *         "email": "Killer57575@gmail.com"
+         *     },
+         *     {
+         *         "_id": "5633451985201c7509caa7e9",
+         *         "personalInfo": {
+         *             "lastName": "Oetrovich",
+         *             "firstName": "Petya"
+         *         },
+         *         "email": "Killer@gmail.com"
+         *     }
+         * ]
+         *
+         * @method getClientList
+         * @instance
+         */
+
         var sortParam = req.query.sort;
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
@@ -1387,7 +1555,7 @@ var AdminHandler = function (db) {
         var search = req.query.search;
         var searchRegExp;
         var sortObj = {};
-        var findObj = {};
+        var findObj;
         var roleObj = {};
         var searchObj = {};
 
@@ -1435,6 +1603,78 @@ var AdminHandler = function (db) {
     };
 
     this.getClientById = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/client/:id`__
+         *
+         * This __method__ allows get client by id for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/client/563342cf1480ea7c109dc385
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *   {
+         *       "_id": "563b2c9315fd1706214adaae",
+         *       "role": "Stylist",
+         *       "createdAt": "2015-11-05T10:16:51.787Z",
+         *       "activeSubscriptions": [],
+         *       "salonInfo": {
+         *           "licenseNumber": "",
+         *           "country": "",
+         *           "city": "",
+         *           "zipCode": "",
+         *           "state": "",
+         *           "address": "",
+         *           "businessRole": "Employee",
+         *           "email": "",
+         *           "phone": "",
+         *           "salonName": ""
+         *      },
+         *      "personalInfo": {
+         *          "avatar": "",
+         *          "facebookURL": "",
+         *          "phone": "01",
+         *          "profession": "",
+         *          "lastName": "Vashkeba",
+         *          "firstName": "Misha"
+         *      },
+         *      "suspend": {
+         *          "history": [
+         *              {
+         *                  "_id": "563b565abaea58c30ca7dfd8",
+         *                  "reason": "",
+         *                  "from": "2015-11-05T13:15:06.906Z"
+         *              }
+         *          ],
+         *          "isSuspend": true
+         *      },
+         *      "approved": true,
+         *      "email": "vashm@mail.ua",
+         *      "coordinates": [],
+         *      "approvedServices": [
+         *          {
+         *              "serviceId": {
+         *                  "name": "Blowout"
+         *              },
+         *              "price": 15
+         *          }
+         *      ]
+         *  }
+         *
+         *
+         * @method getStylistById
+         * @instance
+         */
+
         var clientId = req.params.id;
         var resultObj = {};
         var sortParam = req.query.sort;
