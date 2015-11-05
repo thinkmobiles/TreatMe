@@ -1623,56 +1623,47 @@ var AdminHandler = function (db) {
          *
          *  Response status: 200
          *
-         *   {
-         *       "_id": "563b2c9315fd1706214adaae",
-         *       "role": "Stylist",
-         *       "createdAt": "2015-11-05T10:16:51.787Z",
-         *       "activeSubscriptions": [],
-         *       "salonInfo": {
-         *           "licenseNumber": "",
-         *           "country": "",
-         *           "city": "",
-         *           "zipCode": "",
-         *           "state": "",
-         *           "address": "",
-         *           "businessRole": "Employee",
-         *           "email": "",
-         *           "phone": "",
-         *           "salonName": ""
-         *      },
-         *      "personalInfo": {
-         *          "avatar": "",
-         *          "facebookURL": "",
-         *          "phone": "01",
-         *          "profession": "",
-         *          "lastName": "Vashkeba",
-         *          "firstName": "Misha"
-         *      },
-         *      "suspend": {
-         *          "history": [
-         *              {
-         *                  "_id": "563b565abaea58c30ca7dfd8",
-         *                  "reason": "",
-         *                  "from": "2015-11-05T13:15:06.906Z"
-         *              }
-         *          ],
-         *          "isSuspend": true
-         *      },
-         *      "approved": true,
-         *      "email": "vashm@mail.ua",
-         *      "coordinates": [],
-         *      "approvedServices": [
-         *          {
-         *              "serviceId": {
-         *                  "name": "Blowout"
-         *              },
-         *              "price": 15
-         *          }
-         *      ]
-         *  }
+         * {
+         *     "name": "Petya Petrovich",
+         *     "phone": "123456789",
+         *     "email": "Killer57575@gmail.com",
+         *     "suspend": {
+         *         "isSuspend": false,
+         *         "history": []
+         *     },
+         *     "avatar": "http://localhost:8871/uploads/development/images/563b04c0b3b4c5300f06c983.png",
+         *     "bookedAppointments": [
+         *         {
+         *             "_id": "563b06bc29ff2808236d3280",
+         *             "serviceType": "",
+         *             "bookingDate": "2015-12-05T10:23:51.060Z",
+         *             "stylist": "Stylistname Abramovich",
+         *             "status": "Confirmed"
+         *         },
+         *         {
+         *             "_id": "563b068e29ff2808236d327f",
+         *             "serviceType": "",
+         *             "bookingDate": "2015-11-05T10:23:51.060Z",
+         *             "stylist": "Stylistname Abramovich",
+         *             "status": "Confirmed"
+         *         }
+         *     ],
+         *     "purchasedPackages": [
+         *         {
+         *             "purchaseDate": "2015-11-05T09:19:32.436Z",
+         *             "package": "Unlimited Blowout"
+         *         }
+         *     ],
+         *     "currentPackages": [
+         *         {
+         *             "purchaseDate": "2015-11-05T09:19:32.436Z",
+         *             "package": "Unlimited Blowout",
+         *             "price": 99
+         *         }
+         *     ]
+         * }
          *
-         *
-         * @method getStylistById
+         * @method getClientById
          * @instance
          */
 
@@ -1769,7 +1760,12 @@ var AdminHandler = function (db) {
                             bookedAppointmentsArray = appointmentModelsArray.map(function(model){
                                 var modelJSON = model.toJSON();
 
-                                modelJSON.serviceType = modelJSON.serviceType.name;
+                                if (modelJSON.serviceType){
+                                    modelJSON.serviceType = modelJSON.serviceType.name;
+                                } else {
+                                    modelJSON.serviceType = '';
+                                }
+
                                 modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
 
                                 return modelJSON;
@@ -1835,6 +1831,33 @@ var AdminHandler = function (db) {
     };
 
     this.removeUserById = function(req, res, next){
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/user/:id`__
+         *
+         * This __method__ allows delete user by id for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/user/563342cf1480ea7c109dc385
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *  success: 'User was removed successfully'
+         * }
+         *
+         * @method removeUserById
+         * @instance
+         */
+
         var userId = req.params.id;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(userId)){
