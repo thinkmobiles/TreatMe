@@ -12,6 +12,7 @@ var UserHandler = require('./users');
 var passGen = require('password-generator');
 var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
+var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
 
 var AdminHandler = function (db) {
@@ -24,6 +25,7 @@ var AdminHandler = function (db) {
     var SubscriptionType = db.model('SubscriptionType');
     var Subscription = db.model('Subscription');
     var User = db.model('User');
+    var Gallery = db.model('Gallery');
     var Appointment = db.model('Appointment');
 
     function getEncryptedPass(pass) {
@@ -69,25 +71,12 @@ var AdminHandler = function (db) {
             });
     }
 
-    this.getStylistByCriterion = function(criterion, page, sort, limit, callback){
+    this.getStylistByCriterion = function(criterion, page, sortObj, limit, callback){
 
         var resultArray = [];
         var obj;
-        var sortObj;
 
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
-
-        if (sort === 'desc'){
-            sortObj = {
-                'personalInfo.firstName': -1,
-                'personalInfo.lastName': -1
-            }
-        } else {
-            sortObj = {
-                'personalInfo.firstName': 1,
-                'personalInfo.lastName': 1
-            }
-        }
 
         User
             .find(criterion, {
@@ -95,11 +84,11 @@ var AdminHandler = function (db) {
                 'personalInfo.lastName': 1,
                 'salonInfo': 1,
                 'createdAt': 1,
-                approved: 1
+                'approved': 1
             })
             .sort(sortObj)
             .skip(limit * (page - 1))
-            .limit(CONSTANTS.LIMIT.REQUESTED_STYLISTS)
+            .limit(limit)
             .exec(function(err, resultModel){
                 if (err){
                     return callback(err);
@@ -118,21 +107,23 @@ var AdminHandler = function (db) {
                     resultArray.push(obj);
                 }
 
-                callback(null, resultArray);
+                callback(null, resultArray.reverse());
 
             });
     };
 
-    this.getCountByCriterion = function(req, res, next){
+    function getCountByCriterion(role, status, callback){
 
         var findObj = {
-            role: req.query.role
+            role: role
         };
 
-        if (req.query.role === CONSTANTS.USER_ROLE.STYLIST){
-            if (req.query.status === 'requested'){
+        if (!callback && typeof status === 'function'){
+            callback = status;
+        } else {
+            if (status === 'requested'){
                 findObj.approved = false;
-            } else if (req.query.status === 'approved') {
+            } else if (status === 'approved') {
                 findObj.approved = true;
             }
         }
@@ -141,12 +132,41 @@ var AdminHandler = function (db) {
             .count(findObj, function(err, resultCount){
 
                 if (err){
-                    return next(err);
+                    return callback(err);
                 }
 
-                res.status(200).send({count: resultCount});
+                callback(null, resultCount);
 
             });
+    };
+
+    this.getStylistCount = function(req, res, next){
+
+        var status = req.query.status;
+
+        getCountByCriterion(CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
+
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({count: resultCount});
+
+        });
+    };
+
+    this.getClientCount = function(req, res, next){
+
+
+        getCountByCriterion(CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
+
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({count: resultCount});
+
+        });
     };
 
     this.getStylistList = function(req, res, next){
@@ -189,17 +209,28 @@ var AdminHandler = function (db) {
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var statusRegExp = /^requested$|^all$/;
-        var sortRegExp = /^asc$|^desc$/;
-        var sort = req.query.sort;
+        var sort = req.query.sort || 'name';
+        var order = (req.query.order === '1') ? 1 : -1;
+        var sortObj = {};
+
         var status = req.query.status;
 
         if (!statusRegExp.test(status)) {
             status = 'all';
         }
 
-        if (!sortRegExp.test(sort)){
-            sort = 'desc';
+
+
+        if (sort === 'salon'){
+            sortObj['salonInfo.salonName'] =  order;
+        } else if (sort === 'status'){
+            sortObj['approved'] = order;
+        } else {
+            sortObj['personalInfo.firstName'] = order;
+            sortObj['personalInfo.lastName'] = order;
+
         }
+
 
         var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
 
@@ -207,7 +238,7 @@ var AdminHandler = function (db) {
             criterion.approved = false
         }
 
-        self.getStylistByCriterion(criterion, page, sort, limit, function (err, result) {
+        self.getStylistByCriterion(criterion, page, sortObj, limit, function (err, result) {
 
             if (err) {
                 return next(err);
@@ -499,7 +530,7 @@ var AdminHandler = function (db) {
         });
     };
 
-    this.suspendStylists = function (req, res, next) {
+    this.suspendUsers = function (req, res, next) {
 
         /**
          * __Type__ __`POST`__
@@ -508,9 +539,9 @@ var AdminHandler = function (db) {
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/admin/stylist/suspend`__
+         * __URL: `/admin/suspend`__
          *
-         * This __method__ allows suspend stylist by _Admin_
+         * This __method__ allows suspend users by _Admin_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/admin/stylist/suspend
@@ -523,9 +554,9 @@ var AdminHandler = function (db) {
          *
          *  Response status: 200
          *
-         * {"success": "Stylists suspended successfully"}
+         * {"success": "Users suspended successfully"}
          *
-         * @method suspendStylist
+         * @method suspendUsers
          * @instance
          */
 
@@ -539,7 +570,72 @@ var AdminHandler = function (db) {
         ids = body.ids.toObjectId();
 
         User
-            .update({_id: {$in: ids}, role: CONSTANTS.USER_ROLE.STYLIST}, {$set: {suspend: {isSuspend: true, from: Date.now()}}}, {multi: true})
+            .update({_id: {$in: ids}},
+            {
+                $set: {
+                    suspend: {
+                        isSuspend: true,
+                        history: {
+                            $push: {
+                                from: Date.now(),
+                                reason: 'Suspended by admin'
+                            }
+                        }
+                    }
+                }
+            }, {multi: true})
+            .exec(function (err) {
+
+                if (err) {
+                    return next(err);
+                }
+
+
+                res.status(200).send({success: 'Users suspended successfully'});
+            });
+    };
+
+    this.activateUsers = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/activate`__
+         *
+         * This __method__ allows activate users by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/stylist/suspend
+         *
+         * {
+         *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc385]
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Users activated successfully"}
+         *
+         * @method activateUsers
+         * @instance
+         */
+
+        var body = req.body;
+        var ids;
+
+        if (!body.ids) {
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        }
+
+        ids = body.ids.toObjectId();
+
+        User
+            .update({_id: {$in: ids}}, {$set: {suspend: {isSuspend: false}}}, {multi: true})
             .exec(function(err){
 
                 if (err) {
@@ -547,7 +643,7 @@ var AdminHandler = function (db) {
                 }
 
 
-                res.status(200).send({success: 'Stylists suspended successfully'});
+                res.status(200).send({success: 'Users activated successfully'});
             });
     };
 
@@ -920,7 +1016,7 @@ var AdminHandler = function (db) {
         arrayOfId = arrayOfId.toObjectId();
 
         Appointment
-            .update({_id: {$in: arrayOfId}}, {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}, function (err) {
+            .update({_id: {$in: arrayOfId}}, {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}, {multi: true}, function (err) {
                 if (err) {
                     return next(err);
                 }
@@ -1064,7 +1160,7 @@ var AdminHandler = function (db) {
 
     this.getClientPackages = function (req, res, next) {
         var sortParam = req.query.sort;
-        var sortType = req.query.sortType || 'DESC';
+        var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
@@ -1073,21 +1169,17 @@ var AdminHandler = function (db) {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortType !== CONSTANTS.SORT_TYPE.ASC && sortType !== CONSTANTS.SORT_TYPE.DESC) {
-            return next(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
-        }
-
         if (sortParam === 'Date' || !sortParam) {
-            sortObj.purchaseDate = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj.purchaseDate = order;
         }
 
         if (sortParam === 'Name') {
-            sortObj['client.personalInfo.firstName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
-            sortObj['client.personalInfo.lastName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj['client.personalInfo.firstName'] = order;
+            sortObj['client.personalInfo.lastName'] = order;
         }
 
         if (sortParam === 'Package') {
-            sortObj['subscriptionType.name'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj['subscriptionType.name'] = order;
         }
 
         Subscription
@@ -1245,7 +1337,7 @@ var AdminHandler = function (db) {
 
     this.getClientList = function(req, res, next){
         var sortParam = req.query.sort;
-        var sortType = req.query.sortType || 'DESC';
+        var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
@@ -1254,17 +1346,13 @@ var AdminHandler = function (db) {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortType !== CONSTANTS.SORT_TYPE.ASC && sortType !== CONSTANTS.SORT_TYPE.DESC) {
-            return next(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
-        }
-
         if (sortParam === 'Name' || !sortParam) {
-            sortObj['personalInfo.firstName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
-            sortObj['personalInfo.lastName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj['personalInfo.firstName'] = order;
+            sortObj['personalInfo.lastName'] = order;
         }
 
         if (sortParam === 'Email') {
-            sortObj.email = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+            sortObj.email = order;
         }
 
         User
@@ -1282,7 +1370,228 @@ var AdminHandler = function (db) {
     };
 
     this.getClientById = function(req, res, next){
-        res.status(400).send('Not implemented yet');
+        var clientId = req.params.id;
+        var resultObj = {};
+        var sortParam = req.query.sort;
+        var order = (req.query.order === '1') ? 1 : -1;
+        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_BOOKED_APPOINTMENTS;
+        var sortObj = {};
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
+            return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
+        }
+
+        if (sortParam && sortParam !== 'Booking' && sortParam !== 'Name' && sortParam !== 'Service' && sortParam !== 'Payment' && sortParam !== 'Status') {
+            return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+        }
+
+        if (sortParam === 'Booking' || !sortParam) {
+            sortObj.bookingDate = order;
+        }
+
+        if (sortParam === 'Name') {
+            sortObj['stylist.personalInfo.firstName'] = order;
+            sortObj['stylist.personalInfo.lastName'] = order;
+        }
+
+        if (sortParam === 'Service') {
+            sortObj['serviceType.name'] = order;
+        }
+
+        if (sortParam === 'Payment') {
+            //TODO: sortObj['payment'] = order;
+        }
+
+        if (sortParam === 'Status') {
+            sortObj.status = order;
+        }
+
+
+        async.parallel([
+
+                function(cb){
+                    User
+                        .findOne({_id: clientId, role: CONSTANTS.USER_ROLE.CLIENT}, function(err, clientModel){
+                            var avatarName;
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!clientModel){
+                                return cb(badRequests.DatabaseError());
+                            }
+
+                            resultObj.name = clientModel.personalInfo.firstName + ' ' + clientModel.personalInfo.lastName;
+                            resultObj.phone = clientModel.personalInfo.phone;
+                            resultObj.email = clientModel.email;
+                            avatarName = clientModel.personalInfo.avatar;
+
+                            if (avatarName){
+                                resultObj.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                            } else {
+                                resultObj.avatar = '';
+                            }
+
+                            cb();
+                        });
+                },
+
+                function(cb){
+                    var projectionObj = {
+                        bookingDate: 1,
+                        stylist: 1,
+                        serviceType: 1,
+                        //TODO: payment: 1,
+                        status: 1
+                    };
+
+                    Appointment
+                        .find({client: clientId, status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}}, projectionObj)
+                        .populate([{path: 'serviceType', select: 'name'}, {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}])
+                        .sort(sortObj)
+                        .limit(limit)
+                        .exec(function(err, appointmentModelsArray){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            resultObj.bookedAppointments = appointmentModelsArray;
+
+                            cb();
+                        });
+                },
+
+                function(cb){
+                    Subscription
+                        .find({client: clientId}, {_id: 0, purchaseDate: 1, expirationDate: 1, subscriptionType: 1})
+                        .populate({path: 'subscriptionType', select: 'name price'})
+                        .sort({purchaseDate: -1})
+                        .limit(CONSTANTS.LIMIT.REQUESTED_PURCHASED_PACKAGES)
+                        .exec(function(err, subscriptionModelsArray){
+                            var subscriptionArray;
+                            var activeSubscriptionArray = [];
+                            var currentDate = new Date();
+
+                            if (err){
+                                return cb(err)
+                            }
+
+                            subscriptionArray = subscriptionModelsArray.map(function(model){
+                                var modelJSON = model.toJSON();
+
+                                modelJSON.package = modelJSON.serviceType.name;
+                                modelJSON.price = modelJSON.serviceType.price;
+                                delete modelJSON.serviceType;
+
+                                if (modelJSON.expirationDate >= currentDate){
+
+                                    delete modelJSON.expirationDate;
+                                    activeSubscriptionArray.push(modelJSON);
+                                }
+
+                                delete modelJSON.price;
+
+                                return modelJSON;
+                            });
+
+                            resultObj.purchasedPackages = subscriptionArray;
+                            resultObj.currentPackages = activeSubscriptionArray;
+
+                            cb();
+                        });
+                }
+            ],
+
+            function(err){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(resultObj);
+        });
+    };
+
+    this.removeUserById = function(req, res, next){
+        var userId = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(userId)){
+            return next(badRequests.InvalidValue({value: userId, param: 'id'}));
+        }
+
+        async.parallel([
+
+            function(cb){
+                User
+                    .findOne({_id: userId}, function(err, userModel){
+                        var avatarName;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!userModel){
+                            return cb(badRequests.DatabaseError());
+                        }
+
+                        avatarName = userModel.get('personalInfo.avatar');
+
+                        userModel.remove(function(err){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (avatarName){
+                                image.deleteImage(avatarName, CONSTANTS.BUCKET.IMAGES, cb)
+                            } else {
+                                cb();
+                            }
+                        });
+                    });
+            },
+
+            function(cb){
+                Appointment.remove({$or: [{client: userId}, {stylist: userId}]}, cb);
+            },
+
+            function(cb){
+                Gallery
+                    .find({$or: [{client: userId}, {stylist: userId}]}, function(err, imageModelArray){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        async.each(imageModelArray,
+
+                            function(model, eachCb){
+                                var imageName = model.get('_id').toString();
+
+                                image.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, function(err){
+                                    if (err){
+                                        return eachCb(err);
+                                    }
+
+                                    model.remove(eachCb);
+                                });
+                            },
+
+                            function(err){
+                                if (err){
+                                    return cb(err);
+                                }
+
+                                cb();
+                            });
+                });
+            }
+
+        ], function(err){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'User was removed successfully'});
+        })
     };
 
     this.updateClient = function(req, res, next){
@@ -1290,18 +1599,6 @@ var AdminHandler = function (db) {
     };
 
     this.createClient = function(req, res, next){
-        res.status(400).send('Not implemented yet');
-    };
-
-    this.removeClient = function(req, res, next){
-        res.status(400).send('Not implemented yet');
-    };
-
-    this.suspendClient = function(req, res, next){
-        res.status(400).send('Not implemented yet');
-    };
-
-    this.activateClient = function(req, res, next){
         res.status(400).send('Not implemented yet');
     };
 

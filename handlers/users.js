@@ -38,7 +38,7 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
-    function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, sortType, callback){
+    function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, order, callback){
         var findObj = {};
         var projectionObj;
         var populateArray = [
@@ -75,17 +75,13 @@ var UserHandler = function (app, db) {
                 return callback(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
             }
 
-            if (sortType !== CONSTANTS.SORT_TYPE.ASC && sortType !== CONSTANTS.SORT_TYPE.DESC) {
-                return callback(badRequests.InvalidValue({value: sortType, param: 'sortType'}));
-            }
-
             if (sortParam === 'Name' || !sortParam) {
-                sortObj['client.personalInfo.firstName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
-                sortObj['client.personalInfo.lastName'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+                sortObj['client.personalInfo.firstName'] = order;
+                sortObj['client.personalInfo.lastName'] = order;
             }
 
             if (sortParam === 'Service') {
-                sortObj['serviceType.name'] = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+                sortObj['serviceType.name'] = order;
             }
 
             projectionObj = {
@@ -95,7 +91,7 @@ var UserHandler = function (app, db) {
 
             if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.PENDING){
                 if (sortParam === 'Date') {
-                    sortObj.requestDate = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+                    sortObj.requestDate = order;
                 }
 
                 projectionObj.bookingDate = 0;
@@ -105,7 +101,7 @@ var UserHandler = function (app, db) {
 
             if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.BOOKED){
                 if (sortParam === 'Date') {
-                    sortObj.bookingDate = (sortType === CONSTANTS.SORT_TYPE.ASC) ? 1 : -1;
+                    sortObj.bookingDate = order;
                 }
 
                 projectionObj.requestDate = 0;
@@ -1408,7 +1404,7 @@ var UserHandler = function (app, db) {
     this.getAppointments = function(req, res, next){
         var appointmentId = req.query.id;
         var sortParam = req.query.sort;
-        var sortType = req.query.sortType || 'DESC';
+        var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_APPOINTMENTS;
         var appointmentStatus;
@@ -1431,7 +1427,7 @@ var UserHandler = function (app, db) {
                 }
             }
 
-            getAllUserAppointments(userId, req.session.role, appointmentStatus, page, limit, sortParam, sortType, function(err, result){
+            getAllUserAppointments(userId, req.session.role, appointmentStatus, page, limit, sortParam, order, function(err, result){
                 if (err){
                     return next(err);
                 }

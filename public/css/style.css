@@ -366,6 +366,7 @@ th {
 }
 a {
   text-decoration: none;
+  color: inherit;
 }
 a:hover,
 a:focus {
@@ -385,6 +386,8 @@ body {
   width: 100%;
   height: 100%;
   font-family: "Lato";
+  color: #555;
+  text-rendering: geometricPrecision;
 }
 /*------login--*/
 .welcome-pages {
@@ -444,10 +447,9 @@ body {
 /*---top section-----*/
 .top {
   height: 70px;
-  padding: 30px 0;
-}
-.top button {
+  padding: 30px 0 0 30px;
   text-transform: uppercase;
+  font-weight: 700;
 }
 .logoutBtn {
   float: right;
@@ -462,6 +464,7 @@ body {
 }
 .searchBlock {
   padding-left: 33px;
+  margin-top: 30px;
 }
 .searchBlock input.search {
   width: 99%;
@@ -480,6 +483,18 @@ body {
   position: absolute;
   right: 50px;
   height: 44px;
+}
+/*   breadcrunbs */
+#breadcrumbContainer {
+  display: inline-block;
+}
+#breadcrumbContainer .breadcrumb {
+  padding-bottom: 10px;
+  margin-right: 18px;
+  display: inline-block;
+}
+#breadcrumbContainer .breadcrumb.active {
+  border-bottom: 3px solid #2175cc;
 }
 /*-----Nav-------*/
 .leftMenu {
@@ -597,6 +612,26 @@ a.addApp {
   text-transform: uppercase;
 }
 /*---------*/
+/*--checkbox--*/
+input[type='checkbox'] {
+  position: relative;
+}
+input[type='checkbox']:after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  top: 4px;
+  left: 4px;
+  border: 1px solid #e0e0e0;
+  display: block;
+  background-color: #fff;
+  z-index: 2;
+}
+input[type=checkbox]:checked:after {
+  background: #ffffff url("../images/checkbox.png") no-repeat;
+  border: none;
+}
 .date:after {
   content: 'D';
   margin-left: 5px;

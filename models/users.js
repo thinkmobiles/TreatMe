@@ -8,7 +8,7 @@ module.exports = function (db) {
     var imageHandler = new ImageHandler();
 
     var User = new Schema({
-        email: String,
+        email: {type: String, default: null},
         password: String,
         token: String,
         forgotToken: String,
@@ -26,24 +26,24 @@ module.exports = function (db) {
         },
         role: {type: String, match: /^Stylist$|^Client$|^Admin$/},
         personalInfo: {
-            firstName: String,
-            lastName: String,
-            profession: String,
-            phone: String,
-            facebookURL: String,
-            avatar: String
+            firstName: {type: String, default: ''},
+            lastName: {type: String, default: ''},
+            profession: {type: String, default: ''},
+            phone: {type: String, default: ''},
+            facebookURL: {type: String, default: ''},
+            avatar: {type: String, default: ''}
         },
         salonInfo: {
-            salonName: String,
-            phone: String,
-            email: String,
+            salonName: {type: String, default: ''},
+            phone: {type: String, default: ''},
+            email: {type: String, default: ''},
             businessRole: {type: String, default: 'Employee'},
-            address: String,
-            state: String,
-            zipCode: String,
-            city: String,
-            country: String,
-            licenseNumber: String
+            address: {type: String, default: ''},
+            state: {type: String, default: ''},
+            zipCode: {type: String, default: ''},
+            city: {type: String, default: ''},
+            country: {type: String, default: ''},
+            licenseNumber: {type: String, default: ''}
         },
         loc: {
             type: {
