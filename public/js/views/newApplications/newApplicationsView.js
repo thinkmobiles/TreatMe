@@ -148,7 +148,42 @@ define([
 
             curElement.hasClass('asc')
                 ? curElement.removeClass('asc')
-                : curElement.addClass('asc')
+                : this.ascendingSort(curElement)
+
+        },
+
+        ascendingSort: function (el) {
+            var self = this;
+            var sort = el.attr('class');
+            var sortOrder = 1;
+            var table = $('.table tbody');
+            el.addClass('asc');
+
+            self.collection.fetch({
+                reset: true,
+                data: {
+                    status: 'requested',
+                    sort: sort,
+                    order: sortOrder
+                },
+                success: function (coll) {
+                    self.collection = coll;
+                    table.html('');
+                    coll.forEach(function (applicant) {
+                    table.append(
+                       + '<tr data-id="' + applicant._id +'">'
+                       + '<td><div class="checkBlock"><input type="checkbox" class="check"></div></td>'
+                       + '<td>' + new Date(applicant.createdAt).getDate() + '/' + new Date(applicant.createdAt).getMonth() + '/' + String.prototype.slice.call(new Date(applicant.createdAt).getFullYear(),2,4) + '</td>'
+                       + '<td>' + applicant.firstName + '\s' + applicant.lastName + '</td>'
+                       + '<td>' + applicant.salonName + '</td>'
+                       + '<td><button id="acceptCurrentBtn">Accept</button></td>'
+                       + '<td><button id="removeCurrentBtn">Delete</button></td>'
+                       + '</tr>')
+                    });
+
+                    self.render();
+                }
+            });
 
         }
 
