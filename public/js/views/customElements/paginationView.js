@@ -121,7 +121,8 @@ define([
                 end = allPages;
             }
 
-            if (end - start < 1) {
+            //if (end - start < 1) {
+            if (end < start) {
                 this.stateModel.set({
                     pages: []
                 });
