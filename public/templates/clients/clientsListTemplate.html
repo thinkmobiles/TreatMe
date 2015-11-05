@@ -1,0 +1,22 @@
+<table>
+    <thead>
+    <tr>
+        <th><input type="checkbox" class="checkAll"></th>
+        <th>Stylist Name</th>
+
+        <th>Edit</th>
+        <th>Suspend</th>
+    </tr>
+    </thead>
+    <tbody>
+    <% _.forEach(users, function (user, index) {%>
+    <tr data-id="<%= user._id%>">
+        <td><input type="checkbox"></td>
+        <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
+
+        <td><a href="#clients/<%= user._id%>" class="edit">Edit</a></td>
+        <td><button id="suspendCurrentBtn">Suspend</button></td>
+    </tr>
+    <%});%>
+    </tbody>
+</table>
