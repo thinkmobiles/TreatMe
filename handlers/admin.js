@@ -64,6 +64,8 @@ var AdminHandler = function (db) {
 
                         if (serviceModels.length){
                             userObj.approvedServices = serviceModels;
+                        } else {
+                            userObj.approvedServices = []
                         }
 
                         callback(null, userObj);
@@ -72,6 +74,7 @@ var AdminHandler = function (db) {
     }
 
     this.getStylistByCriterion = function(criterion, page, sortObj, limit, callback){
+
 
         var resultArray = [];
         var obj;
