@@ -4,9 +4,9 @@ module.exports = function (app, db) {
 
     var logWriter = require('../modules/logWriter')();
 
-    //var businessRouter = require('./business')(app, db);
     var clientsRouter = require('./clients')(app, db);
     var adminRouter = require('./admin')(db);
+    var stylistRouter = require('./stylist')(app, db);
 
     var SubscriptionHandler = require('../handlers/subscription');
     var UserHandler = require('../handlers/users');
@@ -14,7 +14,7 @@ module.exports = function (app, db) {
 
     var subscriptionHandler = new SubscriptionHandler(db);
     var user = new UserHandler(app, db);
-    var sessionHandler = new SessionHandler();
+    var sessionHandler = new SessionHandler(db);
 
     /*app.get('/', function (req, res, next) {
         res.status(200).send('Express start succeed');
@@ -24,9 +24,9 @@ module.exports = function (app, db) {
         res.sendfile('index.html');
     });
 
-    //app.use('/business', businessRouter);
     app.use('/client', clientsRouter);
     app.use('/admin', adminRouter);
+    app.use('/stylist', stylistRouter);
 
     app.post('/signUp', user.signUp);
     app.post('/signIn', user.signIn);
@@ -42,12 +42,9 @@ module.exports = function (app, db) {
     app.post('/avatar', sessionHandler.authenticatedUser, user.uploadAvatar);
     app.delete('/avatar/:id?', sessionHandler.authenticatedUser, user.removeAvatar);
 
-    app.put('/personal', sessionHandler.authenticatedUser, user.updatePersonalInfo);
-    app.put('/salon', sessionHandler.authenticatedUser, sessionHandler.isStylist, user.updateSalonInfo);
     app.put('/coordinates', sessionHandler.authenticatedUser, user.updateLocation);
 
     app.get('/service/:stylistId?', sessionHandler.authenticatedUser, sessionHandler.stylistOrAdmin, user.getStylistServices);
-    app.get('/service/request/:serviceId', sessionHandler.authenticatedUser, sessionHandler.isStylist, user.sendRequestForService);
 
     app.get('/gallery/:id?', sessionHandler.authenticatedUser, user.getGalleryPhotos);
     app.delete('/gallery/:id', sessionHandler.authenticatedUser, sessionHandler.clientOrStylist, user.removePhotoFromGallery);

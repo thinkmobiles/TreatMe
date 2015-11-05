@@ -29,7 +29,7 @@ var UserHandler = function (app, db) {
     var ServiceType = db.model('ServiceType');
     var Services = db.model('Service');
 
-    var session = new SessionHandler();
+    var session = new SessionHandler(db);
     var image = new ImageHandler();
 
     function getEncryptedPass(pass) {
@@ -706,6 +706,7 @@ var UserHandler = function (app, db) {
         var role;
         var findObj;
 
+
         if (options.fbId) {
 
             fbId = options.fbId;
@@ -877,7 +878,7 @@ var UserHandler = function (app, db) {
                 }
 
                 resultModel
-                    .update({personalInfo: personalInfo, salonInfo: salonInfo}, function(err){
+                    .update({$set: {personalInfo: personalInfo, salonInfo: salonInfo}}, function(err){
 
                         if (err){
                             return next(err);
@@ -886,223 +887,6 @@ var UserHandler = function (app, db) {
                         res.status(200).send({success: resultModel.role + 'updated successfully'});
 
                     });
-
-            });
-    };
-
-    this.updatePersonalInfo = function(req, res, next){
-
-        /**
-         * __Type__ __`PUT`__
-         *
-         * __Content-Type__ `application/json`
-         *
-         * __HOST: `http://projects.thinkmobiles.com:8871`__
-         *
-         * __URL: `/business/details`__
-         *
-         * This __method__ allows add details for _Business_
-         *
-         * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/business/details
-         *
-         * @example Body example:
-         *
-         * {
-         *    "salonName": "Misha",
-         *    "address": "Uzhgorod, Gvardijska 19",
-         *    "state": "Zakarpatska",
-         *    "zipCode": "88000",
-         *    "phone": "+380968987567",
-         *    "licenseNumber": "1224"
-         * }
-         * @example Response example:
-         *
-         *  Response status: 200
-         *
-         * {
-         *     "success": "Business details saved successful"
-         * }
-         *
-         * @param {string} salonName - `Business` Salon Name
-         * @param {string} address - `Business` Salon Address
-         * @param {string} state - `Business` Salon State
-         * @param {string} zipCode - `Business` Zip Code
-         * @param {string} phone - `Business` Phone Number
-         * @param {string} licenseNumber - `Business` License Number
-         *
-         * @method addBusinessDetails
-         * @instance
-         */
-
-        var uId = req.session.uId;
-        var role = req.session.role;
-        var body = req.body;
-        var personalInfo;
-
-
-        User
-            .findOne({_id: uId}, {personalInfo: 1}, function(err, resultModel){
-
-                if (err){
-                    return next(err);
-                }
-
-                if (!resultModel){
-                    return next(badRequests.DatabaseError());
-                }
-
-                personalInfo = (resultModel.toJSON()).personalInfo;
-
-                if (body.firstName){
-                    personalInfo.firstName = body.firstName;
-                }
-
-                if (body.lastName){
-                    personalInfo.lastName = body.lastName;
-                }
-
-                if (body.profession && (role === CONSTANTS.USER_ROLE.STYLIST)){
-                    personalInfo.profession = body.profession;
-                }
-
-                if (body.phone){
-                    personalInfo.phone = body.phone;
-                }
-
-                if (body.facebookURL && (role === CONSTANTS.USER_ROLE.STYLIST)){
-                    personalInfo.facebookURL = body.facebookURL;
-                }
-
-                resultModel.update({personalInfo: personalInfo}, function(err){
-
-                    if (err){
-                        return next(err);
-                    }
-
-
-                    res.status(200).send({success: 'Personal info updated successfully'});
-                });
-
-            });
-
-    };
-
-    this.updateSalonInfo = function(req, res, next){
-
-        /**
-         * __Type__ __`PUT`__
-         *
-         * __Content-Type__ `application/json`
-         *
-         * __HOST: `http://projects.thinkmobiles.com:8871`__
-         *
-         * __URL: `/business/details`__
-         *
-         * This __method__ allows update details for _Business_
-         *
-         * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/business/details
-         *
-         * @example Body example:
-         *
-         * {
-         *    "salonName": "Misha",
-         *    "address": "Uzhgorod, Gvardijska 19",
-         *    "state": "Zakarpatska",
-         *    "zipCode": "88000",
-         *    "phone": "+380968987567",
-         *    "licenseNumber": "1224"
-         * }
-         * @example Response example:
-         *
-         *  Response status: 200
-         *
-         * {
-         *     "success": "Business details saved successful"
-         * }
-         *
-         * @param {string} [salonName] - `Business` Salon Name
-         * @param {string} [address] - `Business` Salon Address
-         * @param {string} [state] - `Business` Salon State
-         * @param {string} [zipCode] - `Business` Zip Code
-         * @param {string} [phone] - `Business` Phone Number
-         * @param {string} [licenseNumber] - `Business` License Number
-         *
-         * @method updateBusinessDetails
-         * @instance
-         */
-
-        var uId = req.session.uId;
-        var body = req.body;
-        var currentSalonDetails;
-
-        User
-            .findOne({_id: uId}, {salonInfo: 1}, function(err, resultModel){
-
-                if (err){
-                    return next(err);
-                }
-
-                if (!resultModel){
-                    return next(badRequests.DatabaseError());
-                }
-
-                currentSalonDetails = resultModel.get('salonInfo');
-
-                if (body.salonName){
-                    currentSalonDetails.salonName = body.salonName;
-                }
-
-                if (body.yourBusinessRole){
-                    currentSalonDetails.yourBusinessRole = body.yourBusinessRole;
-                }
-
-                if (body.phone){
-                    currentSalonDetails.phone = body.phone;
-                }
-
-                if (body.email){
-                    currentSalonDetails.email = body.email;
-                }
-
-                if (body.address){
-                    currentSalonDetails.address = body.address;
-                }
-
-                if (body.state){
-                    currentSalonDetails.state = body.state;
-                }
-
-                if (body.zipCode){
-                    currentSalonDetails.zipCode = body.zipCode;
-                }
-
-                if (body.phone){
-                    currentSalonDetails.phone = body.phone;
-                }
-
-                if (body.licenseNumber){
-                    currentSalonDetails.licenseNumber = body.licenseNumber;
-                }
-
-                if (body.city){
-                    currentSalonDetails.city = body.city;
-                }
-
-                if (body.country){
-                    currentSalonDetails.country = body.country;
-                }
-
-                resultModel.update({salonInfo: currentSalonDetails}, function(err){
-
-                    if (err){
-                        return next(err);
-                    }
-
-                    res.status(200).send({success: 'Business details updated successful'});
-
-                });
 
             });
     };
@@ -1183,7 +967,7 @@ var UserHandler = function (app, db) {
 
                         function(cb){
                             userModel
-                                .update({'personalInfo.avatar': imageName}, cb);
+                                .update({$set: {'personalInfo.avatar': imageName}}, cb);
                         },
 
                         function(cb) {
@@ -1232,7 +1016,7 @@ var UserHandler = function (app, db) {
                 avatarName = userModel.get('personalInfo.avatar');
 
                 userModel
-                    .update({'personalInfo.avatar': ''}, function(err){
+                    .update({$set: {'personalInfo.avatar': ''}}, function(err){
                         if (err){
                             return next(err);
                         }
@@ -1503,7 +1287,9 @@ var UserHandler = function (app, db) {
             }
 
             Services
-                .find({stylist: uId}, function(err, stylistServiceModel){
+                .find({stylist: uId})
+                .populate({path: 'serviceId', select: '_id name'})
+                .exec(function(err, stylistServiceModel){
 
                     if (err){
                         return next(err);
@@ -1511,15 +1297,15 @@ var UserHandler = function (app, db) {
 
                     allId = (_.pluck(allServiceModels, '_id')).toStringObjectIds();
 
-                    stylistId = (_.pluck(stylistServiceModel, 'serviceId')).toStringObjectIds();
+                    stylistId = (_.pluck(stylistServiceModel, 'serviceId._id')).toStringObjectIds();
 
                     for (var i = 0, n = allServiceModels.length; i < n; i++){
                         ind = stylistId.indexOf(allId[i]);
 
                         if (ind !== -1){
                             serviceObj = {
-                                id: stylistServiceModel[ind].serviceId,
-                                name: stylistServiceModel[ind].name,
+                                id: stylistServiceModel[ind].serviceId._id,
+                                name: stylistServiceModel[ind].serviceId.name,
                                 status: stylistServiceModel[ind].approved ? 'approved' : 'pending'
                             };
 
@@ -1544,58 +1330,7 @@ var UserHandler = function (app, db) {
 
     };
 
-    this.sendRequestForService = function(req, res, next){
 
-        var uId = req.session.uId;
-        var serviceId = req.params.serviceId;
-        var serviceModel;
-        var name;
-        var createObj;
-
-        ServiceType.findOne({_id: serviceId}, {name: 1}, function(err, resultModel){
-
-            if (err){
-                return next(err);
-            }
-
-            if (!resultModel){
-                return next(badRequests.DatabaseError());
-            }
-
-            name = resultModel.get('name');
-
-            Services
-                .findOne({stylist: ObjectId(uId), name: name}, function(err, resultModel){
-
-                    if (err){
-                        return next(err);
-                    }
-
-                    if (resultModel){
-                        return res.status(200).send({success: 'You have already requested this service'});
-                    }
-
-                    createObj = {
-                        stylist: ObjectId(uId),
-                        serviceId: ObjectId(serviceId)
-                    };
-
-                    serviceModel = new Services(createObj);
-
-                    serviceModel
-                        .save(function(err){
-
-                            if (err){
-                                return next(err);
-                            }
-
-                            res.status(200).send({success: 'request succeed'});
-
-                        });
-
-                });
-        });
-    };
 
 };
 

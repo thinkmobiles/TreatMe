@@ -5,7 +5,7 @@ var SessionHandler = require('../handlers/sessions');
 
 module.exports = function(db){
     var admin = new AdminHandler(db);
-    var sessionHandler = new SessionHandler();
+    var sessionHandler = new SessionHandler(db);
 
     router.get('/services/requested', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getRequestedService);
     router.post('/services/approve', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveService);
@@ -33,11 +33,12 @@ module.exports = function(db){
     router.post('/activate/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.activateUsers);
 
     // CRUD Clients
-    router.get('/client', /*sessionHandler.authenticatedUser, sessionHandler.isAdmin,*/ admin.getClientList);
+    router.get('/client', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientList);
     router.get('/client/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientById);
     router.put('/client', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateClient);
     router.post('/client', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.createClient);
-    router.delete('/client', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeClient);
+
+    router.delete('/user/:id', /*sessionHandler.authenticatedUser, sessionHandler.isAdmin,*/ admin.removeUserById);
 
     router.post('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendAppointments);

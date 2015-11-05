@@ -12,6 +12,7 @@ var UserHandler = require('./users');
 var passGen = require('password-generator');
 var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
+var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
 
 var AdminHandler = function (db) {
@@ -24,6 +25,7 @@ var AdminHandler = function (db) {
     var SubscriptionType = db.model('SubscriptionType');
     var Subscription = db.model('Subscription');
     var User = db.model('User');
+    var Gallery = db.model('Gallery');
     var Appointment = db.model('Appointment');
 
     function getEncryptedPass(pass) {
@@ -62,6 +64,8 @@ var AdminHandler = function (db) {
 
                         if (serviceModels.length){
                             userObj.approvedServices = serviceModels;
+                        } else {
+                            userObj.approvedServices = []
                         }
 
                         callback(null, userObj);
@@ -70,6 +74,7 @@ var AdminHandler = function (db) {
     }
 
     this.getStylistByCriterion = function(criterion, page, sortObj, limit, callback){
+
 
         var resultArray = [];
         var obj;
@@ -110,21 +115,45 @@ var AdminHandler = function (db) {
             });
     };
 
-    function getCountByCriterion(role, status, callback){
+    function getCountByCriterion(search, role, status, callback){
 
-        var findObj = {
+        var roleObj = {
             role: role
         };
+
+        var statusObj = {};
+        var searchRegExp;
+        var searchObj = {};
+        var findObj;
 
         if (!callback && typeof status === 'function'){
             callback = status;
         } else {
             if (status === 'requested'){
-                findObj.approved = false;
+                statusObj.approved = false;
             } else if (status === 'approved') {
-                findObj.approved = true;
+                statusObj.approved = true;
             }
         }
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                {'personalInfo.firstName': {$regex: searchRegExp}},
+                {'personalInfo.lastName': {$regex: searchRegExp}},
+                {'email': {$regex: searchRegExp}},
+                {'salon.firstName': {$regex: searchRegExp}}
+            ];
+        }
+
+        findObj = {
+            $and: [
+                roleObj,
+                statusObj,
+                searchObj
+            ]
+        };
 
         User
             .count(findObj, function(err, resultCount){
@@ -141,8 +170,9 @@ var AdminHandler = function (db) {
     this.getStylistCount = function(req, res, next){
 
         var status = req.query.status;
+        var search = req.query.search;
 
-        getCountByCriterion(CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
+        getCountByCriterion(search, CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
 
             if (err){
                 return next(err);
@@ -155,8 +185,9 @@ var AdminHandler = function (db) {
 
     this.getClientCount = function(req, res, next){
 
+        var search = req.query.search;
 
-        getCountByCriterion(CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
+        getCountByCriterion(search, CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
 
             if (err){
                 return next(err);
@@ -207,34 +238,49 @@ var AdminHandler = function (db) {
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var statusRegExp = /^requested$|^all$/;
-        var sort = req.query.sort || 'name';
+        var sort = req.query.sort || 'date';
         var order = (req.query.order === '1') ? 1 : -1;
-        var sortObj = {};
-
         var status = req.query.status;
+        var search = req.query.search || '';
+        var searchRegExp;
+        var sortObj = {};
+        var searchObj = {};
+        var criterion;
+        var approvedObj = {};
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                    {'personalInfo.firstName': {$regex: searchRegExp}},
+                    {'personalInfo.lastName': {$regex: searchRegExp}},
+                    {'email': {$regex: searchRegExp}},
+                    {'salonInfo.salonName': {$regex: searchRegExp}}
+                ];
+        }
 
         if (!statusRegExp.test(status)) {
             status = 'all';
         }
 
-
-
         if (sort === 'salon'){
             sortObj['salonInfo.salonName'] =  order;
         } else if (sort === 'status'){
             sortObj['approved'] = order;
-        } else {
+        } else if (sort === 'name'){
             sortObj['personalInfo.firstName'] = order;
             sortObj['personalInfo.lastName'] = order;
-
+        } else {
+            sortObj['createdAt'] = order;
         }
-
-
-        var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
 
         if (status === 'requested') {
-            criterion.approved = false
+            approvedObj['approved'] = false;
+        } else if (status === 'approved') {
+            approvedObj['approved'] = true;
         }
+
+        criterion = {$and: [{role: CONSTANTS.USER_ROLE.STYLIST}, searchObj, approvedObj]};
 
         self.getStylistByCriterion(criterion, page, sortObj, limit, function (err, result) {
 
@@ -675,7 +721,7 @@ var AdminHandler = function (db) {
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_SERVICES;
 
         Services
-            .find({}, {__v: 0})
+            .find({approved: false}, {__v: 0})
             .populate({path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'})
             .skip(limit * (page - 1))
             .limit(limit)
@@ -1338,7 +1384,22 @@ var AdminHandler = function (db) {
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
+        var search = req.query.search;
+        var searchRegExp;
         var sortObj = {};
+        var findObj = {};
+        var roleObj = {};
+        var searchObj = {};
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                {'personalInfo.firstName': {$regex: searchRegExp}},
+                {'personalInfo.lastName': {$regex: searchRegExp}},
+                {'email': {$regex: searchRegExp}}
+            ];
+        }
 
         if (sortParam && sortParam !== 'Name' && sortParam !== 'Email') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
@@ -1353,8 +1414,14 @@ var AdminHandler = function (db) {
             sortObj.email = order;
         }
 
+        roleObj['role'] = CONSTANTS.USER_ROLE.CLIENT;
+
+        findObj = {
+            $and: [roleObj, searchObj]
+        };
+
         User
-            .find({role: CONSTANTS.USER_ROLE.CLIENT}, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
+            .find(findObj, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
             .sort(sortObj)
             .skip(limit * (page - 1))
             .limit(limit)
@@ -1369,16 +1436,49 @@ var AdminHandler = function (db) {
 
     this.getClientById = function(req, res, next){
         var clientId = req.params.id;
+        var resultObj = {};
+        var sortParam = req.query.sort;
+        var order = (req.query.order === '1') ? 1 : -1;
+        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_BOOKED_APPOINTMENTS;
+        var sortObj = {};
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
             return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
         }
+
+        if (sortParam && sortParam !== 'Booking' && sortParam !== 'Name' && sortParam !== 'Service' && sortParam !== 'Payment' && sortParam !== 'Status') {
+            return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+        }
+
+        if (sortParam === 'Booking' || !sortParam) {
+            sortObj.bookingDate = order;
+        }
+
+        if (sortParam === 'Name') {
+            sortObj['stylist.personalInfo.firstName'] = order;
+            sortObj['stylist.personalInfo.lastName'] = order;
+        }
+
+        if (sortParam === 'Service') {
+            sortObj['serviceType.name'] = order;
+        }
+
+        if (sortParam === 'Payment') {
+            //TODO: sortObj['payment'] = order;
+        }
+
+        if (sortParam === 'Status') {
+            sortObj.status = order;
+        }
+
 
         async.parallel([
 
                 function(cb){
                     User
                         .findOne({_id: clientId, role: CONSTANTS.USER_ROLE.CLIENT}, function(err, clientModel){
+                            var avatarName;
+
                             if (err){
                                 return cb(err);
                             }
@@ -1387,31 +1487,176 @@ var AdminHandler = function (db) {
                                 return cb(badRequests.DatabaseError());
                             }
 
+                            resultObj.name = clientModel.personalInfo.firstName + ' ' + clientModel.personalInfo.lastName;
+                            resultObj.phone = clientModel.personalInfo.phone;
+                            resultObj.email = clientModel.email;
+                            avatarName = clientModel.personalInfo.avatar;
 
+                            if (avatarName){
+                                resultObj.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                            } else {
+                                resultObj.avatar = '';
+                            }
+
+                            cb();
                         });
                 },
 
                 function(cb){
+                    var projectionObj = {
+                        bookingDate: 1,
+                        stylist: 1,
+                        serviceType: 1,
+                        //TODO: payment: 1,
+                        status: 1
+                    };
+
                     Appointment
-                        .find({client: clientId})
+                        .find({client: clientId, status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}}, projectionObj)
+                        .populate([{path: 'serviceType', select: 'name'}, {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}])
+                        .sort(sortObj)
+                        .limit(limit)
                         .exec(function(err, appointmentModelsArray){
                             if (err){
                                 return cb(err);
                             }
 
+                            resultObj.bookedAppointments = appointmentModelsArray;
 
+                            cb();
+                        });
+                },
 
+                function(cb){
+                    Subscription
+                        .find({client: clientId}, {_id: 0, purchaseDate: 1, expirationDate: 1, subscriptionType: 1})
+                        .populate({path: 'subscriptionType', select: 'name price'})
+                        .sort({purchaseDate: -1})
+                        .limit(CONSTANTS.LIMIT.REQUESTED_PURCHASED_PACKAGES)
+                        .exec(function(err, subscriptionModelsArray){
+                            var subscriptionArray;
+                            var activeSubscriptionArray = [];
+                            var currentDate = new Date();
+
+                            if (err){
+                                return cb(err)
+                            }
+
+                            subscriptionArray = subscriptionModelsArray.map(function(model){
+                                var modelJSON = model.toJSON();
+
+                                modelJSON.package = modelJSON.serviceType.name;
+                                modelJSON.price = modelJSON.serviceType.price;
+                                delete modelJSON.serviceType;
+
+                                if (modelJSON.expirationDate >= currentDate){
+
+                                    delete modelJSON.expirationDate;
+                                    activeSubscriptionArray.push(modelJSON);
+                                }
+
+                                delete modelJSON.price;
+
+                                return modelJSON;
+                            });
+
+                            resultObj.purchasedPackages = subscriptionArray;
+                            resultObj.currentPackages = activeSubscriptionArray;
+
+                            cb();
                         });
                 }
             ],
 
-            function(err, result){
+            function(err){
                 if (err){
                     return next(err);
                 }
 
-                res.status(200).send();
+                res.status(200).send(resultObj);
         });
+    };
+
+    this.removeUserById = function(req, res, next){
+        var userId = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(userId)){
+            return next(badRequests.InvalidValue({value: userId, param: 'id'}));
+        }
+
+        async.parallel([
+
+            function(cb){
+                User
+                    .findOne({_id: userId}, function(err, userModel){
+                        var avatarName;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!userModel){
+                            return cb(badRequests.DatabaseError());
+                        }
+
+                        avatarName = userModel.get('personalInfo.avatar');
+
+                        userModel.remove(function(err){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (avatarName){
+                                image.deleteImage(avatarName, CONSTANTS.BUCKET.IMAGES, cb)
+                            } else {
+                                cb();
+                            }
+                        });
+                    });
+            },
+
+            function(cb){
+                Appointment.remove({$or: [{client: userId}, {stylist: userId}]}, cb);
+            },
+
+            function(cb){
+                Gallery
+                    .find({$or: [{client: userId}, {stylist: userId}]}, function(err, imageModelArray){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        async.each(imageModelArray,
+
+                            function(model, eachCb){
+                                var imageName = model.get('_id').toString();
+
+                                image.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, function(err){
+                                    if (err){
+                                        return eachCb(err);
+                                    }
+
+                                    model.remove(eachCb);
+                                });
+                            },
+
+                            function(err){
+                                if (err){
+                                    return cb(err);
+                                }
+
+                                cb();
+                            });
+                });
+            }
+
+        ], function(err){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'User was removed successfully'});
+        })
     };
 
     this.updateClient = function(req, res, next){
@@ -1419,18 +1664,6 @@ var AdminHandler = function (db) {
     };
 
     this.createClient = function(req, res, next){
-        res.status(400).send('Not implemented yet');
-    };
-
-    this.removeClient = function(req, res, next){
-        res.status(400).send('Not implemented yet');
-    };
-
-    this.suspendClient = function(req, res, next){
-        res.status(400).send('Not implemented yet');
-    };
-
-    this.activateClient = function(req, res, next){
         res.status(400).send('Not implemented yet');
     };
 
