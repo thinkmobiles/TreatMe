@@ -11,23 +11,13 @@
             <tr>
                 <th><div class="checkBlock"><input type="checkbox" class="checkAll" id="checkAll"></div></th>
                 <th class="date">Date</th>
-                <th>Stylist Name</th>
-                <th>Salon Name</th>
+                <th class="name">Stylist Name</th>
+                <th class="salon">Salon Name</th>
                 <th>Accept</th>
                 <th>Delete</th>
             </tr>
             </thead>
             <tbody>
-                <% _.forEach(users, function (user) {%>
-                <tr data-id="<%= user._id%>">
-                    <td><div class="checkBlock"><input type="checkbox" class="check"></div></td>
-                    <td><%= new Date(user.createdAt).getDate() + '/' + new Date(user.createdAt).getMonth() + '/' + String.prototype.slice.call(new Date(user.createdAt).getFullYear(),2,4) %></td>
-                    <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
-                    <td><%= user.salonInfo.salonName %></td>
-                    <td><button id="acceptCurrentBtn">Accept</button></td>
-                    <td><button id="removeCurrentBtn">Delete</button></td>
-                </tr>
-                <%});%>
             </tbody>
         </table>
     </div>

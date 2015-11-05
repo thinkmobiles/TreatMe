@@ -1,38 +1,65 @@
 'use strict';
 
 define([
+    'constants/index',
     'collections/stylistCollection',
-    'text!templates/stylists/stylistsTemplate.html'
+    'views/customElements/paginationView',
+    'text!templates/stylists/stylistsTemplate.html',
+    'text!templates/stylists/stylistsListTemplate.html'
 
-], function (StylistCollection, MainTemplate) {
+], function (CONSTANTS, StylistCollection, PaginationView, MainTemplate, ListTemplate) {
 
     var View = Backbone.View.extend({
 
         el : '#wrapper',
 
         mainTemplate : _.template(MainTemplate),
+        listTemplate : _.template(ListTemplate),
 
         events: {
         },
 
-        initialize: function () {
-            var collection = new StylistCollection();
+        initialize: function (options) {
+            var page = (options && options.page) ? parseInt(options.page) : 1;
+            var collectionParams = {
+                page: page
+            };
+            var collection = new StylistCollection(collectionParams);
             var self = this;
+            var paginationOptions;
 
             App.Breadcrumbs.reset([{name: 'Stylist List', path: '#stylists'}]);
+            self.render();
+
+            paginationOptions = {
+                collection    : collection,
+                onPage        : CONSTANTS.ITEMS_PER_PAGE,
+                padding       : 2,
+                page          : page,
+                ends          : true,
+                steps         : false,
+                url           : 'stylists/page',
+                urlPagination : collection.url()//,
+            };
+
+            this.paginationView = new PaginationView(paginationOptions);
 
             self.collection = collection;
             collection.on('reset', function () {
-                self.render();
+                self.renderList();
             });
         },
 
         render: function () {
-            var self = this;
-            var $el = self.$el;
-            var users = self.collection.toJSON();
+            this.$el.html(this.mainTemplate());
 
-            $el.html(self.mainTemplate({users: users}));
+            return this;
+        },
+
+        renderList: function () {
+            var users = this.collection.toJSON();
+
+            this.$el.find('.list').html(this.listTemplate({users: users}));
 
             return this;
         },
