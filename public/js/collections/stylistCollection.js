@@ -2,9 +2,10 @@
 
 
 define([
+    'constants/index',
     'models/stylistModel'
 
-], function (Model) {
+], function (CONSTANTS, Model) {
     var Collection = Backbone.Collection.extend({
         model:Model,
 
@@ -13,7 +14,29 @@ define([
         },
 
         initialize: function(options){
-            if (options && options.status) {
+            var params = {
+                reset: true,
+                success: function(coll){
+                    return coll;
+                }
+            };
+            var status = (options && options.status) ? options.status : null;
+            var page = (options && options.page) ? options.page : 1;
+            var limit = (options && options.count) ? options.status : CONSTANTS.ITEMS_PER_PAGE;
+            var data = {
+                page: page,
+                limit: limit
+            };
+
+            if (status) {
+               data.status = status;
+            }
+
+            params.data = data;
+
+            this.fetch(params);
+
+            /*if (options && options.status) {
                 this.url = "/admin/stylist";
 
                 this.fetch({
@@ -31,7 +54,7 @@ define([
                         return coll;
                     }
                 });
-            }
+            }*/
         },
 
         approve: function (data, callback) {
@@ -54,7 +77,7 @@ define([
                 url: '/admin/stylist',
                 data: data,
                 success: callback,
-                error: this.handleErrorResponse
+                error: this.handleErrorResponse //TODO
             })
         }
     });

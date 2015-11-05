@@ -157,22 +157,86 @@ var ClientsHandler = function (app, db) {
             });
     };
 
+    this.buySubscriptions = function(req, res, next){
+        var clientId = req.session.uId;
+        var body = req.body;
+        var ids;
+
+        if (!body.ids) {
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+            if (!req.params.clientId){
+                return next(badRequests.NotEnParams({reqParams: 'clientId'}))
+            }
+
+            clientId = req.params.clientId;
+        }
+
+        ids = body.ids.toObjectId();
+
+        async.each(ids,
+
+            function(id, cb){
+                var currentDate = new Date();
+                var expirationDate = new Date();
+                var saveObj;
+                var subscriptionModel;
+
+                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+                saveObj = {
+                    client: clientId,
+                    subscriptionType : id,
+                    //TODO: price: 111,
+                    purchaseDate: currentDate,
+                    expirationDate: expirationDate
+                };
+
+                subscriptionModel = new Subscription(saveObj);
+
+                subscriptionModel
+                    .save(function(err){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb();
+                    });
+            },
+
+            function(err){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Subscriptions purchased successfully'});
+            });
+    };
+
     this.createAppointment = function (req, res, next) {
         var body = req.body;
         var appointmentModel;
         var saveObj;
-        var clientId;
+        var clientId = req.session.uId;
         var clientLoc;
         var locationAddress = req.body.location;
 
-        if (!body.clientId || !body.serviceType || !body.bookingDate) {
+        if (!body.serviceType || !body.bookingDate) {
             return next(badRequests.NotEnParams({reqParams: 'clientId and serviceType and bookingDate'}));
         }
 
-        clientId = body.clientId;
+        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+            if (!body.clientId){
+                return next(badRequests.NotEnParams({reqParams: 'clientId'}));
+            }
 
-        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)) {
-            return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+            clientId = body.clientId;
+
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)) {
+                return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+            }
         }
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(body.serviceType)) {

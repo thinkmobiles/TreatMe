@@ -42,8 +42,6 @@ module.exports = function (app, db) {
     app.post('/avatar', sessionHandler.authenticatedUser, user.uploadAvatar);
     app.delete('/avatar/:id?', sessionHandler.authenticatedUser, user.removeAvatar);
 
-    app.put('/personal', sessionHandler.authenticatedUser, user.updatePersonalInfo);
-    app.put('/salon', sessionHandler.authenticatedUser, sessionHandler.isStylist, user.updateSalonInfo);
     app.put('/coordinates', sessionHandler.authenticatedUser, user.updateLocation);
 
     app.get('/service/:stylistId?', sessionHandler.authenticatedUser, sessionHandler.stylistOrAdmin, user.getStylistServices);

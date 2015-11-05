@@ -601,7 +601,7 @@ var UserHandler = function (app, db) {
         var userRole = req.query.role;
 
         User
-            .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {forgotToken: ''}, function (err, userModel) {
+            .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {$set: {forgotToken: ''}}, function (err, userModel) {
                 if (err) {
                     return next(err);
                 }
@@ -631,10 +631,10 @@ var UserHandler = function (app, db) {
         encryptedPassword = getEncryptedPass(body.password);
 
         User
-            .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {
+            .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {$set: {
                 password: encryptedPassword,
                 forgotToken: ''
-            }, function (err, userModel) {
+            }}, function (err, userModel) {
 
                 if (err) {
                     return next(err);
@@ -746,7 +746,7 @@ var UserHandler = function (app, db) {
             }
 
             User
-                .findOneAndUpdate(findObj, {forgotToken: ''}, function (err, userModel) {
+                .findOneAndUpdate(findObj, {$set: {forgotToken: ''}}, function (err, userModel) {
                     var token;
 
                     if (err) {
@@ -887,223 +887,6 @@ var UserHandler = function (app, db) {
                         res.status(200).send({success: resultModel.role + 'updated successfully'});
 
                     });
-
-            });
-    };
-
-    this.updatePersonalInfo = function(req, res, next){
-
-        /**
-         * __Type__ __`PUT`__
-         *
-         * __Content-Type__ `application/json`
-         *
-         * __HOST: `http://projects.thinkmobiles.com:8871`__
-         *
-         * __URL: `/business/details`__
-         *
-         * This __method__ allows add details for _Business_
-         *
-         * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/business/details
-         *
-         * @example Body example:
-         *
-         * {
-         *    "salonName": "Misha",
-         *    "address": "Uzhgorod, Gvardijska 19",
-         *    "state": "Zakarpatska",
-         *    "zipCode": "88000",
-         *    "phone": "+380968987567",
-         *    "licenseNumber": "1224"
-         * }
-         * @example Response example:
-         *
-         *  Response status: 200
-         *
-         * {
-         *     "success": "Business details saved successful"
-         * }
-         *
-         * @param {string} salonName - `Business` Salon Name
-         * @param {string} address - `Business` Salon Address
-         * @param {string} state - `Business` Salon State
-         * @param {string} zipCode - `Business` Zip Code
-         * @param {string} phone - `Business` Phone Number
-         * @param {string} licenseNumber - `Business` License Number
-         *
-         * @method addBusinessDetails
-         * @instance
-         */
-
-        var uId = req.session.uId;
-        var role = req.session.role;
-        var body = req.body;
-        var personalInfo;
-
-
-        User
-            .findOne({_id: uId}, {personalInfo: 1}, function(err, resultModel){
-
-                if (err){
-                    return next(err);
-                }
-
-                if (!resultModel){
-                    return next(badRequests.DatabaseError());
-                }
-
-                personalInfo = (resultModel.toJSON()).personalInfo;
-
-                if (body.firstName){
-                    personalInfo.firstName = body.firstName;
-                }
-
-                if (body.lastName){
-                    personalInfo.lastName = body.lastName;
-                }
-
-                if (body.profession && (role === CONSTANTS.USER_ROLE.STYLIST)){
-                    personalInfo.profession = body.profession;
-                }
-
-                if (body.phone){
-                    personalInfo.phone = body.phone;
-                }
-
-                if (body.facebookURL && (role === CONSTANTS.USER_ROLE.STYLIST)){
-                    personalInfo.facebookURL = body.facebookURL;
-                }
-
-                resultModel.update({personalInfo: personalInfo}, function(err){
-
-                    if (err){
-                        return next(err);
-                    }
-
-
-                    res.status(200).send({success: 'Personal info updated successfully'});
-                });
-
-            });
-
-    };
-
-    this.updateSalonInfo = function(req, res, next){
-
-        /**
-         * __Type__ __`PUT`__
-         *
-         * __Content-Type__ `application/json`
-         *
-         * __HOST: `http://projects.thinkmobiles.com:8871`__
-         *
-         * __URL: `/business/details`__
-         *
-         * This __method__ allows update details for _Business_
-         *
-         * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/business/details
-         *
-         * @example Body example:
-         *
-         * {
-         *    "salonName": "Misha",
-         *    "address": "Uzhgorod, Gvardijska 19",
-         *    "state": "Zakarpatska",
-         *    "zipCode": "88000",
-         *    "phone": "+380968987567",
-         *    "licenseNumber": "1224"
-         * }
-         * @example Response example:
-         *
-         *  Response status: 200
-         *
-         * {
-         *     "success": "Business details saved successful"
-         * }
-         *
-         * @param {string} [salonName] - `Business` Salon Name
-         * @param {string} [address] - `Business` Salon Address
-         * @param {string} [state] - `Business` Salon State
-         * @param {string} [zipCode] - `Business` Zip Code
-         * @param {string} [phone] - `Business` Phone Number
-         * @param {string} [licenseNumber] - `Business` License Number
-         *
-         * @method updateBusinessDetails
-         * @instance
-         */
-
-        var uId = req.session.uId;
-        var body = req.body;
-        var currentSalonDetails;
-
-        User
-            .findOne({_id: uId}, {salonInfo: 1}, function(err, resultModel){
-
-                if (err){
-                    return next(err);
-                }
-
-                if (!resultModel){
-                    return next(badRequests.DatabaseError());
-                }
-
-                currentSalonDetails = resultModel.get('salonInfo');
-
-                if (body.salonName){
-                    currentSalonDetails.salonName = body.salonName;
-                }
-
-                if (body.yourBusinessRole){
-                    currentSalonDetails.yourBusinessRole = body.yourBusinessRole;
-                }
-
-                if (body.phone){
-                    currentSalonDetails.phone = body.phone;
-                }
-
-                if (body.email){
-                    currentSalonDetails.email = body.email;
-                }
-
-                if (body.address){
-                    currentSalonDetails.address = body.address;
-                }
-
-                if (body.state){
-                    currentSalonDetails.state = body.state;
-                }
-
-                if (body.zipCode){
-                    currentSalonDetails.zipCode = body.zipCode;
-                }
-
-                if (body.phone){
-                    currentSalonDetails.phone = body.phone;
-                }
-
-                if (body.licenseNumber){
-                    currentSalonDetails.licenseNumber = body.licenseNumber;
-                }
-
-                if (body.city){
-                    currentSalonDetails.city = body.city;
-                }
-
-                if (body.country){
-                    currentSalonDetails.country = body.country;
-                }
-
-                resultModel.update({$set: {salonInfo: currentSalonDetails}}, function(err){
-
-                    if (err){
-                        return next(err);
-                    }
-
-                    res.status(200).send({success: 'Business details updated successful'});
-
-                });
 
             });
     };
@@ -1286,7 +1069,7 @@ var UserHandler = function (app, db) {
         };
 
         User
-            .findOneAndUpdate({_id: userId}, updateObj, function (err, userModel) {
+            .findOneAndUpdate({_id: userId}, {$set: updateObj}, function (err, userModel) {
                 if (err) {
                     return next(err);
                 }

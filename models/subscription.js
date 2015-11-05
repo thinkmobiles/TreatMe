@@ -15,7 +15,7 @@ module.exports = function (db) {
             type: ObjectId,
             ref: 'SubscriptionType'
         },
-        price: String, //for current user, maybe with discount
+        price: Number, //for current user, maybe with discount
         purchaseDate: {
             type: Date,
             default: Date.now
