@@ -23,6 +23,7 @@ define([
             "click #acceptCurrentBtn, #acceptSelectedBtn": "acceptStylist",
             "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest",
             "click .date, .name, .salon": "sort",
+            "click .table tr": "showDetails",
             "click .checkAll": "checkAll"
         },
 
@@ -158,6 +159,13 @@ define([
             state
                 ? checkboxes.prop('checked', true)
                 : checkboxes.prop('checked', false);
+        },
+
+        showDetails: function (e) {
+            var element = $(e.target);
+            alert(element.closest('tr').attr('data-id'));
+
+            return this;
         },
 
         reRenderContent: function () {
