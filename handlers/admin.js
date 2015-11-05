@@ -112,21 +112,45 @@ var AdminHandler = function (db) {
             });
     };
 
-    function getCountByCriterion(role, status, callback){
+    function getCountByCriterion(role, status, search, callback){
 
-        var findObj = {
+        var roleObj = {
             role: role
         };
+
+        var statusObj = {};
+        var searchRegExp;
+        var searchObj = {};
+        var findObj;
 
         if (!callback && typeof status === 'function'){
             callback = status;
         } else {
             if (status === 'requested'){
-                findObj.approved = false;
+                statusObj.approved = false;
             } else if (status === 'approved') {
-                findObj.approved = true;
+                statusObj.approved = true;
             }
         }
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                {'personalInfo.firstName': {$regex: searchRegExp}},
+                {'personalInfo.lastName': {$regex: searchRegExp}},
+                {'email': {$regex: searchRegExp}},
+                {'salon.firstName': {$regex: searchRegExp}}
+            ];
+        }
+
+        findObj = {
+            $and: [
+                roleObj,
+                statusObj,
+                searchObj
+            ]
+        };
 
         User
             .count(findObj, function(err, resultCount){
@@ -143,8 +167,9 @@ var AdminHandler = function (db) {
     this.getStylistCount = function(req, res, next){
 
         var status = req.query.status;
+        var search = req.query.search;
 
-        getCountByCriterion(CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
+        getCountByCriterion(CONSTANTS.USER_ROLE.STYLIST, status, search, function(err, resultCount){
 
             if (err){
                 return next(err);
@@ -211,29 +236,40 @@ var AdminHandler = function (db) {
         var statusRegExp = /^requested$|^all$/;
         var sort = req.query.sort || 'date';
         var order = (req.query.order === '1') ? 1 : -1;
-        var sortObj = {};
-
         var status = req.query.status;
+        var search = req.query.search || '';
+        var searchRegExp;
+        var sortObj = {};
+        var searchObj = {};
+        var criterion;
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                    {'personalInfo.firstName': {$regex: searchRegExp}},
+                    {'personalInfo.lastName': {$regex: searchRegExp}},
+                    {'email': {$regex: searchRegExp}},
+                    {'salon.firstName': {$regex: searchRegExp}}
+                ];
+        }
+
+        criterion = {$and: [{role: CONSTANTS.USER_ROLE.STYLIST}, searchObj]};
 
         if (!statusRegExp.test(status)) {
             status = 'all';
         }
 
-
-
         if (sort === 'salon'){
             sortObj['salonInfo.salonName'] =  order;
         } else if (sort === 'status'){
             sortObj['approved'] = order;
-        } else {
+        } else if (sort === 'name'){
             sortObj['personalInfo.firstName'] = order;
             sortObj['personalInfo.lastName'] = order;
-
         } else {
             sortObj['createdAt'] = order;
         }
-
-        var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
 
         if (status === 'requested') {
             criterion.approved = false
