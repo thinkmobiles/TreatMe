@@ -17,20 +17,20 @@ define([
         events: {
             "click #acceptCurrentBtn, #acceptSelectedBtn": "acceptStylist",
             "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest",
+            "click .date": "sort",
             "click .checkAll": "checkAll"
         },
 
         initialize: function () {
             var self = this;
 
-            self.collection = new StylistCollection({ status: 'requested' });
+            self.collection = new StylistCollection({status: 'requested'});
             self.collection.on('remove', self.reRender, self);
-
 
 
             self.collection.fetch({
                 reset: true,
-                data: { status: 'requested' },
+                data: {status: 'requested'},
                 success: function (coll) {
                     self.collection = coll;
                     self.render();
@@ -75,7 +75,7 @@ define([
             } else if (el.id === 'acceptSelectedBtn') {
                 checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
 
-                $(checkboxes).each(function( index, element ) {
+                $(checkboxes).each(function (index, element) {
                     modelId = $(element).closest('tr').attr('data-id');
                     models.push(self.collection.get(modelId));
                     data.ids.push(modelId);
@@ -108,7 +108,7 @@ define([
             } else if (el.id === 'removeSelectedBtn') {
                 checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
 
-                $(checkboxes).each(function( index, element ) {
+                $(checkboxes).each(function (index, element) {
                     modelId = $(element).closest('tr').attr('data-id');
                     data.ids.push(modelId);
                 });
@@ -132,14 +132,59 @@ define([
 
         reRender: function () {
             console.log('fire event remove');
+            this.initialize();
+            //var self = this;
+            //var $el = self.$el;
+            //var users = self.collection.toJSON();
+            //
+            //$el.html('');
+            //$el.html(self.mainTemplate({users: users}));
+            //
+            //return this;
+        },
+
+        sort: function (e) {
+            var curElement = $(e.target);
+
+            curElement.hasClass('asc')
+                ? curElement.removeClass('asc')
+                : this.ascendingSort(curElement)
+
+        },
+
+        ascendingSort: function (el) {
             var self = this;
-            var $el = self.$el;
-            var users = self.collection.toJSON();
+            var sort = el.attr('class');
+            var sortOrder = 1;
+            var table = $('.table tbody');
+            el.addClass('asc');
 
-            $el.html('');
-            $el.html(self.mainTemplate({users: users}));
+            self.collection.fetch({
+                reset: true,
+                data: {
+                    status: 'requested',
+                    sort: sort,
+                    order: sortOrder
+                },
+                success: function (coll) {
+                    self.collection = coll;
+                    table.html('');
+                    coll.forEach(function (applicant) {
+                    table.append(
+                       + '<tr data-id="' + applicant._id +'">'
+                       + '<td><div class="checkBlock"><input type="checkbox" class="check"></div></td>'
+                       + '<td>' + new Date(applicant.createdAt).getDate() + '/' + new Date(applicant.createdAt).getMonth() + '/' + String.prototype.slice.call(new Date(applicant.createdAt).getFullYear(),2,4) + '</td>'
+                       + '<td>' + applicant.firstName + '\s' + applicant.lastName + '</td>'
+                       + '<td>' + applicant.salonName + '</td>'
+                       + '<td><button id="acceptCurrentBtn">Accept</button></td>'
+                       + '<td><button id="removeCurrentBtn">Delete</button></td>'
+                       + '</tr>')
+                    });
 
-            return this;
+                    self.render();
+                }
+            });
+
         }
 
     });
