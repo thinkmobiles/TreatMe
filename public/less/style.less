@@ -273,13 +273,48 @@ a.addApp {
 
 
 .date:after, .name:after, .salon:after {
-  content: 'D';
+  content: '';
+  width: 9px;
+  height: 5px;
+  .i('arrow.png', transparent);
   margin-left: 5px;
+  display: inline-block;
+  position: relative;
+  top: -1px;
 }
 .date, .name, .salon {
   cursor: pointer;
 }
 .asc:after {
-  content: 'A';
+  content: '';
+  width: 9px;
+  height: 5px;
+  .i('arrow.png', transparent);
   margin-left: 5px;
+  display: inline-block;
+  position: relative;
+  top: -1px;
+  transform: rotate(180deg);
+}
+.pagination{
+  margin: 50px auto;
+  text-align: center;
+
+  li{
+    display: inline-block;
+    text-transform: uppercase;
+    font-weight: bold;
+    min-width: 30px;
+    width: auto;
+    height: 30px;
+    line-height: 30px;
+    &.active{
+      background-color: @mainColor;
+      border-radius: 50px;
+      color: #fff;
+    }
+    &.arrow{
+      margin: 0 10px;
+    }
+  }
 }
