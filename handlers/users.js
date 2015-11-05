@@ -18,6 +18,7 @@ var async = require('async');
 var ImageHandler = require('./image');
 var _ = require('lodash');
 var ObjectId = mongoose.Types.ObjectId;
+var geocoder = require('geocoder');
 
 
 var UserHandler = function (app, db) {
@@ -250,6 +251,8 @@ var UserHandler = function (app, db) {
 
         User
             .findOne({email: email, role: CONSTANTS.USER_ROLE.STYLIST}, {_id: 1}, function(err, resultModel){
+                var addressString;
+                var userModel;
 
                 if (err){
                     return callback(err);
@@ -259,19 +262,32 @@ var UserHandler = function (app, db) {
                     return callback(badRequests.EmailInUse());
                 }
 
-                var userModel = new User(createObj);
+                addressString = createObj.salonInfo.address + ' ' + createObj.salonInfo.city + ' ' + createObj.salonInfo.country;
 
-                userModel
-                    .save(function(err){
+                geocoder.geocode(addressString, function(err, data){
+                    if (err){
+                        return callback(err);
+                    }
 
-                        if (err){
-                            return callback(err);
-                        }
+                    if (!data || !data.results.length || !data.results[0].geometry || !data.results[0].geometry.location || data.status !== 'OK'){
+                        return callback(badRequests.UnknownGeoLocation());
+                    }
+                    createObj.loc = {
+                        coordinates : [data.results[0].geometry.location.lng, data.results[0].geometry.location.lat]
+                    };
 
-                        callback(null, userModel._id);
+                    userModel = new User(createObj);
 
-                    });
+                    userModel
+                        .save(function(err){
 
+                            if (err){
+                                return callback(err);
+                            }
+
+                            callback(null, userModel._id);
+                        });
+                });
             });
     };
 
