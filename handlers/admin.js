@@ -228,7 +228,6 @@ var AdminHandler = function (db) {
         } else {
             sortObj['personalInfo.firstName'] = order;
             sortObj['personalInfo.lastName'] = order;
-
         }
 
         var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
