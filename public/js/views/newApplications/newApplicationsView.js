@@ -2,9 +2,10 @@
 
 define([
     'collections/stylistCollection',
-    'text!templates/newApplications/newApplicationsTemplate.html'
+    'text!templates/newApplications/newApplicationsTemplate.html',
+    'text!templates/newApplications/newApplicantItemTemplate.html'
 
-], function (StylistCollection, MainTemplate) {
+], function (StylistCollection, MainTemplate, ContentTemplate) {
 
     var View;
 
@@ -14,10 +15,14 @@ define([
 
         mainTemplate: _.template(MainTemplate),
 
+        contentTemplate: _.template(ContentTemplate),
+
+        query: {status: 'requested'},
+
         events: {
             "click #acceptCurrentBtn, #acceptSelectedBtn": "acceptStylist",
             "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest",
-            "click .date": "sort",
+            "click .date, .name, .salon": "sort",
             "click .checkAll": "checkAll"
         },
 
@@ -25,12 +30,12 @@ define([
             var self = this;
 
             self.collection = new StylistCollection({status: 'requested'});
-            self.collection.on('remove', self.reRender, self);
+            self.collection.on('remove', self.refreshContent, self);
 
 
             self.collection.fetch({
                 reset: true,
-                data: {status: 'requested'},
+                data: self.query,
                 success: function (coll) {
                     self.collection = coll;
                     self.render();
@@ -42,9 +47,34 @@ define([
         render: function () {
             var self = this;
             var $el = self.$el;
+
+            $el.html(self.mainTemplate());
+            self.renderContent();
+
+            return this;
+        },
+
+        renderContent: function () {
+            var self = this;
+            var el = $('.table tbody');
             var users = self.collection.toJSON();
 
-            $el.html(self.mainTemplate({users: users}));
+            el.html(self.contentTemplate({users: users}));
+
+            return this;
+        },
+
+        refreshContent: function () {
+            var self = this;
+
+            self.collection.fetch({
+                reset: true,
+                data: self.query,
+                success: function (coll) {
+                    self.collection = coll;
+                    self.reRenderContent();
+                }
+            });
 
             return this;
         },
@@ -130,60 +160,36 @@ define([
                 : checkboxes.prop('checked', false);
         },
 
-        reRender: function () {
-            console.log('fire event remove');
-            this.initialize();
-            //var self = this;
-            //var $el = self.$el;
-            //var users = self.collection.toJSON();
-            //
-            //$el.html('');
-            //$el.html(self.mainTemplate({users: users}));
-            //
-            //return this;
+        reRenderContent: function () {
+            var table = $('.table tbody');
+
+            table.html('');
+            this.renderContent();
+
+            return this;
         },
 
         sort: function (e) {
             var curElement = $(e.target);
 
             curElement.hasClass('asc')
-                ? curElement.removeClass('asc')
-                : this.ascendingSort(curElement)
+                ? this.sorting(curElement, -1)
+                : this.sorting(curElement, 1)
 
         },
 
-        ascendingSort: function (el) {
+        sorting: function (el, sortOrder) {
             var self = this;
             var sort = el.attr('class');
-            var sortOrder = 1;
-            var table = $('.table tbody');
-            el.addClass('asc');
 
-            self.collection.fetch({
-                reset: true,
-                data: {
-                    status: 'requested',
-                    sort: sort,
-                    order: sortOrder
-                },
-                success: function (coll) {
-                    self.collection = coll;
-                    table.html('');
-                    coll.forEach(function (applicant) {
-                    table.append(
-                       + '<tr data-id="' + applicant._id +'">'
-                       + '<td><div class="checkBlock"><input type="checkbox" class="check"></div></td>'
-                       + '<td>' + new Date(applicant.createdAt).getDate() + '/' + new Date(applicant.createdAt).getMonth() + '/' + String.prototype.slice.call(new Date(applicant.createdAt).getFullYear(),2,4) + '</td>'
-                       + '<td>' + applicant.firstName + '\s' + applicant.lastName + '</td>'
-                       + '<td>' + applicant.salonName + '</td>'
-                       + '<td><button id="acceptCurrentBtn">Accept</button></td>'
-                       + '<td><button id="removeCurrentBtn">Delete</button></td>'
-                       + '</tr>')
-                    });
+            sortOrder === 1
+                ? el.addClass('asc')
+                : el.removeClass('asc');
 
-                    self.render();
-                }
-            });
+            self.query.sort = sort;
+            self.query.order = sortOrder;
+
+            self.refreshContent();
 
         }
 
