@@ -112,7 +112,7 @@ var AdminHandler = function (db) {
             });
     };
 
-    function getCountByCriterion(role, status, search, callback){
+    function getCountByCriterion(search, role, status, callback){
 
         var roleObj = {
             role: role
@@ -169,7 +169,7 @@ var AdminHandler = function (db) {
         var status = req.query.status;
         var search = req.query.search;
 
-        getCountByCriterion(CONSTANTS.USER_ROLE.STYLIST, status, search, function(err, resultCount){
+        getCountByCriterion(search, CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
 
             if (err){
                 return next(err);
@@ -182,8 +182,9 @@ var AdminHandler = function (db) {
 
     this.getClientCount = function(req, res, next){
 
+        var search = req.query.search;
 
-        getCountByCriterion(CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
+        getCountByCriterion(search, CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
 
             if (err){
                 return next(err);
@@ -242,6 +243,7 @@ var AdminHandler = function (db) {
         var sortObj = {};
         var searchObj = {};
         var criterion;
+        var approvedObj = {};
 
         if (search){
             searchRegExp = new RegExp('.*' + search + '.*', 'ig');
@@ -250,11 +252,9 @@ var AdminHandler = function (db) {
                     {'personalInfo.firstName': {$regex: searchRegExp}},
                     {'personalInfo.lastName': {$regex: searchRegExp}},
                     {'email': {$regex: searchRegExp}},
-                    {'salon.firstName': {$regex: searchRegExp}}
+                    {'salonInfo.salonName': {$regex: searchRegExp}}
                 ];
         }
-
-        criterion = {$and: [{role: CONSTANTS.USER_ROLE.STYLIST}, searchObj]};
 
         if (!statusRegExp.test(status)) {
             status = 'all';
@@ -272,8 +272,12 @@ var AdminHandler = function (db) {
         }
 
         if (status === 'requested') {
-            criterion.approved = false
+            approvedObj['approved'] = false;
+        } else if (status === 'approved') {
+            approvedObj['approved'] = true;
         }
+
+        criterion = {$and: [{role: CONSTANTS.USER_ROLE.STYLIST}, searchObj, approvedObj]};
 
         self.getStylistByCriterion(criterion, page, sortObj, limit, function (err, result) {
 
@@ -1377,7 +1381,22 @@ var AdminHandler = function (db) {
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
+        var search = req.query.search;
+        var searchRegExp;
         var sortObj = {};
+        var findObj = {};
+        var roleObj = {};
+        var searchObj = {};
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                {'personalInfo.firstName': {$regex: searchRegExp}},
+                {'personalInfo.lastName': {$regex: searchRegExp}},
+                {'email': {$regex: searchRegExp}}
+            ];
+        }
 
         if (sortParam && sortParam !== 'Name' && sortParam !== 'Email') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
@@ -1392,8 +1411,14 @@ var AdminHandler = function (db) {
             sortObj.email = order;
         }
 
+        roleObj['role'] = CONSTANTS.USER_ROLE.CLIENT;
+
+        findObj = {
+            $and: [roleObj, searchObj]
+        };
+
         User
-            .find({role: CONSTANTS.USER_ROLE.CLIENT}, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
+            .find(findObj, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
             .sort(sortObj)
             .skip(limit * (page - 1))
             .limit(limit)
