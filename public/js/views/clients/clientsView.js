@@ -1,41 +1,23 @@
 'use strict';
 
 define([
-    'text!templates/clients/clientsTemplate.html'
+    'views/customElements/ListView',
+    'collections/clientsCollection',
+    'text!/templates/clients/clientsTemplate.html',
+    'text!/templates/clients/clientsListTemplate.html'
+], function (ListView, ClientsCollection, MainTemplate, ListTemplate) {
 
-], function (MainTemplate) {
+    var View = ListView.extend({
+        Collection: ClientsCollection,
+        mainTemplate: _.template(MainTemplate),
+        listTemplate: _.template(ListTemplate),
+        navElement: '#nav_clients',
 
-    var View;
+        initialize: function (options) {
+            App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}]);
 
-    View = Backbone.View.extend({
-
-        el : '#wrapper',
-
-        mainTemplate : _.template(MainTemplate),
-
-        events: {
-        },
-
-        initialize: function () {
-            this.render();
-        },
-
-        render: function () {
-            var self = this;
-            var $el = self.$el;
-
-            $el.html(self.mainTemplate());
-
-            return this;
-        },
-
-        afterRender: function (){
-            var navContainer = $('.sidebar-menu');
-
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_clients').addClass('active')
+            ListView.prototype.initialize.call(this);
         }
-
     });
 
     return View;
