@@ -632,3 +632,14 @@ input[type=checkbox]:checked:after {
   background: #ffffff url("../images/checkbox.png") no-repeat;
   border: none;
 }
+.date:after {
+  content: 'D';
+  margin-left: 5px;
+}
+.date {
+  cursor: progress;
+}
+.asc:after {
+  content: 'A';
+  margin-left: 5px;
+}

@@ -65,6 +65,8 @@ var AdminHandler = function (db) {
 
                         if (serviceModels.length){
                             userObj.approvedServices = serviceModels;
+                        } else {
+                            userObj.approvedServices = []
                         }
 
                         callback(null, userObj);
@@ -73,6 +75,7 @@ var AdminHandler = function (db) {
     }
 
     this.getStylistByCriterion = function(criterion, page, sortObj, limit, callback){
+
 
         var resultArray = [];
         var obj;
@@ -113,21 +116,45 @@ var AdminHandler = function (db) {
             });
     };
 
-    function getCountByCriterion(role, status, callback){
+    function getCountByCriterion(search, role, status, callback){
 
-        var findObj = {
+        var roleObj = {
             role: role
         };
+
+        var statusObj = {};
+        var searchRegExp;
+        var searchObj = {};
+        var findObj;
 
         if (!callback && typeof status === 'function'){
             callback = status;
         } else {
             if (status === 'requested'){
-                findObj.approved = false;
+                statusObj.approved = false;
             } else if (status === 'approved') {
-                findObj.approved = true;
+                statusObj.approved = true;
             }
         }
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                {'personalInfo.firstName': {$regex: searchRegExp}},
+                {'personalInfo.lastName': {$regex: searchRegExp}},
+                {'email': {$regex: searchRegExp}},
+                {'salon.firstName': {$regex: searchRegExp}}
+            ];
+        }
+
+        findObj = {
+            $and: [
+                roleObj,
+                statusObj,
+                searchObj
+            ]
+        };
 
         User
             .count(findObj, function(err, resultCount){
@@ -144,8 +171,9 @@ var AdminHandler = function (db) {
     this.getStylistCount = function(req, res, next){
 
         var status = req.query.status;
+        var search = req.query.search;
 
-        getCountByCriterion(CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
+        getCountByCriterion(search, CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
 
             if (err){
                 return next(err);
@@ -158,8 +186,9 @@ var AdminHandler = function (db) {
 
     this.getClientCount = function(req, res, next){
 
+        var search = req.query.search;
 
-        getCountByCriterion(CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
+        getCountByCriterion(search, CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
 
             if (err){
                 return next(err);
@@ -210,33 +239,49 @@ var AdminHandler = function (db) {
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var statusRegExp = /^requested$|^all$/;
-        var sort = req.query.sort || 'name';
+        var sort = req.query.sort || 'date';
         var order = (req.query.order === '1') ? 1 : -1;
-        var sortObj = {};
-
         var status = req.query.status;
+        var search = req.query.search || '';
+        var searchRegExp;
+        var sortObj = {};
+        var searchObj = {};
+        var criterion;
+        var approvedObj = {};
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                    {'personalInfo.firstName': {$regex: searchRegExp}},
+                    {'personalInfo.lastName': {$regex: searchRegExp}},
+                    {'email': {$regex: searchRegExp}},
+                    {'salonInfo.salonName': {$regex: searchRegExp}}
+                ];
+        }
 
         if (!statusRegExp.test(status)) {
             status = 'all';
         }
 
-
-
         if (sort === 'salon'){
             sortObj['salonInfo.salonName'] =  order;
         } else if (sort === 'status'){
             sortObj['approved'] = order;
-        } else {
+        } else if (sort === 'name'){
             sortObj['personalInfo.firstName'] = order;
             sortObj['personalInfo.lastName'] = order;
-
+        } else {
+            sortObj['createdAt'] = order;
         }
-
-        var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
 
         if (status === 'requested') {
-            criterion.approved = false
+            approvedObj['approved'] = false;
+        } else if (status === 'approved') {
+            approvedObj['approved'] = true;
         }
+
+        criterion = {$and: [{role: CONSTANTS.USER_ROLE.STYLIST}, searchObj, approvedObj]};
 
         self.getStylistByCriterion(criterion, page, sortObj, limit, function (err, result) {
 
@@ -1340,7 +1385,22 @@ var AdminHandler = function (db) {
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
+        var search = req.query.search;
+        var searchRegExp;
         var sortObj = {};
+        var findObj = {};
+        var roleObj = {};
+        var searchObj = {};
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                {'personalInfo.firstName': {$regex: searchRegExp}},
+                {'personalInfo.lastName': {$regex: searchRegExp}},
+                {'email': {$regex: searchRegExp}}
+            ];
+        }
 
         if (sortParam && sortParam !== 'Name' && sortParam !== 'Email') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
@@ -1355,8 +1415,14 @@ var AdminHandler = function (db) {
             sortObj.email = order;
         }
 
+        roleObj['role'] = CONSTANTS.USER_ROLE.CLIENT;
+
+        findObj = {
+            $and: [roleObj, searchObj]
+        };
+
         User
-            .find({role: CONSTANTS.USER_ROLE.CLIENT}, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
+            .find(findObj, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
             .sort(sortObj)
             .skip(limit * (page - 1))
             .limit(limit)
