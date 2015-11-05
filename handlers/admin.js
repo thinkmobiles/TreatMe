@@ -14,6 +14,7 @@ var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
 var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
+var _ = require('lodash');
 
 var AdminHandler = function (db) {
 
@@ -64,6 +65,8 @@ var AdminHandler = function (db) {
 
                         if (serviceModels.length){
                             userObj.approvedServices = serviceModels;
+                        } else {
+                            userObj.approvedServices = []
                         }
 
                         callback(null, userObj);
@@ -72,6 +75,7 @@ var AdminHandler = function (db) {
     }
 
     this.getStylistByCriterion = function(criterion, page, sortObj, limit, callback){
+
 
         var resultArray = [];
         var obj;
@@ -112,21 +116,45 @@ var AdminHandler = function (db) {
             });
     };
 
-    function getCountByCriterion(role, status, callback){
+    function getCountByCriterion(search, role, status, callback){
 
-        var findObj = {
+        var roleObj = {
             role: role
         };
+
+        var statusObj = {};
+        var searchRegExp;
+        var searchObj = {};
+        var findObj;
 
         if (!callback && typeof status === 'function'){
             callback = status;
         } else {
             if (status === 'requested'){
-                findObj.approved = false;
+                statusObj.approved = false;
             } else if (status === 'approved') {
-                findObj.approved = true;
+                statusObj.approved = true;
             }
         }
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                {'personalInfo.firstName': {$regex: searchRegExp}},
+                {'personalInfo.lastName': {$regex: searchRegExp}},
+                {'email': {$regex: searchRegExp}},
+                {'salon.firstName': {$regex: searchRegExp}}
+            ];
+        }
+
+        findObj = {
+            $and: [
+                roleObj,
+                statusObj,
+                searchObj
+            ]
+        };
 
         User
             .count(findObj, function(err, resultCount){
@@ -143,8 +171,9 @@ var AdminHandler = function (db) {
     this.getStylistCount = function(req, res, next){
 
         var status = req.query.status;
+        var search = req.query.search;
 
-        getCountByCriterion(CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
+        getCountByCriterion(search, CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
 
             if (err){
                 return next(err);
@@ -157,8 +186,9 @@ var AdminHandler = function (db) {
 
     this.getClientCount = function(req, res, next){
 
+        var search = req.query.search;
 
-        getCountByCriterion(CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
+        getCountByCriterion(search, CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
 
             if (err){
                 return next(err);
@@ -211,35 +241,47 @@ var AdminHandler = function (db) {
         var statusRegExp = /^requested$|^all$/;
         var sort = req.query.sort || 'date';
         var order = (req.query.order === '1') ? 1 : -1;
-        var sortObj = {};
-
         var status = req.query.status;
+        var search = req.query.search || '';
+        var searchRegExp;
+        var sortObj = {};
+        var searchObj = {};
+        var criterion;
+        var approvedObj = {};
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                    {'personalInfo.firstName': {$regex: searchRegExp}},
+                    {'personalInfo.lastName': {$regex: searchRegExp}},
+                    {'email': {$regex: searchRegExp}},
+                    {'salonInfo.salonName': {$regex: searchRegExp}}
+                ];
+        }
 
         if (!statusRegExp.test(status)) {
             status = 'all';
         }
 
-
-
         if (sort === 'salon'){
             sortObj['salonInfo.salonName'] =  order;
-
         } else if (sort === 'status'){
             sortObj['approved'] = order;
-
-        } else if (sort === 'name') {
+        } else if (sort === 'name'){
             sortObj['personalInfo.firstName'] = order;
             sortObj['personalInfo.lastName'] = order;
-
         } else {
             sortObj['createdAt'] = order;
         }
 
-        var criterion = {role: CONSTANTS.USER_ROLE.STYLIST};
-
         if (status === 'requested') {
-            criterion.approved = false
+            approvedObj['approved'] = false;
+        } else if (status === 'approved') {
+            approvedObj['approved'] = true;
         }
+
+        criterion = {$and: [{role: CONSTANTS.USER_ROLE.STYLIST}, searchObj, approvedObj]};
 
         self.getStylistByCriterion(criterion, page, sortObj, limit, function (err, result) {
 
@@ -471,7 +513,7 @@ var AdminHandler = function (db) {
                 _id: {$in: ids},
                 approved: false,
                 role: CONSTANTS.USER_ROLE.STYLIST
-            }, {approved: true}, {multi: true}, function (err) {
+            }, {$set: {approved: true}}, {multi: true}, function (err) {
                 if (err) {
                     return next(err);
                 }
@@ -735,7 +777,7 @@ var AdminHandler = function (db) {
         }
 
         Services
-            .findOneAndUpdate({stylist: stylistId, serviceId: serviceId}, {approved: true}, function (err) {
+            .findOneAndUpdate({stylist: stylistId, serviceId: serviceId}, {$set: {approved: true}}, function (err) {
 
                 if (err) {
                     return next(err);
@@ -929,7 +971,7 @@ var AdminHandler = function (db) {
         }
 
         ServiceType
-            .findOneAndUpdate({_id: sId}, updateObj, function (err) {
+            .findOneAndUpdate({_id: sId}, {$set: updateObj}, function (err) {
 
                 if (err) {
                     return next(err);
@@ -1019,7 +1061,7 @@ var AdminHandler = function (db) {
         arrayOfId = arrayOfId.toObjectId();
 
         Appointment
-            .update({_id: {$in: arrayOfId}}, {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}, {multi: true}, function (err) {
+            .update({_id: {$in: arrayOfId}}, {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}}, {multi: true}, function (err) {
                 if (err) {
                     return next(err);
                 }
@@ -1279,7 +1321,7 @@ var AdminHandler = function (db) {
 
                 function (cb) {
                     SubscriptionType
-                        .findOneAndUpdate({_id: subscriptionTypeId}, updateObj, function (err, subscriptionTypeModel) {
+                        .findOneAndUpdate({_id: subscriptionTypeId}, {$set: updateObj}, function (err, subscriptionTypeModel) {
                             if (err) {
                                 return cb(err);
                             }
@@ -1343,7 +1385,22 @@ var AdminHandler = function (db) {
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
+        var search = req.query.search;
+        var searchRegExp;
         var sortObj = {};
+        var findObj = {};
+        var roleObj = {};
+        var searchObj = {};
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                {'personalInfo.firstName': {$regex: searchRegExp}},
+                {'personalInfo.lastName': {$regex: searchRegExp}},
+                {'email': {$regex: searchRegExp}}
+            ];
+        }
 
         if (sortParam && sortParam !== 'Name' && sortParam !== 'Email') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
@@ -1358,8 +1415,14 @@ var AdminHandler = function (db) {
             sortObj.email = order;
         }
 
+        roleObj['role'] = CONSTANTS.USER_ROLE.CLIENT;
+
+        findObj = {
+            $and: [roleObj, searchObj]
+        };
+
         User
-            .find({role: CONSTANTS.USER_ROLE.CLIENT}, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
+            .find(findObj, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
             .sort(sortObj)
             .skip(limit * (page - 1))
             .limit(limit)
@@ -1428,6 +1491,8 @@ var AdminHandler = function (db) {
                             resultObj.name = clientModel.personalInfo.firstName + ' ' + clientModel.personalInfo.lastName;
                             resultObj.phone = clientModel.personalInfo.phone;
                             resultObj.email = clientModel.email;
+                            resultObj.suspend = clientModel.suspend;
+
                             avatarName = clientModel.personalInfo.avatar;
 
                             if (avatarName){
@@ -1455,11 +1520,22 @@ var AdminHandler = function (db) {
                         .sort(sortObj)
                         .limit(limit)
                         .exec(function(err, appointmentModelsArray){
+                            var bookedAppointmentsArray;
+
                             if (err){
                                 return cb(err);
                             }
 
-                            resultObj.bookedAppointments = appointmentModelsArray;
+                            bookedAppointmentsArray = appointmentModelsArray.map(function(model){
+                                var modelJSON = model.toJSON();
+
+                                modelJSON.serviceType = modelJSON.serviceType.name;
+                                modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
+
+                                return modelJSON;
+                            });
+
+                            resultObj.bookedAppointments = bookedAppointmentsArray;
 
                             cb();
                         });
@@ -1482,15 +1558,18 @@ var AdminHandler = function (db) {
 
                             subscriptionArray = subscriptionModelsArray.map(function(model){
                                 var modelJSON = model.toJSON();
+                                var activeSubscription;
 
-                                modelJSON.package = modelJSON.serviceType.name;
-                                modelJSON.price = modelJSON.serviceType.price;
-                                delete modelJSON.serviceType;
+                                modelJSON.package = modelJSON.subscriptionType.name;
+                                modelJSON.price = modelJSON.subscriptionType.price;
+                                delete modelJSON.subscriptionType;
 
                                 if (modelJSON.expirationDate >= currentDate){
 
                                     delete modelJSON.expirationDate;
-                                    activeSubscriptionArray.push(modelJSON);
+                                    activeSubscription = _.clone(modelJSON);
+
+                                    activeSubscriptionArray.push(activeSubscription);
                                 }
 
                                 delete modelJSON.price;
