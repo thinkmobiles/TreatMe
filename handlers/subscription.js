@@ -14,7 +14,7 @@ var SubscriptionsHandler = function (db) {
     var User = db.model('User');
     var imageHandler = new ImageHandler();
 
-    function getSubscriptionTypes(callback){
+    function getAllSubscriptionTypes(callback){
         SubscriptionType
             .find({}, {__v: 0}, function(err, subscriptionModels){
                 if (err){
@@ -79,7 +79,7 @@ var SubscriptionsHandler = function (db) {
                 res.status(200).send(result);
             })
         } else {
-            getSubscriptionTypes(function(err, result){
+            getAllSubscriptionTypes(function(err, result){
                 if (err){
                     return next(err);
                 }
@@ -156,7 +156,7 @@ var SubscriptionsHandler = function (db) {
 
             function(cb){
                 SubscriptionType
-                    .findOneAndUpdate({_id: subscriptionId}, updateObj, function(err, subscriptionTypeModel){
+                    .findOneAndUpdate({_id: subscriptionId}, {$set: updateObj}, function(err, subscriptionTypeModel){
                         if (err){
                             return cb(err);
                         }

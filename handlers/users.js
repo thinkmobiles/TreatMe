@@ -601,7 +601,7 @@ var UserHandler = function (app, db) {
         var userRole = req.query.role;
 
         User
-            .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {forgotToken: ''}, function (err, userModel) {
+            .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {$set: {forgotToken: ''}}, function (err, userModel) {
                 if (err) {
                     return next(err);
                 }
@@ -631,10 +631,10 @@ var UserHandler = function (app, db) {
         encryptedPassword = getEncryptedPass(body.password);
 
         User
-            .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {
+            .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {$set: {
                 password: encryptedPassword,
                 forgotToken: ''
-            }, function (err, userModel) {
+            }}, function (err, userModel) {
 
                 if (err) {
                     return next(err);
@@ -746,7 +746,7 @@ var UserHandler = function (app, db) {
             }
 
             User
-                .findOneAndUpdate(findObj, {forgotToken: ''}, function (err, userModel) {
+                .findOneAndUpdate(findObj, {$set: {forgotToken: ''}}, function (err, userModel) {
                     var token;
 
                     if (err) {
@@ -1069,7 +1069,7 @@ var UserHandler = function (app, db) {
         };
 
         User
-            .findOneAndUpdate({_id: userId}, updateObj, function (err, userModel) {
+            .findOneAndUpdate({_id: userId}, {$set: updateObj}, function (err, userModel) {
                 if (err) {
                     return next(err);
                 }

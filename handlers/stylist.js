@@ -81,7 +81,7 @@ var StylistHandler = function(app, db){
         };
 
         Appointment
-            .findOneAndUpdate({_id: appointmentId, stylist: stylistId}, updateObj, function(err, appointmentModel){
+            .findOneAndUpdate({_id: appointmentId, stylist: stylistId}, {$set: updateObj}, function(err, appointmentModel){
                 if (err){
                     return next(err);
                 }
@@ -128,7 +128,7 @@ var StylistHandler = function(app, db){
                 }
 
                 appointmentModel
-                    .update(updateObj, function(err){
+                    .update({$set: updateObj}, function(err){
                         if (err){
                             return next(err);
                         }
@@ -154,7 +154,7 @@ var StylistHandler = function(app, db){
         };
 
         Appointment
-            .findOneAndUpdate({_id: appointmentId, stylist: stylistId}, updateObj, function(err, appointmentModel){
+            .findOneAndUpdate({_id: appointmentId, stylist: stylistId}, {$set: updateObj}, function(err, appointmentModel){
                 if (err){
                     return next(err);
                 }

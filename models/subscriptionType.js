@@ -8,7 +8,7 @@ module.exports = function (db) {
 
     var SubscriptionType = new Schema({
         name: String,
-        price: String,
+        price: {type: Number, default: 0},
         logo: String,
         allowServices: [ObjectId]
     }, {
