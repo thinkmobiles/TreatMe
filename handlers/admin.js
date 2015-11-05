@@ -14,6 +14,7 @@ var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
 var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
+var _ = require('lodash');
 
 var AdminHandler = function (db) {
 
@@ -467,7 +468,7 @@ var AdminHandler = function (db) {
                 _id: {$in: ids},
                 approved: false,
                 role: CONSTANTS.USER_ROLE.STYLIST
-            }, {approved: true}, {multi: true}, function (err) {
+            }, {$set: {approved: true}}, {multi: true}, function (err) {
                 if (err) {
                     return next(err);
                 }
@@ -731,7 +732,7 @@ var AdminHandler = function (db) {
         }
 
         Services
-            .findOneAndUpdate({stylist: stylistId, serviceId: serviceId}, {approved: true}, function (err) {
+            .findOneAndUpdate({stylist: stylistId, serviceId: serviceId}, {$set: {approved: true}}, function (err) {
 
                 if (err) {
                     return next(err);
@@ -925,7 +926,7 @@ var AdminHandler = function (db) {
         }
 
         ServiceType
-            .findOneAndUpdate({_id: sId}, updateObj, function (err) {
+            .findOneAndUpdate({_id: sId}, {$set: updateObj}, function (err) {
 
                 if (err) {
                     return next(err);
@@ -1015,7 +1016,7 @@ var AdminHandler = function (db) {
         arrayOfId = arrayOfId.toObjectId();
 
         Appointment
-            .update({_id: {$in: arrayOfId}}, {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}, {multi: true}, function (err) {
+            .update({_id: {$in: arrayOfId}}, {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED}}, {multi: true}, function (err) {
                 if (err) {
                     return next(err);
                 }
@@ -1275,7 +1276,7 @@ var AdminHandler = function (db) {
 
                 function (cb) {
                     SubscriptionType
-                        .findOneAndUpdate({_id: subscriptionTypeId}, updateObj, function (err, subscriptionTypeModel) {
+                        .findOneAndUpdate({_id: subscriptionTypeId}, {$set: updateObj}, function (err, subscriptionTypeModel) {
                             if (err) {
                                 return cb(err);
                             }
@@ -1424,6 +1425,8 @@ var AdminHandler = function (db) {
                             resultObj.name = clientModel.personalInfo.firstName + ' ' + clientModel.personalInfo.lastName;
                             resultObj.phone = clientModel.personalInfo.phone;
                             resultObj.email = clientModel.email;
+                            resultObj.suspend = clientModel.suspend;
+
                             avatarName = clientModel.personalInfo.avatar;
 
                             if (avatarName){
@@ -1451,11 +1454,22 @@ var AdminHandler = function (db) {
                         .sort(sortObj)
                         .limit(limit)
                         .exec(function(err, appointmentModelsArray){
+                            var bookedAppointmentsArray;
+
                             if (err){
                                 return cb(err);
                             }
 
-                            resultObj.bookedAppointments = appointmentModelsArray;
+                            bookedAppointmentsArray = appointmentModelsArray.map(function(model){
+                                var modelJSON = model.toJSON();
+
+                                modelJSON.serviceType = modelJSON.serviceType.name;
+                                modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
+
+                                return modelJSON;
+                            });
+
+                            resultObj.bookedAppointments = bookedAppointmentsArray;
 
                             cb();
                         });
@@ -1478,15 +1492,18 @@ var AdminHandler = function (db) {
 
                             subscriptionArray = subscriptionModelsArray.map(function(model){
                                 var modelJSON = model.toJSON();
+                                var activeSubscription;
 
-                                modelJSON.package = modelJSON.serviceType.name;
-                                modelJSON.price = modelJSON.serviceType.price;
-                                delete modelJSON.serviceType;
+                                modelJSON.package = modelJSON.subscriptionType.name;
+                                modelJSON.price = modelJSON.subscriptionType.price;
+                                delete modelJSON.subscriptionType;
 
                                 if (modelJSON.expirationDate >= currentDate){
 
                                     delete modelJSON.expirationDate;
-                                    activeSubscriptionArray.push(modelJSON);
+                                    activeSubscription = _.clone(modelJSON);
+
+                                    activeSubscriptionArray.push(activeSubscription);
                                 }
 
                                 delete modelJSON.price;

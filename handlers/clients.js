@@ -157,6 +157,64 @@ var ClientsHandler = function (app, db) {
             });
     };
 
+    this.buySubscriptions = function(req, res, next){
+        var clientId = req.session.uId;
+        var body = req.body;
+        var ids;
+
+        if (!body.ids) {
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        }
+
+        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+            if (!req.params.clientId){
+                return next(badRequests.NotEnParams({reqParams: 'clientId'}))
+            }
+
+            clientId = req.params.clientId;
+        }
+
+        ids = body.ids.toObjectId();
+
+        async.each(ids,
+
+            function(id, cb){
+                var currentDate = new Date();
+                var expirationDate = new Date();
+                var saveObj;
+                var subscriptionModel;
+
+                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+                saveObj = {
+                    client: clientId,
+                    subscriptionType : id,
+                    //TODO: price: 111,
+                    purchaseDate: currentDate,
+                    expirationDate: expirationDate
+                };
+
+                subscriptionModel = new Subscription(saveObj);
+
+                subscriptionModel
+                    .save(function(err){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb();
+                    });
+            },
+
+            function(err){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Subscriptions purchased successfully'});
+            });
+    };
+
     this.createAppointment = function (req, res, next) {
         var body = req.body;
         var appointmentModel;
