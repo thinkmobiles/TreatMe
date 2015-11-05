@@ -29,7 +29,7 @@ var UserHandler = function (app, db) {
     var ServiceType = db.model('ServiceType');
     var Services = db.model('Service');
 
-    var session = new SessionHandler();
+    var session = new SessionHandler(db);
     var image = new ImageHandler();
 
     function getEncryptedPass(pass) {
@@ -706,6 +706,7 @@ var UserHandler = function (app, db) {
         var role;
         var findObj;
 
+
         if (options.fbId) {
 
             fbId = options.fbId;
@@ -877,7 +878,7 @@ var UserHandler = function (app, db) {
                 }
 
                 resultModel
-                    .update({personalInfo: personalInfo, salonInfo: salonInfo}, function(err){
+                    .update({$set: {personalInfo: personalInfo, salonInfo: salonInfo}}, function(err){
 
                         if (err){
                             return next(err);
@@ -1094,7 +1095,7 @@ var UserHandler = function (app, db) {
                     currentSalonDetails.country = body.country;
                 }
 
-                resultModel.update({salonInfo: currentSalonDetails}, function(err){
+                resultModel.update({$set: {salonInfo: currentSalonDetails}}, function(err){
 
                     if (err){
                         return next(err);
@@ -1183,7 +1184,7 @@ var UserHandler = function (app, db) {
 
                         function(cb){
                             userModel
-                                .update({'personalInfo.avatar': imageName}, cb);
+                                .update({$set: {'personalInfo.avatar': imageName}}, cb);
                         },
 
                         function(cb) {
@@ -1232,7 +1233,7 @@ var UserHandler = function (app, db) {
                 avatarName = userModel.get('personalInfo.avatar');
 
                 userModel
-                    .update({'personalInfo.avatar': ''}, function(err){
+                    .update({$set: {'personalInfo.avatar': ''}}, function(err){
                         if (err){
                             return next(err);
                         }
@@ -1503,7 +1504,9 @@ var UserHandler = function (app, db) {
             }
 
             Services
-                .find({stylist: uId}, function(err, stylistServiceModel){
+                .find({stylist: uId})
+                .populate({path: 'serviceId', select: '_id name'})
+                .exec(function(err, stylistServiceModel){
 
                     if (err){
                         return next(err);
@@ -1511,15 +1514,15 @@ var UserHandler = function (app, db) {
 
                     allId = (_.pluck(allServiceModels, '_id')).toStringObjectIds();
 
-                    stylistId = (_.pluck(stylistServiceModel, 'serviceId')).toStringObjectIds();
+                    stylistId = (_.pluck(stylistServiceModel, 'serviceId._id')).toStringObjectIds();
 
                     for (var i = 0, n = allServiceModels.length; i < n; i++){
                         ind = stylistId.indexOf(allId[i]);
 
                         if (ind !== -1){
                             serviceObj = {
-                                id: stylistServiceModel[ind].serviceId,
-                                name: stylistServiceModel[ind].name,
+                                id: stylistServiceModel[ind].serviceId._id,
+                                name: stylistServiceModel[ind].serviceId.name,
                                 status: stylistServiceModel[ind].approved ? 'approved' : 'pending'
                             };
 
@@ -1544,58 +1547,7 @@ var UserHandler = function (app, db) {
 
     };
 
-    this.sendRequestForService = function(req, res, next){
 
-        var uId = req.session.uId;
-        var serviceId = req.params.serviceId;
-        var serviceModel;
-        var name;
-        var createObj;
-
-        ServiceType.findOne({_id: serviceId}, {name: 1}, function(err, resultModel){
-
-            if (err){
-                return next(err);
-            }
-
-            if (!resultModel){
-                return next(badRequests.DatabaseError());
-            }
-
-            name = resultModel.get('name');
-
-            Services
-                .findOne({stylist: ObjectId(uId), name: name}, function(err, resultModel){
-
-                    if (err){
-                        return next(err);
-                    }
-
-                    if (resultModel){
-                        return res.status(200).send({success: 'You have already requested this service'});
-                    }
-
-                    createObj = {
-                        stylist: ObjectId(uId),
-                        serviceId: ObjectId(serviceId)
-                    };
-
-                    serviceModel = new Services(createObj);
-
-                    serviceModel
-                        .save(function(err){
-
-                            if (err){
-                                return next(err);
-                            }
-
-                            res.status(200).send({success: 'request succeed'});
-
-                        });
-
-                });
-        });
-    };
 
 };
 

@@ -1,7 +1,28 @@
 var CONSTANTS = require('../constants');
 var badRequests = require('../helpers/badRequests');
 
-var Session = function () {
+var Session = function (db) {
+
+    var User = db.model('User');
+
+    function checkApproval(userId, callback){
+
+        User
+            .findOne({_id: userId}, {approved: 1}, function(err, resultModel){
+
+                if (err){
+                    return callback(err);
+                }
+
+                if (!resultModel){
+                    return callback(badRequests.DatabaseError());
+                }
+
+                callback(null, resultModel.approved);
+
+            });
+
+    }
 
     'use strict';
 
@@ -37,7 +58,20 @@ var Session = function () {
 
     this.isStylist = function(req, res, next){
         if (req.session && (req.session.role === CONSTANTS.USER_ROLE.STYLIST)){
-            next();
+
+            checkApproval(req.session.uId, function(err, approved){
+                if (err){
+                    return next(err);
+                }
+
+                if (!approved){
+                    err = new Error('Your account must be approved by admin');
+                    err.status = 403;
+                    return next(err);
+                }
+                next();
+            });
+
         } else {
             next(badRequests.AccessError({'message': 'Only Stylist does have permissions for do this'}));
         }
@@ -76,8 +110,25 @@ var Session = function () {
     };
 
     this.stylistOrAdmin = function(req, res, next){
-        if (req.session && (req.session.role === CONSTANTS.USER_ROLE.STYLIST || req.session.role === CONSTANTS.USER_ROLE.ADMIN)){
-            next();
+
+        if (req.session){
+            if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+                checkApproval(req.session.uId, function(err, approved){
+                    if (err){
+                        return next(err);
+                    }
+
+                    if (!approved){
+                        err = new Error('Your account must be approved by admin');
+                        err.status = 403;
+                        return next(err);
+                    }
+                    next();
+                });
+            } else if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+                next()
+            }
+
         } else {
             next(badRequests.AccessError({'message': 'Only Stylist or Admin does have permissions for do this'}));
         }

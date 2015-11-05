@@ -5,7 +5,7 @@ var SessionHandler = require('../handlers/sessions');
 
 module.exports = function(app, db){
     var clientsHandler = new ClientsHandler(app, db);
-    var sessionHandler = new SessionHandler();
+    var sessionHandler = new SessionHandler(db);
 
     router.get('/subscriptions', sessionHandler.authenticatedUser, sessionHandler.isClient, clientsHandler.getActiveSubscriptions);
 
