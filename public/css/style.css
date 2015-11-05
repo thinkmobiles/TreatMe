@@ -632,12 +632,16 @@ input[type=checkbox]:checked:after {
   background: #ffffff url("../images/checkbox.png") no-repeat;
   border: none;
 }
-.date:after {
+.date:after,
+.name:after,
+.salon:after {
   content: 'D';
   margin-left: 5px;
 }
-.date {
-  cursor: progress;
+.date,
+.name,
+.salon {
+  cursor: pointer;
 }
 .asc:after {
   content: 'A';

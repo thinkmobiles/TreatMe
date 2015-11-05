@@ -2,19 +2,20 @@
 
 define([
     'constants/index',
-    'collections/stylistCollection',
     'views/customElements/paginationView',
-    'text!templates/stylists/stylistsTemplate.html',
-    'text!templates/stylists/stylistsListTemplate.html'
+    'text!templates/customElements/mainTemplate.html'
 
-], function (CONSTANTS, StylistCollection, PaginationView, MainTemplate, ListTemplate) {
+], function (CONSTANTS, PaginationView, MainTemplate) {
 
     var View = Backbone.View.extend({
 
         el : '#wrapper',
 
         mainTemplate : _.template(MainTemplate),
-        listTemplate : _.template(ListTemplate),
+        listTemplate : null,
+        url: null,
+        Collection: null,
+        navElement: '#nav_dashborad',
 
         events: {
         },
@@ -24,28 +25,28 @@ define([
             var collectionParams = {
                 page: page
             };
-            var collection = new StylistCollection(collectionParams);
             var self = this;
+            var Collection = this.Collection;
             var paginationOptions;
 
-            App.Breadcrumbs.reset([{name: 'Stylist List', path: '#stylists'}]);
+            this.collection = new Collection(collectionParams);
+
             self.render();
 
             paginationOptions = {
-                collection    : collection,
+                collection    : self.collection,
                 onPage        : CONSTANTS.ITEMS_PER_PAGE,
                 padding       : 2,
                 page          : page,
                 ends          : true,
                 steps         : false,
-                url           : 'stylists/page',
-                urlPagination : collection.url()//,
+                url           : self.url,//'stylists/page',
+                urlPagination : self.collection.url()
             };
 
             this.paginationView = new PaginationView(paginationOptions);
 
-            self.collection = collection;
-            collection.on('reset', function () {
+            this.collection.on('reset', function () {
                 self.renderList();
             });
         },
@@ -57,18 +58,19 @@ define([
         },
 
         renderList: function () {
-            var users = this.collection.toJSON();
+            var items = this.collection.toJSON();
 
-            this.$el.find('.list').html(this.listTemplate({users: users}));
+            this.$el.find('.list').html(this.listTemplate({users: items}));
 
             return this;
         },
 
         afterRender: function (){
             var navContainer = $('.sidebar-menu');
+            var navElement = this.navElement;
 
             navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_stylists').addClass('active')
+            navContainer.find(navElement).addClass('active')
         }
 
     });
