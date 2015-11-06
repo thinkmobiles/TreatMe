@@ -43,7 +43,16 @@ module.exports = function (db) {
             zipCode: {type: String, default: ''},
             city: {type: String, default: ''},
             country: {type: String, default: ''},
-            licenseNumber: {type: String, default: ''}
+            licenseNumber: {type: String, default: ''},
+            availability: {
+                0: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}], //Sunday
+                1: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}], //Monday
+                2: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}],
+                3: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}],
+                4: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}],
+                5: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}],
+                6: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}]
+            }
         },
         loc: {
             type: {

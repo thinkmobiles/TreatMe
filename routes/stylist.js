@@ -17,6 +17,9 @@ module.exports = function(app, db){
     router.get('/appointment/start/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.startAppointmentById);
     router.get('/appointment/finish/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.finishAppointmentById);
     router.get('/appointment/accept/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.acceptAppointmentById);
+
+    router.put('/availability', stylistHandler.updateAvailabilityHours);
+    router.post('/checkTest', stylistHandler.checkTest);
     //router.get('/appointment/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getBusinessAppointmentById);
 
     return router;
