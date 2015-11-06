@@ -2,34 +2,86 @@
     <div class="userNameContainer">
         <span>
         <%if (user._id) { %>
-            <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%>
+            APPLICATION # <%= user._id %>
         <% } else { %>
             Add Application
         <% } %>
         </span>
+        <%if (user._id) { %>
+        <button id="editBtn">Edit</button>
+        <span> <%= new Date(user.createdAt).getDate() + '/' + new Date(user.createdAt).getMonth() + '/' + String.prototype.slice.call(new Date(user.createdAt).getFullYear(),2,4) %> </span>
+        <% } %>
     </div>
-
+    <%var inputStatus%>
+    <%if (user._id) { inputStatus = 'disabled' } else { inputStatus = '' } %>
     <div class="avatar"></div>
 
-    <input type="text" class="firstName" name="firstName" placeholder="First Name" value="<%= (user._id) ? user.personalInfo.firstName : ''%>"/><br/>
-    <input type="text" class="lastName" name="lastName" placeholder="Last Name"  value="<%= (user._id) ? user.personalInfo.lastName : ''%>"/><br/>
-    <input type="text" class="role" name="role" placeholder="Profession"  value="<%= (user._id) ? user.role : ''%>"/><br/>
-    <input type="text" name="salonName" class="salonName" placeholder="Salon Name" /><br/>
-    <input type="text" name="businessRole" class="businessRole" placeholder="Business Role"  value="<%= (user._id) ? user.salonInfo.businessRole : ''%>"/><br/>
-    <input type="text" class="phone" name="phone" placeholder="Phone Number" value="<%= (user._id) ? user.personalInfo.phone : ''%>"/><br/>
-    <input type="text" class="email" name="email" placeholder="Email" value="<%= (user._id) ? user.email : ''%>"/><br/>
+    <%if (user._id) { %>
+    <label for="firstName">First Name</label>
+    <% } %>
+    <input type="text"  id="firstName" name="firstName" placeholder="First Name" value="<%= (user._id) ? user.personalInfo.firstName : ''%>" <%= inputStatus %>/><br/>
+    <%if (user._id) { %>
+    <label for="lastName">Last Name</label>
+    <% } %>
+    <input type="text" id="lastName" <%= inputStatus %> name="lastName" placeholder="Last Name"  value="<%= (user._id) ? user.personalInfo.lastName : ''%>"/><br/>
+    <%if (user._id) { %>
+    <label for="role">Profession</label>
+    <% } %>
+    <input type="text"  id="role" <%= inputStatus %> name="role" placeholder="Profession"  value="<%= (user._id) ? user.role : ''%>"/><br/>
+    <%if (user._id) { %>
+    <label for="salonName">Salon Name</label>
+    <% } %>
+    <input type="text"  name="salonName" id="salonName" <%= inputStatus %> placeholder="Salon Name" /><br/>
+    <%if (user._id) { %>
+    <label for="businessRole">Business Role</label>
+    <% } %>
+    <input type="text"  name="businessRole" id="businessRole" placeholder="Business Role"  <%= inputStatus %> value="<%= (user._id) ? user.salonInfo.businessRole : ''%>"/><br/>
+    <%if (user._id) { %>
+    <label for="phone">Phone Number</label>
+    <% } %>
+    <input type="text"  id="phone" name="phone" placeholder="Phone Number" <%= inputStatus %> value="<%= (user._id) ? user.personalInfo.phone : ''%>"/><br/>
+    <%if (user._id) { %>
+    <label for="email">Email</label>
+    <% } %>
+    <input type="text" id="email" name="email" placeholder="Email" <%= inputStatus %>  value="<%= (user._id) ? user.email : ''%>"/><br/>
+    <%if (user._id) { %>
+    <label for="salonAddress">Salon Address</label>
+    <% } %>
+    <input type="text"  name="salonAddress" id="salonAddress" <%= inputStatus %> placeholder="Salon Address"/><br/>
+    <%if (user._id) { %>
+    <label for="salonAddress2">Salon Address LIne 2</label>
+    <% } %>
+    <input type="text"  name="salonAddress2" id="salonAddress2" <%= inputStatus %> placeholder="Salon Address Line 2"/><br/>
+    <%if (user._id) { %>
+    <label for="license">License Number</label>
+    <% } %>
+    <input type="text" name="license" id="license" <%= inputStatus %> placeholder="License Number"/><br/>
+    <%if (user._id) { %>
+    <label for="city">City</label>
+    <% } %>
+    <input type="text"  name="city" id="city" <%= inputStatus %> placeholder="City"/><br/>
+    <%if (user._id) { %>
+    <label for="region">State</label>
+    <% } %>
+    <input type="text" name="region" id="region" <%= inputStatus %> placeholder="State/Province/Region"/><br/>
+    <%if (user._id) { %>
+    <label for="zip">Zip Code</label>
+    <% } %>
+    <input type="text"  name="zip" id="zip" <%= inputStatus %> placeholder="Zip Code"/><br/>
+    <%if (user._id) { %>
+    <label for="country">Country</label>
+    <% } %>
+    <input type="text"  name="country" id="country" <%= inputStatus %> placeholder="Country"/><br/>
 
-    <!--<input type="text" name="salonNumber" class="salonNumber" placeholder="Salon Number"/><br/>-->
-    <!--<input type="text" name="salonEmail" class="salonEmail" placeholder="Salon Email"/><br/>-->
-    <input type="text" name="salonAddress" class="salonAddress" placeholder="Salon Address"/><br/>
-    <input type="text" name="salonAddress2" class="salonAddress2" placeholder="Salon Address Line 2"/><br/>
-    <input type="text" name="license" class="license" placeholder="License Number"/><br/>
-    <input type="text" name="city" class="city" placeholder="City"/><br/>
-    <input type="text" name="region" class="region" placeholder="State/Province/Region"/><br/>
-    <input type="text" name="zip" class="zip" placeholder="Zip Code"/><br/>
-    <input type="text" name="country" class="country" placeholder="Country"/><br/>
 
-    <button class="saveBtn">Save</button>
+    <div class="buttonContainer">
+        <%if (user._id) { %>
+        <button id="acceptBtn">Accept</button>
+        <button id="removeBtn">Delete</button>
+        <% } else { %>
+        <button class="saveBtn">Save</button>
+        <% } %>
+    </div>
 
 </div>
 

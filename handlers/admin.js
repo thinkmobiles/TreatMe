@@ -531,7 +531,7 @@ var AdminHandler = function (db) {
         body.approved = true;
         body.role = CONSTANTS.USER_ROLE.STYLIST;
 
-        services = body.services;
+        services = body.services || [];
 
         delete body.services;
 
