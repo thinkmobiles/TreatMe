@@ -28,6 +28,13 @@ module.exports = function (app, db) {
     app.use('/admin', adminRouter);
     app.use('/stylist', stylistRouter);
 
+    app.use(function (req, res, next) {
+        if (process.env.NODE_ENV === 'development') {
+            console.log('user-agent:', req.headers['user-agent']);
+        }
+        next();
+    });
+
     app.post('/signUp', user.signUp);
     app.post('/signIn', user.signIn);
     app.get('/signOut', user.signOut);
@@ -35,6 +42,7 @@ module.exports = function (app, db) {
     app.put('/profile/:userId?', sessionHandler.authenticatedUser, user.updateUserProfile);
     
     app.get('/confirm/:token', user.confirmRegistration);
+    app.post('/forgot', user.forgotPassword);
     app.get('/passwordChange', user.confirmForgotPass);
     app.post('/passwordChange', user.changePassword);
     app.get('/profile/:id?', sessionHandler.authenticatedUser, user.getProfile);
@@ -56,6 +64,7 @@ module.exports = function (app, db) {
     app.get('/subscriptionTypes/:id?', sessionHandler.authenticatedUser, sessionHandler.clientOrAdmin, subscriptionHandler.getSubscriptionTypes);
     app.post('/subscriptionTypes', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.createSubscriptionType);
     app.put('/subscriptionTypes/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.updateSubscriptionType);
+
 
     function notFound(req, res, next) {
         next();
