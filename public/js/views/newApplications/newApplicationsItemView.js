@@ -24,6 +24,7 @@ define([
                 this.model = new StylistModel();
                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/add'}]);
                 this.render();
+
             } else {
                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/' + userId}]);
                 model = new StylistModel({_id: userId});

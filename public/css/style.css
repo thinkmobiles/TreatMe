@@ -447,7 +447,7 @@ body {
 /*---top section-----*/
 .top {
   height: 70px;
-  padding: 30px 0 0 30px;
+  padding: 30px 0 0 50px;
   text-transform: uppercase;
   font-weight: 700;
 }
@@ -684,4 +684,55 @@ input[type=checkbox]:checked:after {
 }
 .pagination li.arrow {
   margin: 0 10px;
+}
+.edit {
+  background: transparent url("../images/note.png") no-repeat;
+  background-position: center;
+  text-indent: -99999px;
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+}
+.pending {
+  width: 16px;
+  height: 13px;
+  background: transparent url("../images/check-ok.png") no-repeat;
+  display: inline-block;
+  margin-left: 12px;
+}
+.stylistForm {
+  font-size: 18px;
+  padding-left: 60px;
+}
+.stylistForm label {
+  color: #A7A7A7;
+  display: inline-block;
+  min-width: 170px;
+  padding: 10px 0;
+}
+.stylistForm input {
+  background-color: #fff;
+  border: none;
+  color: #555;
+  padding: 10px 0;
+}
+#acceptBtn {
+  background: #00a651 url("../images/check-white.png") no-repeat;
+  background-position: 14px center;
+  border-radius: 5px;
+  width: 120px;
+  height: 40px;
+  color: #fff;
+  padding-left: 35px;
+  box-sizing: border-box;
+}
+#removeBtn {
+  background: #ed1c24 url("../images/trash-white.png") no-repeat;
+  background-position: 14px center;
+  border-radius: 5px;
+  width: 120px;
+  height: 40px;
+  color: #fff;
+  padding-left: 35px;
+  box-sizing: border-box;
 }
