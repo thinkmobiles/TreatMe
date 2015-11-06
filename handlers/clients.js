@@ -3,6 +3,7 @@ var async = require('async');
 var ImageHandler = require('./image');
 var mongoose = require('mongoose');
 var CONSTANTS = require('../constants');
+var geocoder = require('geocoder');
 
 var ClientsHandler = function (app, db) {
 
@@ -221,18 +222,19 @@ var ClientsHandler = function (app, db) {
         var saveObj;
         var clientId = req.session.uId;
         var clientLoc;
-        var locationAddress = req.body.location;
+        var locationAddress;
 
         if (!body.serviceType || !body.bookingDate) {
             return next(badRequests.NotEnParams({reqParams: 'clientId and serviceType and bookingDate'}));
         }
 
         if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
-            if (!body.clientId){
-                return next(badRequests.NotEnParams({reqParams: 'clientId'}));
+            if (!body.clientId || !body.location){
+                return next(badRequests.NotEnParams({reqParams: 'clientId and location'}));
             }
 
             clientId = body.clientId;
+            locationAddress = body.location;
 
             if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)) {
                 return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
@@ -259,16 +261,31 @@ var ClientsHandler = function (app, db) {
                         clientLoc = clientModel.get('loc');
 
                         if (locationAddress) {
-                            //TODO: convert address to coordinates for CMS
-                            //var coordinates = locationAddress to coordinates
-                            //clientLoc.coordinates = coordinates;
-                        }
+                            geocoder.geocode(locationAddress, function(err, data){
+                                if (err){
+                                    return cb(err);
+                                }
 
-                        if (!clientLoc || !clientLoc.coordinates.length) {
-                            return cb(badRequests.UnknownGeoLocation());
-                        }
+                                if (!data || !data.results.length || !data.results[0].geometry || !data.results[0].geometry.location || data.status !== 'OK'){
+                                    return cb(badRequests.UnknownGeoLocation());
+                                }
 
-                        cb();
+                                clientLoc.coordinates[0] = data.results[0].geometry.location.lng;
+                                clientLoc.coordinates[1] = data.results[0].geometry.location.lat;
+
+                                if (!clientLoc || !clientLoc.coordinates.length) {
+                                    return cb(badRequests.UnknownGeoLocation());
+                                }
+
+                                cb();
+                            });
+                        } else {
+                            if (!clientLoc || !clientLoc.coordinates.length) {
+                                return cb(badRequests.UnknownGeoLocation());
+                            }
+
+                            cb();
+                        }
                     });
             },
 
