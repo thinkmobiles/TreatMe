@@ -19,7 +19,7 @@ module.exports = function(){
             name: options.name,
             email: options.email,
             password: options.password,
-            url: process.env.HOST + '/confirm/' + options.token
+            url: process.env.EXT_HOST + '/confirm/' + options.token
         };
 
         var mailOptions = {
@@ -38,7 +38,7 @@ module.exports = function(){
         var templateOptions = {
             name: options.name,
             email: options.email,
-            url: process.env.HOST + '/passwordChange?token=' + options.forgotToken + '&role=' + role
+            url: process.env.EXT_HOST + '/passwordChange?token=' + options.forgotToken + '&role=' + role
         };
 
         var mailOptions = {

@@ -115,7 +115,7 @@ var imagesUploader = function (dirConfig) {
             return process.env.EXT_HOST + '/' + defaultUploadsDir + "\/" + process.env.NODE_ENV.toLowerCase() + "\/" + folder + "\/" + imageName;
         }
 
-        return process.env.HOST + '/' + defaultUploadsDir + "\/" + process.env.NODE_ENV.toLowerCase() + "\/" + folder + "\/" + imageName;
+        return process.env.EXT_HOST + '/' + defaultUploadsDir + "\/" + process.env.NODE_ENV.toLowerCase() + "\/" + folder + "\/" + imageName;
     }
 
     function uploadImage(imageData, imageName, folderName, callback) {
