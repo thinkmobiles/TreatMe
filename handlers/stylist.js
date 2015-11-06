@@ -286,6 +286,35 @@ var StylistHandler = function (app, db) {
                     });
             });
     };
+
+    this.changeOnlineStatus = function(req, res, next){
+        var stylistId = req.session.uId;
+
+        User
+            .findOne({_id: stylistId}, {online: 1}, function(err, stylistModel){
+                var online;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!stylistModel){
+                    return next(badRequests.DatabaseError());
+                }
+
+                online = stylistModel.get('online');
+                online = !online;
+
+                stylistModel
+                    .update({$set: {online: online}}, function(err){
+                        if (err){
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: 'Your online status changed successfully'});
+                    });
+            });
+    };
 };
 
 module.exports = StylistHandler;

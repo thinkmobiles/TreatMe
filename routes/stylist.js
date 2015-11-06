@@ -18,8 +18,11 @@ module.exports = function(app, db){
     router.get('/appointment/finish/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.finishAppointmentById);
     router.get('/appointment/accept/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.acceptAppointmentById);
 
-    router.put('/availability', stylistHandler.updateAvailabilityHours);
+    router.put('/availability', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.updateAvailabilityHours);
+
     router.post('/checkTest', stylistHandler.checkTest);
+
+    router.put('/online', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.changeOnlineStatus);
     //router.get('/appointment/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getBusinessAppointmentById);
 
     return router;

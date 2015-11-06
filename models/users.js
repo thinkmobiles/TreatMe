@@ -24,6 +24,7 @@ module.exports = function (db) {
                 }
             ]
         },
+        online: {type: Boolean, default: false},
         role: {type: String, match: /^Stylist$|^Client$|^Admin$/},
         personalInfo: {
             firstName: {type: String, default: ''},
