@@ -82,7 +82,6 @@ var AdminHandler = function (db) {
 
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
 
-
         User
             .find(criterion, {
                 'personalInfo.firstName': 1,
@@ -114,14 +113,14 @@ var AdminHandler = function (db) {
                     resultArray.push(obj);
                 }
 
-                callback(null, {total: total, data: resultArray.reverse()});
+                callback(null, resultArray.reverse());
 
             });
     };
 
-    function getCountByCriterion(search, role, status, callback){
+    function getCountByCriterion(findObj, callback){
 
-        var roleObj = {
+       /* var roleObj = {
             role: role
         };
 
@@ -149,15 +148,7 @@ var AdminHandler = function (db) {
                 {'email': {$regex: searchRegExp}},
                 {'salon.firstName': {$regex: searchRegExp}}
             ];
-        }
-
-        findObj = {
-            $and: [
-                roleObj,
-                statusObj,
-                searchObj
-            ]
-        };
+        }*/
 
         User
             .count(findObj, function(err, resultCount){
@@ -361,16 +352,24 @@ var AdminHandler = function (db) {
 
         criterion = {$and: [{role: CONSTANTS.USER_ROLE.STYLIST}, searchObj, approvedObj]};
 
-        self.getStylistByCriterion(criterion, page, sortObj, limit, function (err, result) {
+        async
+            .parallel([
+                function(cb){
+                    getCountByCriterion(criterion, cb)
+                },
 
-            if (err) {
-                return next(err);
-            }
+                function(cb){
+                    self.getStylistByCriterion(criterion, page, sortObj, limit, cb)
+                }
+            ], function(err, result){
 
-            res.status(200).send(result);
+                if (err){
+                    return next(err);
+                }
 
-        });
+                res.status(200).send({total: result[0], data: result[1]});
 
+            });
     };
 
     this.getStylistById = function (req, res, next) {
@@ -1593,18 +1592,29 @@ var AdminHandler = function (db) {
             $and: [roleObj, searchObj]
         };
 
-        User
-            .find(findObj, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
-            .sort(sortObj)
-            .skip(limit * (page - 1))
-            .limit(limit)
-            .exec(function(err, clientModels){
+        async
+            .parallel([
+                function(cb){
+                    getCountByCriterion(findObj, cb);
+                },
+
+                function(cb){
+                    User
+                        .find(findObj, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
+                        .sort(sortObj)
+                        .skip(limit * (page - 1))
+                        .limit(limit)
+                        .exec(cb)
+                }
+            ], function(err, result){
                 if (err){
                     return next(err);
                 }
 
-                res.status(200).send(clientModels);
+                res.status(200).send({total: result[0], data: result[1]});
             });
+
+
     };
 
     this.getClientById = function(req, res, next){
