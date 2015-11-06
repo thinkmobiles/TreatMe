@@ -82,6 +82,7 @@ var AdminHandler = function (db) {
 
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
 
+
         User
             .find(criterion, {
                 'personalInfo.firstName': 1,

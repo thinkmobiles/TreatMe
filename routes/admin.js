@@ -24,7 +24,7 @@ module.exports = function(db){
     router.get('/stylist/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistList);
     router.get('/stylist/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistById);
     router.post('/stylist/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.createStylist);
-    router.put('/stylist', sessionHandler.authenticatedUser, sessionHandler.isAdmin, user.updateUserProfile);
+    router.put('/stylist/:userId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, user.updateUserProfile);
 
     router.delete('/stylist/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeStylist);
     router.get('/client/count/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientCount);
