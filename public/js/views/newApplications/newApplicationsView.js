@@ -1,90 +1,40 @@
 'use strict';
 
 define([
+    'views/customElements/ListView',
     'collections/stylistCollection',
     'text!templates/newApplications/newApplicationsTemplate.html',
-    'text!templates/newApplications/newApplicantItemTemplate.html'
+    'text!templates/newApplications/newApplicantItemTemplate.html',
+    'text!templates/newApplications/itemTemplate.html'
 
-], function (StylistCollection, MainTemplate, ContentTemplate) {
+], function (ListView, StylistCollection, MainTemplate, ContentTemplate, ItemTemplate) {
 
     var View;
 
-    View = Backbone.View.extend({
+    View = ListView.extend({
 
-        el: '#wrapper',
-
+        //el: '#wrapper',
+        Collection: StylistCollection,
         mainTemplate: _.template(MainTemplate),
+        listTemplate: _.template(ContentTemplate),
+        itemTemplate: _.template(ItemTemplate),
 
-        contentTemplate: _.template(ContentTemplate),
-
+        navElement: '#newApplications',
         query: {status: 'requested'},
 
         events: {
             "click #acceptCurrentBtn, #acceptSelectedBtn": "acceptStylist",
             "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest",
             "click .date, .name, .salon": "sort",
-            "click .table tr": "showDetails",
+            "click .table td": "showDetails",
             "click .checkAll": "checkAll"
         },
 
         initialize: function () {
-            var self = this;
 
-            self.collection = new StylistCollection({status: 'requested'});
-            self.collection.on('remove', self.refreshContent, self);
+            App.Breadcrumbs.reset([{name: 'New Applicants', path: '#newApplications'}]);
+            ListView.prototype.initialize.call(this);
 
-
-            self.collection.fetch({
-                reset: true,
-                data: self.query,
-                success: function (coll) {
-                    self.collection = coll;
-                    self.render();
-                }
-            });
-
-        },
-
-        render: function () {
-            var self = this;
-            var $el = self.$el;
-
-            $el.html(self.mainTemplate());
-            self.renderContent();
-
-            return this;
-        },
-
-        renderContent: function () {
-            var self = this;
-            var el = $('.table tbody');
-            var users = self.collection.toJSON();
-
-            el.html(self.contentTemplate({users: users}));
-
-            return this;
-        },
-
-        refreshContent: function () {
-            var self = this;
-
-            self.collection.fetch({
-                reset: true,
-                data: self.query,
-                success: function (coll) {
-                    self.collection = coll;
-                    self.reRenderContent();
-                }
-            });
-
-            return this;
-        },
-
-        afterRender: function () {
-            var navContainer = $('.sidebar-menu');
-
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_new_applications').addClass('active')
         },
 
         acceptStylist: function (e) {
@@ -152,53 +102,16 @@ define([
             })
         },
 
-        checkAll: function () {
-            var state = $('.checkAll').prop('checked');
-            var checkboxes = $(':checkbox:not(\'.checkAll\')');
-
-            state
-                ? checkboxes.prop('checked', true)
-                : checkboxes.prop('checked', false);
-        },
-
         showDetails: function (e) {
             var element = $(e.target);
-            alert(element.closest('tr').attr('data-id'));
+            var id;
+
+            if (!element.closest('td').children().length) {
+                id = element.closest('tr').attr('data-id');
+                window.location.hash = 'newApplications/' + id;
+            }
 
             return this;
-        },
-
-        reRenderContent: function () {
-            var table = $('.table tbody');
-
-            table.html('');
-            this.renderContent();
-
-            return this;
-        },
-
-        sort: function (e) {
-            var curElement = $(e.target);
-
-            curElement.hasClass('asc')
-                ? this.sorting(curElement, -1)
-                : this.sorting(curElement, 1)
-
-        },
-
-        sorting: function (el, sortOrder) {
-            var self = this;
-            var sort = el.attr('class');
-
-            sortOrder === 1
-                ? el.addClass('asc')
-                : el.removeClass('asc');
-
-            self.query.sort = sort;
-            self.query.order = sortOrder;
-
-            self.refreshContent();
-
         }
 
     });
