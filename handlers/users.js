@@ -5,7 +5,6 @@
  *
  */
 
-
 var mailer = require('../helpers/mailer')();
 var mongoose = require('mongoose');
 var validator = require('validator');
@@ -18,7 +17,7 @@ var async = require('async');
 var ImageHandler = require('./image');
 var _ = require('lodash');
 var ObjectId = mongoose.Types.ObjectId;
-
+var fs = require('fs');
 
 var UserHandler = function (app, db) {
 
@@ -244,6 +243,13 @@ var UserHandler = function (app, db) {
             });
     }
 
+    function checkHeader (header){
+        var headerRegExp = new RegExp('.*iPhone;.*', 'ig');
+
+        return headerRegExp.test(header);
+
+    }
+
     this.addStylistProfile = function(createObj, callback){
 
         var email = createObj.email;
@@ -346,7 +352,7 @@ var UserHandler = function (app, db) {
         var user;
 
         if (!body.role){
-            return next(badRequests.NotEnParams({reqParams: 'Role'}));
+            return next(badRequests.NotEnParams({reqParams: 'role'}));
         }
 
         if (body.role === 'Admin'){
@@ -472,7 +478,7 @@ var UserHandler = function (app, db) {
                                     token: token
                                 });
 
-                                res.status(200).send({success: 'User created successful. For using your account you must verify it. Please check email.'});
+                                res.status(201).send({success: 'User created successful. For using your account you must verify it. Please check email.'});
 
                             });
 
@@ -518,8 +524,13 @@ var UserHandler = function (app, db) {
 
     this.confirmRegistration = function (req, res, next) {
 
+        var registrationHTML = fs.readFileSync('public/templates/registration/registrationTemplate.html', encoding = "utf-8");
+        var registrationTemplate = _.template(registrationHTML);
+
         var token = req.params.token;
         var uId;
+        var sendObj = {};
+        var header = req.headers['user-agent'];
 
         User
             .findOneAndUpdate({token: token}, {
@@ -534,12 +545,19 @@ var UserHandler = function (app, db) {
                 }
 
                 if (!userModel){
-                    return next();
+                    return res.status(200).send({success: "You are already confirmed your account"}); // TODO send pretty html page insted of JSON
                 }
 
                 uId = userModel.get('_id');
 
-                session.register(req, res, uId, true, CONSTANTS.USER_ROLE.STYLIST);
+
+                if (checkHeader(header)){
+                    sendObj.url = 'treatme://';
+                } else {
+                    sendObj.url = process.env.EXT_HOST;  // TODO change
+                }
+
+                res.status(200).send(registrationTemplate(sendObj));
 
             });
     };
@@ -597,8 +615,12 @@ var UserHandler = function (app, db) {
 
     this.confirmForgotPass = function (req, res, next) {
 
+        var confirmPassHTML = fs.readFileSync('public/templates/registration/confirmPassword.html', encoding = "utf-8");
+        var confirmPassTemplate = _.template(confirmPassHTML);
         var forgotToken = req.query.token;
         var userRole = req.query.role;
+        var header = req.headers['user-agent'];
+        var sendObj = {};
 
         User
             .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {$set: {forgotToken: ''}}, function (err, userModel) {
@@ -610,7 +632,15 @@ var UserHandler = function (app, db) {
                     return next(badRequests.TokenWasUsed());
                 }
 
-                res.status(200).send({success: 'Confirm change password'});
+
+                if (checkHeader(header)){
+                    sendObj.url = 'treatme://'
+                } else {
+                    sendObj.url = process.env.EXT_HOST;
+                }
+
+                res.status(200).send(confirmPassTemplate(sendObj));
+
             });
     };
 
@@ -669,16 +699,14 @@ var UserHandler = function (app, db) {
          *
          * If you want login via Facebook
          * {
-         *      "fbId": "test1",
-         *      "role": "Stylist"
+         *      "fbId": "test1"
          * }
          *
          * If you want login via email
          *
          * {
          *      "email": "test@test.com",
-         *      "password": "qwerty",
-         *      "role": "Stylist"
+         *      "password": "qwerty"
          * }
          *
          * @example Response example:
@@ -692,7 +720,6 @@ var UserHandler = function (app, db) {
          * @param {string} [fbId] - FaceBook Id for signing `User`
          * @param {string} [email] - `User` email
          * @param {string} password - `User` password
-         * @param {string} role - `User` role (Stylist or Client)
          *
          * @method signIn
          * @instance
@@ -774,6 +801,56 @@ var UserHandler = function (app, db) {
     };
 
     this.updateUserProfile = function (req, res, next) {
+
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/profile/`__
+         *
+         * This __method__ allows update _User_ profile
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/proflie/
+         *
+         * @example Body example:
+         *
+         *  {
+         *    personalInfo:{
+         *            "firstName": "Petya",
+         *            "lastName": "Petrovich",
+         *            "profession": "cleaner"
+         *            "phone":"987654321",
+         *            "email":"zehetawop@ubismail.net",
+         *            "facebookURL": "www.facebook.com"
+         *        },
+         *    salonInfo: {
+         *           salonName: "My salon",
+         *            phone: "01",
+         *            email: "vasya@pupkin.com",
+         *            businessRole: "employee",
+         *            address: "Some address string",
+         *            state: "Some state"
+         *            zipCode: "88001"
+         *            city: "Uzhgorod"
+         *            country: "Ukraine"
+         *            licenseNumber: "41515643"
+         *    }
+         *  }
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "User updated successfully"
+         *  }
+         *
+         * @method updateUserProfile
+         * @instance
+         */
 
         var role = req.session.role;
         var uId;
@@ -892,6 +969,65 @@ var UserHandler = function (app, db) {
     };
 
     this.getProfile = function (req, res, next) {
+
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/profile/`__
+         *
+         * This __method__ allows update _User_ profile
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/proflie/
+         *
+         * @example Body example:
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *       "_id": "563c53d1bd76bceb104a8900",
+         *       "role": "Stylist",
+         *       "createdAt": "2015-11-06T07:16:33.766Z",
+         *       "activeSubscriptions": [],
+         *       "salonInfo": {
+         *           "licenseNumber": "",
+         *           "country": "",
+         *           "city": "",
+         *           "zipCode": "",
+         *           "state": "",
+         *           "address": "",
+         *           "businessRole": "Employee",
+         *           "email": "",
+         *           "phone": "",
+         *           "salonName": ""
+         *       },
+         *       "personalInfo": {
+         *           "avatar": "",
+         *           "facebookURL": "",
+         *           "phone": "01",
+         *           "profession": "",
+         *           "lastName": "Vashkeba",
+         *           "firstName": "Misha"
+         *       },
+         *       "suspend": {
+         *           "history": [],
+         *           "isSuspend": false
+         *       },
+         *       "email": "vashm@mail.ua",
+         *       "coordinates": []
+         *   }
+         *
+         * @method getProfile
+         * @instance
+         */
+
         var userId = req.params.id || req.session.uId;
         var projectionObj;
 
@@ -924,6 +1060,40 @@ var UserHandler = function (app, db) {
     };
 
     this.uploadAvatar = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/avatar/`__
+         *
+         * This __method__ allows upload _User_ avatar
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/avatar/
+         *
+         * @example Body example:
+         *
+         * {
+         *      "avatar": "data:image/png;base64, /9j/4AAQSkZJRgABAQAAAQABAAD/2wCE..."
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "User updated successfully"
+         *  }
+         *
+         * @param {string} avatar - avatar string(Base64)
+         *
+         * @method uploadAvatar
+         * @instance
+         */
 
         var body = req.body;
         var userId = req.session.uId;
@@ -991,6 +1161,34 @@ var UserHandler = function (app, db) {
     };
 
     this.removeAvatar = function(req, res, next){
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/avatar/`__
+         *
+         * This __method__ allows delete _User_ avatar
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/avatar/
+         *
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Avatar removed successfully"
+         *  }
+         *
+         * @method removeAvatar
+         * @instance
+         */
+
         var userId = req.session.uId;
 
         if (req.params.id && req.session.role === CONSTANTS.USER_ROLE.ADMIN){
@@ -1037,6 +1235,41 @@ var UserHandler = function (app, db) {
     };
 
     this.updateLocation = function (req, res, next) {
+
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/coordinates/`__
+         *
+         * This __method__ allows update _User_ location
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/avatar/
+         *
+         * @example Body example:
+         *
+         * {
+         *      "coordinates": [150, -78]
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Coordinates updated successfully"
+         *  }
+         *
+         * @param {array} coordinates - _User_ location coordinates -180 < coordinates[0] < 180 ; -90 < coordinates[1] < 90
+         *
+         * @method updateLocation
+         * @instance
+         */
+
         var userId = req.session.uId;
         var body = req.body;
         var longitude;
@@ -1288,7 +1521,7 @@ var UserHandler = function (app, db) {
 
             Services
                 .find({stylist: uId})
-                .populate({path: 'serviceId', select: '_id name'})
+                .populate({path: 'serviceId', select: '_id name logo'})
                 .exec(function(err, stylistServiceModel){
 
                     if (err){
@@ -1306,6 +1539,7 @@ var UserHandler = function (app, db) {
                             serviceObj = {
                                 id: stylistServiceModel[ind].serviceId._id,
                                 name: stylistServiceModel[ind].serviceId.name,
+                                logo: image.computeUrl(stylistServiceModel[ind].serviceId.logo, CONSTANTS.BUCKET.IMAGES),
                                 status: stylistServiceModel[ind].approved ? 'approved' : 'pending'
                             };
 
@@ -1314,6 +1548,7 @@ var UserHandler = function (app, db) {
                             serviceObj = {
                                 id: allServiceModels[i]._id,
                                 name: allServiceModels[i].name,
+                                logo: image.computeUrl(allServiceModels[i].logo, CONSTANTS.BUCKET.IMAGES),
                                 status: 'new'
                             };
 
