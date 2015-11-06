@@ -78,6 +78,7 @@ var AdminHandler = function (db) {
 
         var resultArray = [];
         var obj;
+        var total;
 
         criterion.role = CONSTANTS.USER_ROLE.STYLIST;
 
@@ -97,6 +98,8 @@ var AdminHandler = function (db) {
                     return callback(err);
                 }
 
+                total = resultModel.length;
+
                 for (var i = resultModel.length; i--; ){
 
                         obj = {
@@ -110,7 +113,7 @@ var AdminHandler = function (db) {
                     resultArray.push(obj);
                 }
 
-                callback(null, resultArray.reverse());
+                callback(null, {total: total, data: resultArray.reverse()});
 
             });
     };

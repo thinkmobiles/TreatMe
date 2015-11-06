@@ -825,12 +825,14 @@ var UserHandler = function (app, db) {
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/profile/`__
+         * __URL: `/profile/:userId?`__
+         *
+         * Param userId must be when admin use method
          *
          * This __method__ allows update _User_ profile
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/proflie/
+         *         http://projects.thinkmobiles.com:8871/proflie/563c53d1bd76bceb104a8900
          *
          * @example Body example:
          *
