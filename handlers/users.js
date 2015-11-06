@@ -271,6 +271,16 @@ var UserHandler = function (app, db) {
                 addressString = createObj.salonInfo.address + ' ' + createObj.salonInfo.city + ' ' + createObj.salonInfo.country;
 
                 geocoder.geocode(addressString, function(err, data){
+                    var availability = {
+                        0: [{from: '00:00', to: '00:00'}], //Sunday
+                        1: [{from: '00:00', to: '00:00'}], //Monday
+                        2: [{from: '00:00', to: '00:00'}],
+                        3: [{from: '00:00', to: '00:00'}],
+                        4: [{from: '00:00', to: '00:00'}],
+                        5: [{from: '00:00', to: '00:00'}],
+                        6: [{from: '00:00', to: '00:00'}]
+                    };
+
                     if (err){
                         return callback(err);
                     }
@@ -281,6 +291,7 @@ var UserHandler = function (app, db) {
                     createObj.loc = {
                         coordinates : [data.results[0].geometry.location.lng, data.results[0].geometry.location.lat]
                     };
+                    createObj.salonInfo.availability = availability;
 
                     userModel = new User(createObj);
 
@@ -455,7 +466,7 @@ var UserHandler = function (app, db) {
                     personalInfo: {
                         firstName: body.firstName,
                         lastName: body.lastName,
-                        phone: body.phone,
+                        phone: body.phone
                     },
                     email: email,
                     password: getEncryptedPass(password),
