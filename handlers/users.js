@@ -903,73 +903,78 @@ var UserHandler = function (app, db) {
 
                 personalInfo = userObj.personalInfo;
 
-                if (body.personalInfo.firstName) {
-                    personalInfo.firstName = body.personalInfo.firstName;
-                }
+                if (body.personalInfo){
+                    if (body.personalInfo.firstName) {
+                        personalInfo.firstName = body.personalInfo.firstName;
+                    }
 
-                if (body.personalInfo.lastName) {
-                    personalInfo.lastName = body.personalInfo.lastName;
-                }
+                    if (body.personalInfo.lastName) {
+                        personalInfo.lastName = body.personalInfo.lastName;
+                    }
 
-                if (body.personalInfo.profession && (resultModel.role === CONSTANTS.USER_ROLE.STYLIST)) {
-                    personalInfo.profession = body.personalInfo.profession;
-                }
+                    if (body.personalInfo.profession && (resultModel.role === CONSTANTS.USER_ROLE.STYLIST)) {
+                        personalInfo.profession = body.personalInfo.profession;
+                    }
 
-                if (body.personalInfo.phone) {
-                    personalInfo.phone = body.personalInfo.phone;
-                }
+                    if (body.personalInfo.phone) {
+                        personalInfo.phone = body.personalInfo.phone;
+                    }
 
-                if (body.personalInfo.facebookURL && (resultModel.role === CONSTANTS.USER_ROLE.STYLIST)) {
-                    personalInfo.facebookURL = body.personalInfo.facebookURL;
+                    if (body.personalInfo.facebookURL && (resultModel.role === CONSTANTS.USER_ROLE.STYLIST)) {
+                        personalInfo.facebookURL = body.personalInfo.facebookURL;
+                    }
                 }
 
                 if (resultModel.role = CONSTANTS.USER_ROLE.STYLIST) {
 
                     salonInfo = userObj.salonInfo;
 
-                    if (body.salonInfo.salonName){
-                        salonInfo.salonName = body.salonInfo.salonName;
+                    if (body.salonInfo){
+                        if (body.salonInfo.salonName){
+                            salonInfo.salonName = body.salonInfo.salonName;
+                        }
+
+                        if (body.salonInfo.yourBusinessRole){
+                            salonInfo.yourBusinessRole = body.salonInfo.yourBusinessRole;
+                        }
+
+                        if (body.salonInfo.phone){
+                            salonInfo.phone = body.salonInfo.phone;
+                        }
+
+                        if (body.salonInfo.email){
+                            salonInfo.email = body.salonInfo.email;
+                        }
+
+                        if (body.salonInfo.address){
+                            salonInfo.address = body.salonInfo.address;
+                        }
+
+                        if (body.salonInfo.state){
+                            salonInfo.state = body.salonInfo.state;
+                        }
+
+                        if (body.salonInfo.zipCode){
+                            salonInfo.zipCode = body.salonInfo.zipCode;
+                        }
+
+                        if (body.salonInfo.phone){
+                            salonInfo.phone = body.salonInfo.phone;
+                        }
+
+                        if (body.salonInfo.licenseNumber){
+                            salonInfo.licenseNumber = body.salonInfo.licenseNumber;
+                        }
+
+                        if (body.salonInfo.city){
+                            salonInfo.city = body.salonInfo.city;
+                        }
+
+                        if (body.salonInfo.country){
+                            salonInfo.country = body.salonInfo.country;
+                        }
                     }
 
-                    if (body.salonInfo.yourBusinessRole){
-                        salonInfo.yourBusinessRole = body.salonInfo.yourBusinessRole;
-                    }
-
-                    if (body.salonInfo.phone){
-                        salonInfo.phone = body.salonInfo.phone;
-                    }
-
-                    if (body.salonInfo.email){
-                        salonInfo.email = body.salonInfo.email;
-                    }
-
-                    if (body.salonInfo.address){
-                        salonInfo.address = body.salonInfo.address;
-                    }
-
-                    if (body.salonInfo.state){
-                        salonInfo.state = body.salonInfo.state;
-                    }
-
-                    if (body.salonInfo.zipCode){
-                        salonInfo.zipCode = body.salonInfo.zipCode;
-                    }
-
-                    if (body.salonInfo.phone){
-                        salonInfo.phone = body.salonInfo.phone;
-                    }
-
-                    if (body.salonInfo.licenseNumber){
-                        salonInfo.licenseNumber = body.salonInfo.licenseNumber;
-                    }
-
-                    if (body.salonInfo.city){
-                        salonInfo.city = body.salonInfo.city;
-                    }
-
-                    if (body.salonInfo.country){
-                        salonInfo.country = body.salonInfo.country;
-                    }
                 }
 
                 resultModel
@@ -979,7 +984,7 @@ var UserHandler = function (app, db) {
                             return next(err);
                         }
 
-                        res.status(200).send({success: resultModel.role + 'updated successfully'});
+                        res.status(200).send({success: resultModel.role + ' updated successfully'});
 
                     });
 
