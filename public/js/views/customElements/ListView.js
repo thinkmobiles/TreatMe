@@ -63,16 +63,15 @@ define([
         },
 
         renderList: function () {
-            var items = this.collection.toJSON();
+            var items = this.collection.models[0].toJSON().data;
 
-            //this.$el.find('.list').html(this.listTemplate({users: items}));
             this.$el.find('.table tbody').html(this.listTemplate({users: items}));
 
             return this;
         },
 
         reRenderList: function () {
-            var items = this.collection.toJSON();
+            var items = this.collection.models[0].toJSON().data;
             var element = this.$el.find('.table tbody');
 
             element.html('');

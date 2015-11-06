@@ -117,16 +117,16 @@ define([
                 }
 
                 model = self.model;
-                model.updateCurrent(data/*, {
+                model.updateCurrent(data, {
                     success: function () {
                         alert('success created');
                     },
                     error: self.handleModelError
-                    /!*error: function (model, response, options) {
+                    /*error: function (model, response, options) {
                      var errMessage = response.responseJSON.error;
                      self.handleError(errMessage);
-                     }*!/
-                }*/);
+                     }*/
+                });
             });
         },
 
