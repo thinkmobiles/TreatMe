@@ -685,3 +685,18 @@ input[type=checkbox]:checked:after {
 .pagination li.arrow {
   margin: 0 10px;
 }
+.edit {
+  background: transparent url("../images/note.png") no-repeat;
+  background-position: center;
+  text-indent: -99999px;
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+}
+.pending {
+  width: 16px;
+  height: 13px;
+  background: transparent url("../images/check-ok.png") no-repeat;
+  display: inline-block;
+  margin-left: 12px;
+}
