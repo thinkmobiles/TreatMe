@@ -863,7 +863,8 @@ var AdminHandler = function (db) {
          * @example Body example:
          * {
          *  "serviceId": "563342cf1480ea7c109dc385",
-         *  "stylistId": "563342cf1480ea7c109dc385"
+         *  "stylistId": "563342cf1480ea7c109dc385",
+         *  "price": 25
          * }
          *
          * @example Response example:
@@ -878,13 +879,14 @@ var AdminHandler = function (db) {
         var body = req.body;
         var serviceId = body.serviceId;
         var stylistId = body.stylistId;
+        var price = body.price;
 
-        if (!body.serviceId || !body.stylistId) {
-            return next(badRequests.NotEnParams({reqParams: 'serviceId or stylistId'}));
+        if (!body.serviceId || !body.stylistId || !body.price) {
+            return next(badRequests.NotEnParams({reqParams: 'serviceId or stylistId or price'}));
         }
 
         Services
-            .findOneAndUpdate({stylist: stylistId, serviceId: serviceId}, {$set: {approved: true}}, function (err) {
+            .findOneAndUpdate({stylist: stylistId, serviceId: serviceId}, {$set: {approved: true, price: body.price}}, function (err) {
 
                 if (err) {
                     return next(err);
