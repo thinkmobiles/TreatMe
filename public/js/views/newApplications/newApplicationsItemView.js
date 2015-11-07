@@ -12,7 +12,9 @@ define([
         mainTemplate: _.template(MainTemplate),
 
         events: {
-            "click .saveBtn": "saveStylist"
+            "click .saveBtn": "saveStylist",
+            "click #editBtn": "edit",
+            "click #acceptBtn": "saveStylist"
         },
 
         initialize: function (options) {
@@ -24,6 +26,7 @@ define([
                 this.model = new StylistModel();
                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/add'}]);
                 this.render();
+
             } else {
                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/' + userId}]);
                 model = new StylistModel({_id: userId});
@@ -44,6 +47,7 @@ define([
             var user = self.model.toJSON();
 
             console.log(user);
+            $('.searchBlock').html('');
             $el.html(self.mainTemplate({user: user}));
 
             return this;
@@ -113,7 +117,7 @@ define([
                 }
 
                 model = self.model;
-                model.save(data, {
+                model.updateCurrent(data, {
                     success: function () {
                         alert('success created');
                     },
@@ -124,6 +128,11 @@ define([
                      }*/
                 });
             });
+        },
+
+        edit : function () {
+            console.log('Fire edit event!');
+            $('input:disabled').prop('disabled', false);
         }
 
     });
