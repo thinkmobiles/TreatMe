@@ -1,15 +1,21 @@
 'use strict';
 
 define([
-    'constants/index',
+    /*'constants/index',
     'collections/stylistCollection',
     'views/customElements/paginationView',
     'text!templates/stylists/stylistsTemplate.html',
+    'text!templates/stylists/stylistsListTemplate.html'*/
+
+    'views/customElements/ListView',
+    'collections/stylistCollection',
+    'text!templates/stylists/stylistsTemplate.html',
     'text!templates/stylists/stylistsListTemplate.html'
 
-], function (CONSTANTS, StylistCollection, PaginationView, MainTemplate, ListTemplate) {
+//], function (CONSTANTS, StylistCollection, PaginationView, MainTemplate, ListTemplate) {
+], function (ListView, Collection, MainTemplate, ListTemplate) {
 
-    var View = Backbone.View.extend({
+   /* var View = Backbone.View.extend({
 
         el : '#wrapper',
 
@@ -71,7 +77,21 @@ define([
             navContainer.find('#nav_stylists').addClass('active')
         }
 
+    });*/
+
+    var View = ListView.extend({
+        Collection: Collection,
+        mainTemplate: _.template(MainTemplate),
+        listTemplate: _.template(ListTemplate),
+        navElement: '#nav_stylists',
+
+        initialize: function (options) {
+            App.Breadcrumbs.reset([{name: 'Stylist List', path: '#stylists'}]);
+
+            ListView.prototype.initialize.call(this, options);
+        }
     });
+
 
     return View;
 });

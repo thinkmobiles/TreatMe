@@ -17,8 +17,9 @@ define([
             "newApplications"           :  "newApplications",
             "newApplications/add"       :  "newApplicationDetails",
             "newApplications/:id"       :  "newApplicationDetails",
-            "stylists"                  :  "stylists",
-            "stylists/page/:page"       :  "stylists",
+            "stylists(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "stylists",
+            /*"stylists"                  :  "stylists",
+            "stylists/page/:page"       :  "stylists",*/
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
             "clients"                   :  "clients",
@@ -51,7 +52,7 @@ define([
 
             if (redirect === REDIRECT.whenAuthorized) {
                 if (App.sessionData.get('authorized')){
-                    return Backbone.history.navigate("users", {trigger: true});
+                    return Backbone.history.navigate("dashboard", {trigger: true});
                 }
             }
 
@@ -63,10 +64,6 @@ define([
                 }
 
                 self.wrapperView = self[nameView];
-
-                if (self.wrapperView.afterRender) {
-                    self.wrapperView.afterRender();
-                }
             });
         },
 
@@ -106,9 +103,16 @@ define([
             this.loadWrapperView('newApplications', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
-        stylists: function (page) {
+        stylists: function (page, countPerPage, orderBy, order, filter) {
+            var options = {
+                page: parseInt(page),
+                countPerPage: countPerPage,
+                orderBy: orderBy,
+                order: order,
+                filter: filter
+            };
 
-            this.loadWrapperView('stylists', {page: page}, REDIRECT.whenNOTAuthorized);
+            this.loadWrapperView('stylists', options, REDIRECT.whenNOTAuthorized);
         },
 
         clients: function () {
@@ -141,54 +145,7 @@ define([
 
         stylistDetails: function (id) {
             this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
-        },
-
-        /*users: function () {
-            this.loadWrapperView('users', null, REDIRECT.whenNOTAuthorized);
-        },
-
-        taskList : function (){
-            this.loadWrapperView('taskList', null, REDIRECT.whenNOTAuthorized);
-        },
-
-        documents: function (viewType) {
-            this.loadWrapperView('documents', {viewType : viewType}, REDIRECT.whenNOTAuthorized);
-        },
-
-        forPreview: function (docType, id){
-            if (docType === 'templates' || docType === 'documents') {
-                this.loadWrapperView('templatesPre', {docType: docType, id: id}, REDIRECT.whenNOTAuthorized);
-            } else {
-                Backbone.history.navigate("users", {trigger: true});
-            }
-        },
-
-        signature : function (type, token) {
-            if (type === 'company'){
-                return this.loadWrapperView('signature', {token : token}, REDIRECT.whenNOTAuthorized, 'Company');
-            }
-            if (type === 'user'){
-                return this.loadWrapperView('signature', {token : token}, null, 'User');
-            }
-
-            Backbone.history.navigate("users", {trigger: true});
-        },
-
-        templates: function (viewType) {
-            this.loadWrapperView('templates', {viewType : viewType}, REDIRECT.whenNOTAuthorized);
-        },
-
-        settings: function () {
-            this.loadWrapperView('settings', null, REDIRECT.whenNOTAuthorized);
-        },
-
-        help: function(){
-            this.loadWrapperView('help', null, REDIRECT.whenNOTAuthorized);
-        },
-
-        newUsers: function() {
-            this.loadWrapperView('newUsers', null, REDIRECT.whenNOTAuthorized);
-        }*/
+        }
 
     });
 

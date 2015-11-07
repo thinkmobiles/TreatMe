@@ -1,19 +1,29 @@
 'use strict';
 
-
 define([
-    'constants/index',
+    //'constants/index',
+    'collections/parentCollection',
     'models/stylistModel'
+], function (/*CONSTANTS,*/ParentCollection, Model) {
+    var Collection = ParentCollection.extend({
 
-], function (CONSTANTS, Model) {
-    var Collection = Backbone.Collection.extend({
-        model:Model,
+        model: Model,
 
         url: function () {
             return "/admin/stylist"
         },
 
-        initialize: function(options){
+        initialize: function (options) {
+            var page;
+
+            options = options || {};
+            page = options.page;
+            options.reset = true;
+
+            this.getPage(page, options);
+        },
+
+        /*initialize: function(options){
             var params = {
                 reset: true,
                 success: function(coll){
@@ -35,27 +45,7 @@ define([
             params.data = data;
 
             this.fetch(params);
-
-            /*if (options && options.status) {
-                this.url = "/admin/stylist";
-
-                this.fetch({
-                    reset: true,
-                    data: {status: options.status},
-                    success: function(coll){
-                        return coll;
-                    }
-                })
-
-            } else {
-                this.fetch({
-                    reset: true,
-                    success: function(coll){
-                        return coll;
-                    }
-                });
-            }*/
-        },
+        },*/
 
         approve: function (data, callback) {
             $.ajax({

@@ -1,19 +1,9 @@
-define([
-    //todo get this files by contentType automaticly
-    //'views/domain/createView',
-    //'views/domain/editView',
-    //"text!templates/domain/newThumbnail.html",
-    //"text!templates/domain/newRow.html",
-], function (/*CreateView, EditView, newThumbnail, newRow*/) {
+define([], function(){
     var View = Backbone.View.extend({
-        listLength          : null,
-        defaultItemsNumber  : null,
-        newCollection       : null,
-        $pagination         : null,
-        //templateNewRow      : _.template(newRow),
-        //templateNewThumbnail: _.template(newThumbnail),
-
-        //<editor-fold desc="Pagination">
+        listLength: null,
+        defaultItemsNumber: null,
+        newCollection: null,
+        $pagination: null,
 
         changeLocationHash: function (page, count, filter) {
             var location = window.location.hash;
@@ -68,7 +58,7 @@ define([
             Backbone.history.navigate(url);
         },
 
-        nextPage: function (options) {
+        nextPage: function(options){
             var itemsNumber = $("#itemsNumber").text();
             var page = parseInt($("#currentShowPage").val()) + 1;
             var pageNumber = $("#lastPage").text();
@@ -109,7 +99,7 @@ define([
             $("#firstShowPage").prop("disabled", false);
 
             options = options || {
-                    count : itemsNumber,
+                    count: itemsNumber,
                     filter: this.filter
                 };
 
@@ -117,7 +107,7 @@ define([
             this.changeLocationHash(page, itemsNumber);
         },
 
-        previousPage: function (options) {
+        previousPage: function(options){
             var itemsNumber = $("#itemsNumber").text();
             var currentShowPage = $("#currentShowPage");
             var page = parseInt(currentShowPage.val()) - 1;
@@ -166,7 +156,7 @@ define([
             $("#lastShowPage").prop("disabled", false);
 
             options = options || {
-                    count : itemsNumber,
+                    count: itemsNumber,
                     filter: this.filter
                 };
 
@@ -174,7 +164,7 @@ define([
             this.changeLocationHash(page, itemsNumber);
         },
 
-        firstPage: function (options) {
+        firstPage: function(options){
             var itemsNumber = $("#itemsNumber").text();
             var currentShowPage = $("#currentShowPage");
             var page = 1;
@@ -208,7 +198,7 @@ define([
             $("#lastShowPage").prop("disabled", false);
 
             options = options || {
-                    count : itemsNumber,
+                    count: itemsNumber,
                     filter: this.filter
                 };
 
@@ -216,7 +206,7 @@ define([
             this.changeLocationHash(1, itemsNumber);
         },
 
-        lastPage: function (options) {
+        lastPage: function(options){
             var itemsNumber = $("#itemsNumber").text();
             var page = $("#lastPage").text();
 
@@ -249,8 +239,8 @@ define([
             $("#firstShowPage").prop("disabled", false);
 
             options = options || {
-                    page  : page,
-                    count : itemsNumber,
+                    page: page,
+                    count: itemsNumber,
                     filter: this.filter
                 };
 
@@ -258,11 +248,12 @@ define([
             this.changeLocationHash(page, itemsNumber);
         },
 
-        getPage: function (options) {
+        getPage: function(options){
             var itemsNumber;
             var page;
             var adr = /^\d+$/;
             var lastPage;
+            var itemsNumber;
             var itemsOnPage = 7;
 
             if (!this.listLength) {
@@ -343,7 +334,7 @@ define([
             this.changeLocationHash(page, itemsNumber);
         },
 
-        pageElementRender: function (totalCount, currentPage) {
+        pageElementRender: function(totalCount, currentPage){
             var itemsNumber = this.defaultItemsNumber;
             var start = $("#gridStart");
             var end = $("#gridEnd");
@@ -414,7 +405,6 @@ define([
         switchPageCounter: function (e) {
             e.preventDefault();
 
-            var self = this;
             var itemsNumber = e.target.textContent;
 
             this.defaultItemsNumber = itemsNumber;
@@ -423,184 +413,17 @@ define([
             $('#check_all').prop('checked', false);
 
             this.collection.getPage(1, {
-                count        : itemsNumber,
-                page         : 1,
-                filter       : this.filter,
-                newCollection: false,
-                success      : function () {
-                    self.render();
-                }
+                count: itemsNumber,
+                page: 1,
+                filter: this.filter,
+                newCollection: false
             });
 
             this.changeLocationHash(1, itemsNumber);
-        },
-
-        // </editor-fold>
-
-        // <editor-fold desc="Checkboxes">
-
-        addCheckboxesFunctionality: function (context) {
-            var currentEl;
-
-            if (!context) {
-                context = this;
-            }
-
-            currentEl = context.$el;
-
-            currentEl.find(".checkbox").click(function (e) {
-                e.stopPropagation();
-
-                setViewStateAfterCheck();
-            });
-
-            currentEl.find(".checkboxArea").click(function (e) {
-                var checkbox;
-
-                e.stopPropagation();
-                checkbox = $(e.target).children('input:checkbox');
-                checkbox.prop('checked', !checkbox.is(':checked'));
-
-                setViewStateAfterCheck();
-            });
-
-            var setViewStateAfterCheck = function () {
-
-                if (!context.$checkAll) {
-                    //todo change after button behavior adding
-                    return;
-                }
-
-                var checkLength;
-                var collectionLength = context.collection.length;
-                if (collectionLength > 0) {
-                    checkLength = $("input.checkbox:checked").length;
-
-                    if (checkLength === collectionLength) {
-                        context.$checkAll.prop('checked', true);
-                    } else {
-                        context.$checkAll.prop('checked', false);
-                    }
-                }
-            };
-
-        },
-
-        addCheckAllFunctionality: function (context) {
-            var currentEl;
-
-            if (!context) {
-                context = this;
-            }
-
-            currentEl = context.$el;
-            context.$checkAll = currentEl.find('#check_all');
-            context.$checkAll.click(function () {
-                $(':checkbox').prop('checked', this.checked);
-
-                //if ($("input.checkbox:checked").length > 0) {
-                //    $("#top-bar-deleteBtn").show();
-                //} else {
-                //    $("#top-bar-deleteBtn").hide();
-                //}
-            });
-        },
-
-        // </editor-fold>
-        checked: function (e) {
-            e.stopPropagation();
-        },
-
-        inputClick: function (e) {
-            var checkBoxes = this.$el.find('input[type="checkbox"]:checked');
-
-            if (checkBoxes.length) { //not because we have benn subscribed for label click and auto input click
-                this.$btnHolder.show();
-            } else {
-                this.$btnHolder.hide();
-            }
-
-            e.stopPropagation();
-        },
-
-        createItem: function () {
-            var contentType = this.contentType;
-            var viewType = this.viewType;
-            var parentId = this.parentId;
-            var modelUrl = 'models/' + contentType;
-            var self = this;
-            require([modelUrl], function (Model) {
-                var createView = new CreateView({
-                    Model      : Model,
-                    contentType: contentType,
-                    viewType   : viewType,
-                    parentId   : parentId
-                });
-                createView.on('modelSaved', function (data) {
-                    var curEl = $('#contentHolder');
-
-                    data = data.toJSON();
-
-                    self.collection.add(data, {remove: false});
-
-                    if (self.viewType === 'list') {
-                        curEl.find('#listTable').append(self.templateNewRow({domain: data}));
-                    } else {
-                        curEl.append(self.templateNewThumbnail({domain: data}));
-                    }
-                });
-            });
-        },
-
-        editItem: function () {
-            var contentType = this.contentType;
-            var viewType = this.viewType;
-            var parentId = this.parentId;
-            var curentId = this.$el.find('input[type="checkbox"]:checked').attr('id');
-            var model = this.collection.get(curentId);
-
-            new EditView({
-                model      : model,
-                contentType: contentType,
-                viewType   : viewType,
-                parentId   : parentId
-            });
-        },
-
-        showFilteredContent: function (value) {
-            var self = this;
-
-            var filter = {
-                'archived': {
-                    type  : 'boolean',
-                    values: [value]
-                }
-            };
-
-            var creationOptions = {
-                viewType     : this.viewType,
-                page         : 1,
-                filter       : filter,
-                parentId     : this.parentId,
-                newCollection: true,
-                success      : function () {
-                    self.render();
-                }
-            };
-
-            this.filter = filter;
-
-            this.collection.getPage(1, creationOptions);
-        },
-
-        pageSwitcherRenderer: function (contentType) {
-            var text = contentType.capitalizer('caps');
-
-            this.$mainContent.text(text);
-            this.$createBtn.text('New ' + text);
         }
 
     });
+
 
     return View;
 });
