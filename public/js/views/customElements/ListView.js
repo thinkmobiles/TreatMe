@@ -46,7 +46,7 @@ define([
 
             this.render();
 
-            this.collection = new Collection(this.pageParams);
+            this.collection = new Collection(params);
             this.collection.on('reset', function () {
                 self.renderList();
             });
