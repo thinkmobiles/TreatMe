@@ -4,6 +4,7 @@ var ImageHandler = require('./image');
 var mongoose = require('mongoose');
 var CONSTANTS = require('../constants');
 var geocoder = require('geocoder');
+var StylistHandler = require('./stylist');
 
 var ClientsHandler = function (app, db) {
 
@@ -15,7 +16,7 @@ var ClientsHandler = function (app, db) {
     var SubscriptionType = db.model('SubscriptionType');
     var imageHandler = new ImageHandler(db);
     var ObjectId = mongoose.Types.ObjectId;
-
+    var stylistHandler = new StylistHandler(app, db);
 
     /*  this.updateProfile = function (req, res, next) {
      var clientId = req.session.uId;
@@ -277,14 +278,14 @@ var ClientsHandler = function (app, db) {
                                     return cb(badRequests.UnknownGeoLocation());
                                 }
 
-                                cb();
+                                cb(null, clientLoc.coordinates);
                             });
                         } else {
                             if (!clientLoc || !clientLoc.coordinates.length) {
                                 return cb(badRequests.UnknownGeoLocation());
                             }
 
-                            cb();
+                            cb(null, clientLoc.coordinates);
                         }
                     });
             },
@@ -335,11 +336,19 @@ var ClientsHandler = function (app, db) {
             }
 
         ], function (err, result) {
+            var appointmentId;
+            var userCoordinates;
+
             if (err) {
                 return next(err);
             }
 
-            res.status(200).send({success: 'Appointment created successfully', appointmentId: result[2]});
+            userCoordinates = result[0];
+            appointmentId = result[2];
+
+            stylistHandler.startLookStylistForAppointment(appointmentId, userCoordinates, body.serviceType);
+
+            res.status(200).send({success: 'Appointment created successfully', appointmentId: appointmentId});
         });
     };
 

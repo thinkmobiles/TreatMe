@@ -3,6 +3,9 @@ var badRequests = require('../helpers/badRequests');
 var CONSTANTS = require('../constants');
 var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
+var _ = require('lodash');
+var schedule = require('node-schedule');
+var ImageHandler = require('./image');
 
 
 var StylistHandler = function (app, db) {
@@ -11,19 +14,26 @@ var StylistHandler = function (app, db) {
     var Services = db.model('Service');
     var Appointment = db.model('Appointment');
     var User = db.model('User');
+    var imageHandler = new ImageHandler();
+    var io = app.get('io');
 
 
-    function checkStylistAvailability(stylistId, appointmentId, callback) {
+    function checkStylistAvailability(availabilityObj, appointmentId, callback) {
+        var resultModelJSON;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)) {
             return callback(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
         }
 
         Appointment
-            .findOne({_id: appointmentId}, function (err, appointmentModel) {
+            .findOne({_id: appointmentId}, {client: 1, clientLoc: 1, serviceType: 1, status: 1, bookingDate: 1})
+            .populate([{path: 'serviceType'}, {path: 'client', select: 'personalInfo.firstName personalInfo.lastName personalInfo.avatarName'}])
+            .exec(function (err, appointmentModel) {
                 var status;
                 var error;
                 var bookingDate;
+                var bookDay;
+                var bookedHoursAndMinutes;
 
                 if (err) {
                     return callback(err);
@@ -43,49 +53,192 @@ var StylistHandler = function (app, db) {
                 }
 
                 bookingDate = appointmentModel.get('bookingDate');
+                bookDay = bookingDate.getDay();
+                console.log('Appointment booked on ' + bookDay + 'day');
+                bookedHoursAndMinutes = bookingDate.getHours() + ':' + bookingDate.getMinutes();
 
-                User
-                    .findOne({_id: stylistId}, function (err, stylistModel) {
-                        var availabilityObj;
-                        var bookDay = bookingDate.getDay();
-                        var bookedHoursAndMinutes = bookingDate.getHours() + ':' + bookingDate.getMinutes();
+                if (availabilityObj && Object.keys(availabilityObj).length) {
 
-                        if (err) {
-                            return callback(err);
-                        }
-
-                        if (!stylistModel) {
-                            return callback(badRequests.DatabaseError());
-                        }
-
-                        availabilityObj = stylistModel.get('salonInfo.availability');
-
-                        for (var i = 0, len = availabilityObj[bookDay].length; i < len; i++) {
-                            if (bookedHoursAndMinutes >= availabilityObj[bookDay][i].from && bookedHoursAndMinutes < availabilityObj[bookDay][i].to) {
-                                return callback(null, true);
+                    for (var i = 0, len = availabilityObj[bookDay].length; i < len; i++) {
+                        if (bookedHoursAndMinutes >= availabilityObj[bookDay][i].from && bookedHoursAndMinutes < availabilityObj[bookDay][i].to) {
+                            resultModelJSON = appointmentModel.toJSON();
+                            resultModelJSON.clientLoc = resultModelJSON.clientLoc.coordinates;
+                            resultModelJSON.clientInfo = {
+                                name: resultModelJSON.client.personalInfo.firstName + ' ' +resultModelJSON.client.personalInfo.lastName,
+                                _id: resultModelJSON.client._id.toString()
+                            };
+                            if (resultModelJSON.client.personalInfo.avatar){
+                                resultModelJSON.clientInfo.avatar = imageHandler.computeUrl(resultModelJSON.client.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
                             }
-                        }
+                            resultModelJSON.service = {
+                                _id: resultModelJSON.serviceType._id.toString(),
+                                name: resultModelJSON.serviceType.name
+                            };
+                            if (resultModelJSON.serviceType.logo){
+                                resultModelJSON.service.logo = imageHandler.computeUrl(resultModelJSON.serviceType.logo, CONSTANTS.BUCKET.IMAGES);
+                            }
+                            resultModelJSON._id = resultModelJSON._id.toString();
 
-                        callback(null, false);
-                    })
+                            delete resultModelJSON.client;
+                            delete resultModelJSON.serviceType;
+
+                            return callback(null, resultModelJSON);
+                        }
+                    }
+                }
+
+                callback(null, false);
             });
     }
 
-    this.checkTest = function (req, res, next) {
-        var stylistId = req.session.uId;
-        var appointmentId = req.body.id;
+    this.startLookStylistForAppointment = function (appointmentId, userCoordinates, serviceTypeId) {
 
-        checkStylistAvailability(stylistId, appointmentId, function(err, status){
-            if (err){
-                return next(err);
+        var foundedStylists = [];
+        var tenStylistsModelArray = [];
+        var goodStylistModel;
+        var stylistId;
+        var room;
+        var distance = CONSTANTS.SEARCH_DISTANCE.START;
+        var maxDistance = CONSTANTS.SEARCH_DISTANCE.MAX;
+
+        var newScheduler = schedule.scheduleJob('*/30 * * * * *', function () {
+            var availabilityObj;
+
+            console.log('>>> Scheduler starts for appointment id: ' + appointmentId + ' and distance: ' + distance / 1609.344 + ' miles');
+
+            if (distance > maxDistance) {
+                console.log('>>>Scheduler canceled');
+                newScheduler.cancel();
+
+                return;
             }
 
-            if (status){
-                return res.status(200).send('Free');
+            if (tenStylistsModelArray.length) {
+                goodStylistModel = tenStylistsModelArray.shift();
+
+                if (!goodStylistModel) {
+                    return distance += 1609.344;
+                }
+
+                stylistId = goodStylistModel.get('_id');
+                availabilityObj = goodStylistModel.get('salonInfo.availability');
+
+                console.log('>>>Found stylist with id: ' + stylistId);
+
+                checkStylistAvailability(availabilityObj, appointmentId, function (err, appointmentModel) {
+                    if (err) {
+                        if (err.message.indexOf('was accepted') !== -1) {
+                            console.log('>>>Scheduler canceled');
+                            newScheduler.cancel();
+                            return;
+                        }
+
+                        return console.log(err);
+                    }
+
+                    if (appointmentModel) {
+                        room = stylistId.toString();
+
+                        io.to(room).send('new appointment', appointmentModel);
+                        return console.log('Sent appointment to stylist with id: ' + stylistId);
+                    }
+                })
             }
 
-            res.status(200).send('Busy');
-        })
+            User
+                .find(
+                {
+                    role: CONSTANTS.USER_ROLE.STYLIST,
+                    online: true,
+                    'suspend.isSuspend': false,
+                    loc: {
+                        $geoWithin: {
+                            $centerSphere: [userCoordinates, distance / 6378137]
+                        }
+                    },
+                    _id: {$nin: foundedStylists}
+                })
+                .limit(10)
+                .exec(function (err, stylistModelsArray) {
+                    var stylistIdsArray;
+
+                    if (err) {
+                        return console.log(err);
+                    }
+
+                    stylistIdsArray = _.pluck(stylistModelsArray, '_id');
+                    foundedStylists = foundedStylists.concat(stylistIdsArray);
+
+                    Services
+                        .find({
+                            stylist: {$in: stylistIdsArray},
+                            serviceId: ObjectId(serviceTypeId),
+                            approved: true
+                        }, {stylist: 1, price: 1})
+                        .sort({price: -1})
+                        .limit(10)
+                        .exec(function (err, serviceModelArray) {
+                            var stylistWithServices;
+                            var stylistModelsStringIdsArray;
+
+                            if (err) {
+                                return console.log(err);
+                            }
+
+                            console.log(serviceModelArray);
+
+                            if (serviceModelArray.length) {
+                                stylistWithServices = _.pluck(serviceModelArray, 'stylist');
+                                stylistWithServices = stylistWithServices.toStringObjectIds();
+
+                                stylistModelsStringIdsArray = stylistIdsArray.toStringObjectIds();
+
+                                tenStylistsModelArray = stylistWithServices.map(function (id) {
+                                    var index = stylistModelsStringIdsArray.indexOf(id);
+
+                                    if (index !== -1) {
+                                        return stylistModelsArray[index];
+                                    }
+                                });
+
+                                if (tenStylistsModelArray.length) {
+                                    goodStylistModel = tenStylistsModelArray.shift();
+
+                                    stylistId = goodStylistModel.get('_id');
+                                    availabilityObj = goodStylistModel.get('salonInfo.availability');
+
+                                    console.log('>>>Found stylist with id: ' + stylistId);
+                                }
+                            } else {
+                                availabilityObj = {};
+                            }
+
+                            checkStylistAvailability(availabilityObj, appointmentId, function (err, appointmentModel) {
+                                if (err) {
+                                    if (err.message.indexOf('was accepted') !== -1) {
+                                        console.log('>>>Scheduler canceled');
+                                        newScheduler.cancel();
+                                        return;
+                                    }
+
+                                    return console.log(err);
+                                }
+
+                                if (appointmentModel) {
+                                    room = stylistId.toString();
+
+                                    io.to(room).send('new appointment', appointmentModel);
+                                    return console.log('Sent appointment to stylist with id: ' + stylistId);
+                                } else {
+                                    if (!tenStylistsModelArray.length) {
+                                        return distance += 1609.344;
+                                    }
+                                }
+                            })
+
+                        });
+                })
+        });
     };
 
 
