@@ -52,7 +52,24 @@ var AdminHandler = function (db) {
                     return callback(err);
                 }
 
-                Services
+                userObj = resultModel.toJSON();
+
+                user.getService(sId, function(err, resultServices){
+
+                    if (err){
+                        return callback(err);
+                    }
+
+                    if (resultServices.length){
+                        userObj.services = resultServices;
+                    } else {
+                        userObj.services = []
+                    }
+
+                    callback(null, userObj);
+                });
+
+                /*Services
                     .find({stylist: ObjectId(sId), approved: true}, {price: 1, _id: 0, serviceId: 1})
                     .populate({path: 'serviceId', select: '-_id name'})
                     .exec(function(err, serviceModels){
@@ -70,7 +87,7 @@ var AdminHandler = function (db) {
                         }
 
                         callback(null, userObj);
-                    });
+                    });*/
             });
     }
 
