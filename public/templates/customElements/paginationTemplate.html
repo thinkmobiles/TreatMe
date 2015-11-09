@@ -1,13 +1,4 @@
-<ul class="pagination">
-    <% _.forEach(pages, function (page) {%>
-    <li class="<% if (page.clNam) {%>arrow <%}%><% if(page.active) { %>active <% } %>item">
-        <span>
-        <% if(urlPagination) { %>
-            <a href="#<%= url %>/<%= page.data %>"><%= page.html %></a>
-        <% } else { %>
-            <a class="goToPage" value="<%= page.data %>"><%= page.html %></a>
-        <% } %>
-        </span>
-    </li>
-    <%});%>
+<ul id="pageList" class="allNumberPerPage">
+    <li class="arrow showFirst">First</li>
+    <li class="arrow showLast">Last</li>
 </ul>

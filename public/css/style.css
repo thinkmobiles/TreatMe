@@ -664,11 +664,11 @@ input[type=checkbox]:checked:after {
   top: -1px;
   transform: rotate(180deg);
 }
-.pagination {
+#pageList {
   margin: 50px auto;
   text-align: center;
 }
-.pagination li {
+#pageList li {
   display: inline-block;
   text-transform: uppercase;
   font-weight: bold;
@@ -677,12 +677,20 @@ input[type=checkbox]:checked:after {
   height: 30px;
   line-height: 30px;
 }
-.pagination li.active {
+#pageList li.active {
   background-color: #2175cc;
   border-radius: 50px;
   color: #fff;
 }
-.pagination li.arrow {
+#pageList li:hover {
+  color: #2175cc;
+  cursor: pointer;
+}
+#pageList li.active:hover {
+  color: inherit;
+}
+
+#pageList li.arrow {
   margin: 0 10px;
 }
 .edit {

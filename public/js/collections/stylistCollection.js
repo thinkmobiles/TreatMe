@@ -1,26 +1,15 @@
 'use strict';
 
 define([
-    //'constants/index',
     'collections/parentCollection',
     'models/stylistModel'
-], function (/*CONSTANTS,*/ParentCollection, Model) {
+], function (ParentCollection, Model) {
     var Collection = ParentCollection.extend({
 
         model: Model,
 
         url: function () {
             return "/admin/stylist"
-        },
-
-        initialize: function (options) {
-            var page;
-
-            options = options || {};
-            page = options.page;
-            options.reset = true;
-
-            this.getPage(page, options);
         },
 
         /*initialize: function(options){

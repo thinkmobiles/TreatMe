@@ -18,11 +18,9 @@ define([
             "newApplications/add"       :  "newApplicationDetails",
             "newApplications/:id"       :  "newApplicationDetails",
             "stylists(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "stylists",
-            /*"stylists"                  :  "stylists",
-            "stylists/page/:page"       :  "stylists",*/
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
-            "clients"                   :  "clients",
+            "clients(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clients",
             "pendingRequests"           :  "pendingRequests",
             "bookings"                  :  "bookings",
             "stylistPayments"           :  "stylistPayments",
@@ -106,7 +104,7 @@ define([
         stylists: function (page, countPerPage, orderBy, order, filter) {
             var options = {
                 page: parseInt(page),
-                countPerPage: countPerPage,
+                countPerPage: parseInt(countPerPage),
                 orderBy: orderBy,
                 order: order,
                 filter: filter
@@ -115,8 +113,16 @@ define([
             this.loadWrapperView('stylists', options, REDIRECT.whenNOTAuthorized);
         },
 
-        clients: function () {
-            this.loadWrapperView('clients', null, REDIRECT.whenNOTAuthorized);
+        clients: function (page, countPerPage, orderBy, order, filter) {
+            var options = {
+                page: parseInt(page),
+                countPerPage: parseInt(countPerPage),
+                orderBy: orderBy,
+                order: order,
+                filter: filter
+            };
+
+            this.loadWrapperView('clients', options, REDIRECT.whenNOTAuthorized);
         },
 
         pendingRequests: function () {

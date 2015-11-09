@@ -1,25 +1,10 @@
-<table>
-    <thead>
-    <tr>
-        <th><input type="checkbox" class="checkAll"></th>
-        <th>Stylist Name</th>
-        <th>Salon Name</th>
-        <th>Status</th>
-        <th>Edit</th>
-        <th>Suspend</th>
-    </tr>
-    </thead>
-    <tbody>
-    <% _.forEach(items, function (user, index) {%>
-    <tr data-id="<%= user._id%>">
-        <!--<td><input type="checkbox"></td>-->
-        <td><%= (index+1) %></td>
-        <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
-        <td><%= user.salonInfo.salonName %></td>
-        <td><span class="<%= (user.approved) ? 'confirmed' : 'pending' %>"></span></td>
-        <td><a href="#stylists/<%= user._id%>" class="edit">Edit</a></td>
-        <td><button id="suspendCurrentBtn">Suspend</button></td>
-    </tr>
-    <%});%>
-    </tbody>
-</table>
+<% _.forEach(items, function (user, index) {%>
+<tr data-id="<%= user._id%>">
+    <td><input type="checkbox"></td>
+    <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
+    <td><%= user.salonInfo.salonName %></td>
+    <td><span class="<%= (user.approved) ? 'confirmed' : 'pending' %>"></span></td>
+    <td><a href="#stylists/<%= user._id%>" class="edit">Edit</a></td>
+    <td><button id="suspendCurrentBtn">Suspend</button></td>
+</tr>
+<%});%>
