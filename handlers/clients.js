@@ -261,6 +261,12 @@ var ClientsHandler = function (app, db) {
 
                         clientLoc = clientModel.get('loc');
 
+                        if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
+                            if (body.coordinates){
+                                clientLoc.coordinates = body.coordinates;
+                            }
+                        }
+
                         if (locationAddress) {
                             geocoder.geocode(locationAddress, function(err, data){
                                 if (err){
