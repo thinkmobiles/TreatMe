@@ -1,5 +1,5 @@
 /**
- * @description admin profile managment module
+ * @description admin profile management module
  * @module adminHandler
  *
  */
@@ -119,36 +119,6 @@ var AdminHandler = function (db) {
     };
 
     function getCountByCriterion(findObj, callback){
-
-       /* var roleObj = {
-            role: role
-        };
-
-        var statusObj = {};
-        var searchRegExp;
-        var searchObj = {};
-        var findObj;
-
-        if (!callback && typeof status === 'function'){
-            callback = status;
-        } else {
-            if (status === 'requested'){
-                statusObj.approved = false;
-            } else if (status === 'approved') {
-                statusObj.approved = true;
-            }
-        }
-
-        if (search){
-            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
-
-            searchObj['$or'] = [
-                {'personalInfo.firstName': {$regex: searchRegExp}},
-                {'personalInfo.lastName': {$regex: searchRegExp}},
-                {'email': {$regex: searchRegExp}},
-                {'salon.firstName': {$regex: searchRegExp}}
-            ];
-        }*/
 
         User
             .count(findObj, function(err, resultCount){
