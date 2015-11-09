@@ -3,6 +3,8 @@ var badRequests = require('../helpers/badRequests');
 var CONSTANTS = require('../constants');
 var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
+var _ = require('lodash');
+var ImageHandler = require('./image');
 
 
 var StylistHandler = function (app, db) {
@@ -11,19 +13,25 @@ var StylistHandler = function (app, db) {
     var Services = db.model('Service');
     var Appointment = db.model('Appointment');
     var User = db.model('User');
+    var imageHandler = new ImageHandler();
 
 
-    function checkStylistAvailability(stylistId, appointmentId, callback) {
+    this.checkStylistAvailability = function(availabilityObj, appointmentId, callback) {
+        var resultModelJSON;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)) {
             return callback(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
         }
 
         Appointment
-            .findOne({_id: appointmentId}, function (err, appointmentModel) {
+            .findOne({_id: appointmentId}, {client: 1, clientLoc: 1, serviceType: 1, status: 1, bookingDate: 1})
+            .populate([{path: 'serviceType'}, {path: 'client', select: 'personalInfo.firstName personalInfo.lastName personalInfo.avatarName'}])
+            .exec(function (err, appointmentModel) {
                 var status;
                 var error;
                 var bookingDate;
+                var bookDay;
+                var bookedHoursAndMinutes;
 
                 if (err) {
                     return callback(err);
@@ -43,49 +51,43 @@ var StylistHandler = function (app, db) {
                 }
 
                 bookingDate = appointmentModel.get('bookingDate');
+                bookDay = bookingDate.getDay();
+                bookedHoursAndMinutes = bookingDate.getHours() + ':' + bookingDate.getMinutes();
 
-                User
-                    .findOne({_id: stylistId}, function (err, stylistModel) {
-                        var availabilityObj;
-                        var bookDay = bookingDate.getDay();
-                        var bookedHoursAndMinutes = bookingDate.getHours() + ':' + bookingDate.getMinutes();
+                console.log('Appointment booked on ' + bookDay + ' day and Booked hours: ' + bookedHoursAndMinutes);
 
-                        if (err) {
-                            return callback(err);
-                        }
+                if (availabilityObj && Object.keys(availabilityObj).length) {
 
-                        if (!stylistModel) {
-                            return callback(badRequests.DatabaseError());
-                        }
-
-                        availabilityObj = stylistModel.get('salonInfo.availability');
-
-                        for (var i = 0, len = availabilityObj[bookDay].length; i < len; i++) {
-                            if (bookedHoursAndMinutes >= availabilityObj[bookDay][i].from && bookedHoursAndMinutes < availabilityObj[bookDay][i].to) {
-                                return callback(null, true);
+                    for (var i = 0, len = availabilityObj[bookDay].length; i < len; i++) {
+                        if (bookedHoursAndMinutes >= availabilityObj[bookDay][i].from && bookedHoursAndMinutes < availabilityObj[bookDay][i].to) {
+                            resultModelJSON = appointmentModel.toJSON();
+                            resultModelJSON.clientLoc = resultModelJSON.clientLoc.coordinates;
+                            resultModelJSON.clientInfo = {
+                                name: resultModelJSON.client.personalInfo.firstName + ' ' +resultModelJSON.client.personalInfo.lastName,
+                                _id: resultModelJSON.client._id.toString()
+                            };
+                            if (resultModelJSON.client.personalInfo.avatar){
+                                resultModelJSON.clientInfo.avatar = imageHandler.computeUrl(resultModelJSON.client.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
                             }
+                            resultModelJSON.service = {
+                                _id: resultModelJSON.serviceType._id.toString(),
+                                name: resultModelJSON.serviceType.name
+                            };
+                            if (resultModelJSON.serviceType.logo){
+                                resultModelJSON.service.logo = imageHandler.computeUrl(resultModelJSON.serviceType.logo, CONSTANTS.BUCKET.IMAGES);
+                            }
+                            resultModelJSON._id = resultModelJSON._id.toString();
+
+                            delete resultModelJSON.client;
+                            delete resultModelJSON.serviceType;
+
+                            return callback(null, resultModelJSON);
                         }
+                    }
+                }
 
-                        callback(null, false);
-                    })
+                callback(null, null);
             });
-    }
-
-    this.checkTest = function (req, res, next) {
-        var stylistId = req.session.uId;
-        var appointmentId = req.body.id;
-
-        checkStylistAvailability(stylistId, appointmentId, function(err, status){
-            if (err){
-                return next(err);
-            }
-
-            if (status){
-                return res.status(200).send('Free');
-            }
-
-            res.status(200).send('Busy');
-        })
     };
 
 
