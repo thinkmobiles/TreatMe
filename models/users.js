@@ -1,17 +1,16 @@
-var ImageHandler = require('../handlers/image');
 
 module.exports = function (db) {
     'use strict';
     var mongoose = require('mongoose');
     var Schema = mongoose.Schema;
     var CONSTANTS = require('../constants');
-    var imageHandler = new ImageHandler();
 
     var User = new Schema({
         email: {type: String, default: null},
         password: String,
         token: String,
         forgotToken: String,
+
         fbId: {type: String, default: null},
         confirmed: {type: Date},
         approved: {type: Boolean, default: false},
