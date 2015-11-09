@@ -5,18 +5,19 @@ define([
     'collections/clientsCollection',
     'text!/templates/clients/clientsTemplate.html',
     'text!/templates/clients/clientsListTemplate.html'
-], function (ListView, ClientsCollection, MainTemplate, ListTemplate) {
+], function (ListView, Collection, MainTemplate, ListTemplate) {
 
     var View = ListView.extend({
-        Collection: ClientsCollection,
+        Collection: Collection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
         navElement: '#nav_clients',
+        url: '#clients',
 
         initialize: function (options) {
             App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}]);
 
-            ListView.prototype.initialize.call(this);
+            ListView.prototype.initialize.call(this, options);
         }
     });
 

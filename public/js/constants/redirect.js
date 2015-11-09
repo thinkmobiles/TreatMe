@@ -1,6 +1,4 @@
-/**
- * Created by andrey on 22.07.15.
- */
+'use strict';
 
 define(function () {
     return {

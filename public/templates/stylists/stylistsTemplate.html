@@ -1,7 +1,21 @@
-<div>
+<div class="list">
     <div class="buttons">
         <button id="removeSelectedBtn">Delete</button>
     </div>
-    <div class="list"></div>
-    <div class="paginationContainer"></div>
+    <table class="table">
+        <thead>
+        <tr>
+            <th><input type="checkbox" class="checkAll"></th>
+            <th class="sortable" data-orderby="Name">Stylist Name</th>
+            <th>Salon Name</th>
+            <th>Status</th>
+            <th>Edit</th>
+            <th>Suspend</th>
+        </tr>
+        </thead>
+        <tbody class="items">
+            <!-- put items here -->
+        </tbody>
+    </table>
+    <div class="pagination"></div>
 </div>

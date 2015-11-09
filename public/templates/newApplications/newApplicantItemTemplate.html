@@ -1,4 +1,4 @@
-<% _.forEach(users, function (user) {%>
+<% _.forEach(items, function (user) {%>
 <tr data-id="<%= user._id%>">
     <td><div class="checkBlock"><input type="checkbox" class="check"></div></td>
     <td><%= new Date(user.createdAt).getDate() + '/' + new Date(user.createdAt).getMonth() + '/' + String.prototype.slice.call(new Date(user.createdAt).getFullYear(),2,4) %></td>
