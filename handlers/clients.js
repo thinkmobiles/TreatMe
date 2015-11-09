@@ -4,7 +4,7 @@ var ImageHandler = require('./image');
 var mongoose = require('mongoose');
 var CONSTANTS = require('../constants');
 var geocoder = require('geocoder');
-var StylistHandler = require('./stylist');
+var SchedulerHelper = require('../helpers/scheduler');
 
 var ClientsHandler = function (app, db) {
 
@@ -16,7 +16,7 @@ var ClientsHandler = function (app, db) {
     var SubscriptionType = db.model('SubscriptionType');
     var imageHandler = new ImageHandler(db);
     var ObjectId = mongoose.Types.ObjectId;
-    var stylistHandler = new StylistHandler(app, db);
+    var schedulerHelper = new SchedulerHelper(app, db);
 
     /*  this.updateProfile = function (req, res, next) {
      var clientId = req.session.uId;
@@ -352,7 +352,7 @@ var ClientsHandler = function (app, db) {
             userCoordinates = result[0];
             appointmentId = result[2];
 
-            stylistHandler.startLookStylistForAppointment(appointmentId, userCoordinates, body.serviceType);
+            schedulerHelper.startLookStylistForAppointment(appointmentId, userCoordinates, body.serviceType);
 
             res.status(200).send({success: 'Appointment created successfully', appointmentId: appointmentId});
         });
