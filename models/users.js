@@ -72,20 +72,9 @@ module.exports = function (db) {
 
     User.methods.toJSON = function(){
         var user = this.toObject();
-        var avatarName;
-        var avatarUrl;
 
         if (user.role === CONSTANTS.USER_ROLE.CLIENT){
             delete user.salonInfo;
-        }
-
-        if (user.personalInfo) {
-            avatarName = user.personalInfo.avatar || '';
-        }
-
-        if (avatarName) {
-            avatarUrl = imageHandler.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
-            user.personalInfo.avatar = avatarUrl;
         }
 
         if (user.loc){

@@ -485,6 +485,15 @@ var AdminHandler = function (db) {
 
         var body = req.body;
         var ids;
+        var availability = {
+            0: [{from: '00:00', to: '00:00'}], //Sunday
+            1: [{from: '00:00', to: '00:00'}], //Monday
+            2: [{from: '00:00', to: '00:00'}],
+            3: [{from: '00:00', to: '00:00'}],
+            4: [{from: '00:00', to: '00:00'}],
+            5: [{from: '00:00', to: '00:00'}],
+            6: [{from: '00:00', to: '00:00'}]
+        };
 
         if (!body.ids) {
             return next(badRequests.NotEnParams({reqParams: 'ids'}));
@@ -497,7 +506,7 @@ var AdminHandler = function (db) {
                 _id: {$in: ids},
                 approved: false,
                 role: CONSTANTS.USER_ROLE.STYLIST
-            }, {$set: {approved: true}}, {multi: true}, function (err) {
+            }, {$set: {approved: true, 'salonInfo.availability': availability}}, {multi: true}, function (err) {
                 if (err) {
                     return next(err);
                 }

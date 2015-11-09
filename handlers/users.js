@@ -936,7 +936,7 @@ var UserHandler = function (app, db) {
                     }
                 }
 
-                if (resultModel.role = CONSTANTS.USER_ROLE.STYLIST) {
+                if (resultModel.role === CONSTANTS.USER_ROLE.STYLIST) {
 
                     salonInfo = userObj.salonInfo;
 
@@ -1081,12 +1081,19 @@ var UserHandler = function (app, db) {
 
         User
             .findOne({_id: userId}, projectionObj, function (err, clientModel) {
+                var avatarName;
 
                 if (err) {
                     return next(err);
                 }
                 if (!clientModel) {
                     return next(badRequests.NotFound({target: 'User'}));
+                }
+
+                avatarName = clientModel.get('personalInfo.avatar');
+
+                if (avatarName){
+                    clientModel.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                 }
 
                 res.status(200).send(clientModel);
