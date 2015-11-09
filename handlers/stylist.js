@@ -228,17 +228,20 @@ var StylistHandler = function (app, db) {
                                     room = stylistId.toString();
 
                                     io.to(room).send('new appointment', appointmentModel);
-                                    return console.log('Sent appointment to stylist with id: ' + stylistId);
-                                } else {
-                                    if (!tenStylistsModelArray.length) {
-                                        return distance += 1609.344;
-                                    }
+                                    console.log('Sent appointment to stylist with id: ' + stylistId);
                                 }
+
+                                if (!tenStylistsModelArray.length) {
+                                    return distance += 1609.344;
+                                }
+
                             })
 
                         });
                 })
         });
+
+        newScheduler.invoke();
     };
 
 
