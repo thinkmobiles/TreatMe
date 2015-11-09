@@ -97,7 +97,7 @@ var SchedulerHelper = function(app, db){
                             serviceId: ObjectId(serviceTypeId),
                             approved: true
                         }, {stylist: 1, price: 1})
-                        .sort({price: -1})
+                        .sort({price: 1})
                         .limit(10)
                         .exec(function (err, serviceModelArray) {
                             var stylistWithServices;
