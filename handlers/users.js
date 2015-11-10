@@ -551,14 +551,10 @@ var UserHandler = function (app, db) {
 
     this.confirmRegistration = function (req, res, next) {
 
-       // var registrationHTML = fs.readFileSync('public/templates/registration/registrationTemplate.html', encoding = "utf-8");
-        //var registrationTemplate = _.template(registrationHTML);
-
         var url;
 
         var token = req.params.token;
         var uId;
-        var sendObj = {};
         var header = req.headers['user-agent'];
 
         User
@@ -646,12 +642,10 @@ var UserHandler = function (app, db) {
 
     this.confirmForgotPass = function (req, res, next) {
 
-        var confirmPassHTML = fs.readFileSync('public/templates/registration/confirmPassword.html', encoding = "utf-8");
-        var confirmPassTemplate = _.template(confirmPassHTML);
         var forgotToken = req.query.token;
         var userRole = req.query.role;
         var header = req.headers['user-agent'];
-        var sendObj = {};
+        var url;
 
         User
             .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {$set: {forgotToken: ''}}, function (err, userModel) {
@@ -663,14 +657,15 @@ var UserHandler = function (app, db) {
                     return next(badRequests.TokenWasUsed());
                 }
 
-
                 if (checkHeader(header)){
-                    sendObj.url = 'treatme://login/changePass'
+                    url = 'treatme://login/changePass'
                 } else {
-                    sendObj.url = process.env.EXT_HOST;
+                    url = process.env.EXT_HOST;
                 }
 
-                res.status(200).send(confirmPassTemplate(sendObj));
+                res.render('confirmPassword', {
+                    url: url
+                });
 
             });
     };
@@ -1114,7 +1109,7 @@ var UserHandler = function (app, db) {
          * @instance
          */
 
-        var userId = req.params.id || req.session.uId;
+        var userId = req.params.userId || req.session.uId;
         var projectionObj;
 
         if (req.params.id && !CONSTANTS.REG_EXP.OBJECT_ID.test(userId)) {

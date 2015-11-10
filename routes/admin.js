@@ -21,8 +21,6 @@ module.exports = function(db){
     router.put('/services/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateService);
     router.delete('/services/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeService);
 
-    //router.get('/stylist/count', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistCount);
-
     // CRUD Stylists
     router.get('/stylist/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistList);
     router.get('/stylist/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistById);
@@ -30,7 +28,6 @@ module.exports = function(db){
     router.put('/stylist/:userId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, user.updateUserProfile);
 
     router.delete('/stylist/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeStylist);
-    //router.get('/client/count/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientCount);
 
     router.post('/stylist/approve/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveStylist);
 
