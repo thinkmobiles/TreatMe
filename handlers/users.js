@@ -906,6 +906,11 @@ var UserHandler = function (app, db) {
 
             uId = req.params.userId;
 
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(uId)){
+                return next(badRequests.InvalidValue({value: uId, param: 'userId'}));
+            }
+
+
         } else {
             uId = req.session.uId;
         }
@@ -1012,21 +1017,25 @@ var UserHandler = function (app, db) {
 
                             //TODO remake with async
 
+                            services = services.map(function(service){
+                                service.stylist = ObjectId(uId);
+                                service.approved = true;
+
+                                if (!CONSTANTS.REG_EXP.OBJECT_ID.test(service.id)){
+                                    return next(badRequests.InvalidValue({value: service.id, param: 'service.id'}));
+                                }
+
+                                service.serviceId = ObjectId(service.id);
+                                delete service.id;
+                                return service;
+                            });
+
                             Services
                                 .remove({stylist: uId}, function(err){
 
                                     if (err){
                                         return next(err);
                                     }
-
-                                    services = services.map(function(service){
-                                        service.stylist = ObjectId(uId);
-                                        service.approved = true;
-                                        service.serviceId = ObjectId(service.id);
-                                        delete service.id;
-                                        return service;
-                                    });
-
 
                                     Services.create(services, function(err){
 
@@ -1585,7 +1594,7 @@ var UserHandler = function (app, db) {
 
         var ind;
         var allId;
-        var stylistServiceId;
+        var stylistServiceId = [];
         var serviceArray = [];
         var serviceObj;
 
