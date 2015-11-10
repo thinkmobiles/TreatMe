@@ -871,7 +871,18 @@ var UserHandler = function (app, db) {
          *            city: "Uzhgorod"
          *            country: "Ukraine"
          *            licenseNumber: "41515643"
-         *    }
+         *    },
+         *    "services": [
+         *       {
+         *           "id": "5638ccde3624f77b33b6587d",
+         *           "price": 27
+         *       },
+         *       {
+         *           "id": "56408f8281c43c3a24a332fa",
+         *           "price": 24
+         *       }
+         *   ]
+         *
          *  }
          * @example Response example:
          *
