@@ -551,8 +551,10 @@ var UserHandler = function (app, db) {
 
     this.confirmRegistration = function (req, res, next) {
 
-        var registrationHTML = fs.readFileSync('public/templates/registration/registrationTemplate.html', encoding = "utf-8");
-        var registrationTemplate = _.template(registrationHTML);
+       // var registrationHTML = fs.readFileSync('public/templates/registration/registrationTemplate.html', encoding = "utf-8");
+        //var registrationTemplate = _.template(registrationHTML);
+
+        var url;
 
         var token = req.params.token;
         var uId;
@@ -579,12 +581,14 @@ var UserHandler = function (app, db) {
 
 
                 if (checkHeader(header)){
-                    sendObj.url = 'treatme://';
+                    url = 'treatme://';
                 } else {
-                    sendObj.url = process.env.EXT_HOST;  // TODO change
+                    url = process.env.EXT_HOST;  // TODO change
                 }
 
-                res.status(200).send(registrationTemplate(sendObj));
+                res.render('registrationTemplate', {
+                    url: url
+                });
 
             });
     };
@@ -867,7 +871,18 @@ var UserHandler = function (app, db) {
          *            city: "Uzhgorod"
          *            country: "Ukraine"
          *            licenseNumber: "41515643"
-         *    }
+         *    },
+         *    "services": [
+         *       {
+         *           "id": "5638ccde3624f77b33b6587d",
+         *           "price": 27
+         *       },
+         *       {
+         *           "id": "56408f8281c43c3a24a332fa",
+         *           "price": 24
+         *       }
+         *   ]
+         *
          *  }
          * @example Response example:
          *
@@ -887,6 +902,7 @@ var UserHandler = function (app, db) {
         var personalInfo;
         var salonInfo = {};
         var userObj;
+        var services;
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
             if (!req.params.userId){
@@ -936,7 +952,7 @@ var UserHandler = function (app, db) {
                     }
                 }
 
-                if (resultModel.role = CONSTANTS.USER_ROLE.STYLIST) {
+                if (resultModel.role === CONSTANTS.USER_ROLE.STYLIST) {
 
                     salonInfo = userObj.salonInfo;
 
@@ -995,7 +1011,43 @@ var UserHandler = function (app, db) {
                             return next(err);
                         }
 
-                        res.status(200).send({success: resultModel.role + ' updated successfully'});
+                        if (resultModel.role === CONSTANTS.USER_ROLE.STYLIST && body.services){
+
+                            services = body.services;
+
+                            //TODO remake with async
+
+                            Services
+                                .remove({stylist: uId}, function(err){
+
+                                    if (err){
+                                        return next(err);
+                                    }
+
+                                    services = services.map(function(service){
+                                        service.stylist = ObjectId(uId);
+                                        service.approved = true;
+                                        service.serviceId = ObjectId(service.id);
+                                        delete service.id;
+                                        return service;
+                                    });
+
+
+                                    Services.create(services, function(err){
+
+                                            if (err){
+                                                return next(err);
+                                            }
+
+                                            res.status(200).send({success: resultModel.role + ' updated successfully'});
+
+                                        });
+
+
+                                });
+                        } else {
+                            res.status(200).send({success: resultModel.role + ' updated successfully'});
+                        }
 
                     });
 
@@ -1081,12 +1133,19 @@ var UserHandler = function (app, db) {
 
         User
             .findOne({_id: userId}, projectionObj, function (err, clientModel) {
+                var avatarName;
 
                 if (err) {
                     return next(err);
                 }
                 if (!clientModel) {
                     return next(badRequests.NotFound({target: 'User'}));
+                }
+
+                avatarName = clientModel.get('personalInfo.avatar');
+
+                if (avatarName){
+                    clientModel.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                 }
 
                 res.status(200).send(clientModel);
@@ -1527,6 +1586,67 @@ var UserHandler = function (app, db) {
             });
     };
 
+    this.getService = function(stylistId, callback){
+
+        var ind;
+        var allId;
+        var stylistServiceId;
+        var serviceArray = [];
+        var serviceObj;
+
+        ServiceType.find({}, function(err, allServiceModels){
+
+            if (err){
+                return next(err);
+            }
+
+            Services
+                .find({stylist: stylistId})
+                .populate({path: 'serviceId', select: '_id name logo'})
+                .exec(function(err, stylistServiceModel){
+
+                    if (err){
+                        return callback(err);
+                    }
+
+                    allId = (_.pluck(allServiceModels, '_id')).toStringObjectIds();
+
+                    stylistServiceId = (_.pluck(stylistServiceModel, 'serviceId._id')).toStringObjectIds();
+
+                    for (var i = 0, n = allServiceModels.length; i < n; i++){
+                        ind = stylistServiceId.indexOf(allId[i]);
+
+                        if (ind !== -1){
+                            serviceObj = {
+                                id: stylistServiceModel[ind].serviceId._id,
+                                name: stylistServiceModel[ind].serviceId.name,
+                                logo: image.computeUrl(stylistServiceModel[ind].serviceId.logo, CONSTANTS.BUCKET.IMAGES),
+                                status: stylistServiceModel[ind].approved ? 'approved' : 'pending',
+                                price: stylistServiceModel[ind].price || 0
+                            };
+
+                            serviceArray.push(serviceObj);
+                        } else {
+                            serviceObj = {
+                                id: allServiceModels[i]._id,
+                                name: allServiceModels[i].name,
+                                logo: image.computeUrl(allServiceModels[i].logo, CONSTANTS.BUCKET.IMAGES),
+                                status: 'new',
+                                price: 0
+                            };
+
+                            serviceArray.push(serviceObj);
+                        }
+
+                    }
+
+                    callback(null, serviceArray);
+
+                });
+
+        });
+    };
+
     this.getStylistServices = function(req, res, next){
         var role = req.session.role;
         var uId;
@@ -1541,59 +1661,14 @@ var UserHandler = function (app, db) {
             uId = req.params.stylistId;
         }
 
-        var ind;
-        var allId;
-        var stylistId;
-        var serviceArray = [];
-        var serviceObj;
 
-        ServiceType.find({}, function(err, allServiceModels){
+        self.getService(uId, function(err, resultServices){
 
             if (err){
                 return next(err);
             }
 
-            Services
-                .find({stylist: uId})
-                .populate({path: 'serviceId', select: '_id name logo'})
-                .exec(function(err, stylistServiceModel){
-
-                    if (err){
-                        return next(err);
-                    }
-
-                    allId = (_.pluck(allServiceModels, '_id')).toStringObjectIds();
-
-                    stylistId = (_.pluck(stylistServiceModel, 'serviceId._id')).toStringObjectIds();
-
-                    for (var i = 0, n = allServiceModels.length; i < n; i++){
-                        ind = stylistId.indexOf(allId[i]);
-
-                        if (ind !== -1){
-                            serviceObj = {
-                                id: stylistServiceModel[ind].serviceId._id,
-                                name: stylistServiceModel[ind].serviceId.name,
-                                logo: image.computeUrl(stylistServiceModel[ind].serviceId.logo, CONSTANTS.BUCKET.IMAGES),
-                                status: stylistServiceModel[ind].approved ? 'approved' : 'pending'
-                            };
-
-                            serviceArray.push(serviceObj);
-                        } else {
-                            serviceObj = {
-                                id: allServiceModels[i]._id,
-                                name: allServiceModels[i].name,
-                                logo: image.computeUrl(allServiceModels[i].logo, CONSTANTS.BUCKET.IMAGES),
-                                status: 'new'
-                            };
-
-                            serviceArray.push(serviceObj);
-                        }
-
-                    }
-
-                    res.status(200).send(serviceArray);
-
-                });
+            res.status(200).send(resultServices);
 
         });
 

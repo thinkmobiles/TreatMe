@@ -3,6 +3,7 @@ module.exports = function () {
     'use strict';
 
     var express = require('express');
+    var consolidate = require('consolidate');
     var app = express();
     var path = require('path');
     var logger = require('morgan');
@@ -44,6 +45,10 @@ module.exports = function () {
     app.use(logger('dev'));
     app.use(bodyParser.json({strict: false, limit: 1024 * 1024 * 200}));
     app.use(bodyParser.urlencoded({extended: false}));
+
+    app.engine('html', consolidate.swig);
+    app.set('views', __dirname + '/public/templates/registration');
+    app.set('view engine', 'html');
 
     connectOptions = {
         db: {native_parser: false},

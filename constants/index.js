@@ -32,6 +32,10 @@ module.exports = {
         //for getClientById in CMS
         REQUESTED_BOOKED_APPOINTMENTS: 5,
         REQUESTED_PURCHASED_PACKAGES: 4
+    },
+    SEARCH_DISTANCE: {
+        START: 1609.344, // start search stylists from 1 mile
+        MAX: 50 * 1609.344 //max 50 miles
     }
 };
 

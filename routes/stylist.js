@@ -81,8 +81,6 @@ module.exports = function(app, db){
 
     router.put('/availability', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.updateAvailabilityHours);
 
-    router.post('/checkTest', stylistHandler.checkTest);
-
     router.put('/online', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.changeOnlineStatus);
     //router.get('/appointment/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getBusinessAppointmentById);
 

@@ -10,7 +10,9 @@ var socketEvents = function (app) {
 
         socket.emit('connectedToServer', {success: true});
 
-        socket.on('authorize', function (userId){
+        socket.on('authorize', function (data){
+            var userId = data.userId;
+
             console.log('>>> User with userId: ' + userId + ' connected to socket ' + socket.id);
             socket.join(userId);
         });
