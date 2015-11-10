@@ -63,7 +63,7 @@ define([
         prepareSaveData: function (callback) {
             var form = this.$el.find('.stylistForm');
             var servicesBlock = form.find('.services');
-            var serviceList = servicesBlock.find('input:checkbox');
+            var serviceList = servicesBlock.find('input:checkbox:checked');
             var email = form.find('#email').val();
             var firstName = form.find('#firstName').val();
             var lastName = form.find('#lastName').val();
@@ -80,14 +80,13 @@ define([
             var zip = form.find('#zip').val();
             var country = form.find('#country').val();
             var services = [];
-            var service = {};
+            var service;
             var data;
 
             serviceList.each(function (index, element) {
-                service.price = $(element).siblings('input:text')[0].value || 0;
-                service.status = element.checked ? 'approved' : 'new';
-                service.name = element.id;
-                service.id = element['data-id'];
+                service = {};
+                service.price = $(element).siblings('input:text')[index].value || 0;
+                service.id = $(element).data('id');
 
                 services.push(service);
 
@@ -115,8 +114,8 @@ define([
                     country      : country,
                     licenseNumber: license
                 },
-                services: services
-                /*approved: true*/
+                services: services/*,
+                approved: true*/
             };
 
             callback(null, data);
@@ -136,6 +135,7 @@ define([
                 model.updateCurrent(data, {
                     success: function () {
                         console.log('success created');
+                        window.location.hash = 'newApplications';
                     },
                     error: self.handleModelError
                     /*error: function (model, response, options) {

@@ -16,7 +16,7 @@ var StylistHandler = function (app, db) {
     var imageHandler = new ImageHandler();
 
 
-    this.checkStylistAvailability = function(availabilityObj, appointmentId, callback) {
+    this.checkStylistAvailability = function(availabilityObj, stylistId, appointmentId, callback) {
         var resultModelJSON;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)) {
@@ -60,6 +60,7 @@ var StylistHandler = function (app, db) {
 
                     for (var i = 0, len = availabilityObj[bookDay].length; i < len; i++) {
                         if (bookedHoursAndMinutes >= availabilityObj[bookDay][i].from && bookedHoursAndMinutes < availabilityObj[bookDay][i].to) {
+
                             resultModelJSON = appointmentModel.toJSON();
                             resultModelJSON.clientLoc = resultModelJSON.clientLoc.coordinates;
                             resultModelJSON.clientInfo = {
@@ -81,12 +82,35 @@ var StylistHandler = function (app, db) {
                             delete resultModelJSON.client;
                             delete resultModelJSON.serviceType;
 
-                            return callback(null, resultModelJSON);
+
+                            if (!stylistId){
+                                return callback(null, null);
+                            }
+
+                            Appointment
+                                .find({stylist: ObjectId(stylistId)}, function(err, stylistAppointmentsArray){
+                                    if (err){
+                                        return callback(err);
+                                    }
+
+                                    if (!stylistAppointmentsArray.length){
+                                        return callback(null, resultModelJSON);
+                                    }
+
+                                    //check if stylist have appointments for bookingDate, if NO - he is free
+                                    stylistAppointmentsArray.map(function(model){
+                                        if (model.bookingDate === bookingDate){
+                                            return callback(null, null);
+                                        }
+                                    });
+
+                                    return callback(null, resultModelJSON);
+                                });
                         }
                     }
+                } else {
+                    callback(null, null);
                 }
-
-                callback(null, null);
             });
     };
 
