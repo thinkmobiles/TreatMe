@@ -45,7 +45,7 @@ var SchedulerHelper = function(app, db){
 
                 console.log('Found stylist with id: ' + stylistId);
 
-                stylistHandler.checkStylistAvailability(availabilityObj, appointmentId, function (err, appointmentModel) {
+                stylistHandler.checkStylistAvailability(availabilityObj, stylistId, appointmentId, function (err, appointmentModel) {
                     if (err) {
                         if (err.message.indexOf('was accepted') !== -1) {
                             console.log('>>> Scheduler canceled');
@@ -138,7 +138,7 @@ var SchedulerHelper = function(app, db){
                                     availabilityObj = {};
                                 }
 
-                                stylistHandler.checkStylistAvailability(availabilityObj, appointmentId, function (err, appointmentModel) {
+                                stylistHandler.checkStylistAvailability(availabilityObj, stylistId, appointmentId, function (err, appointmentModel) {
                                     if (err) {
                                         if (err.message.indexOf('was accepted') !== -1) {
                                             console.log('>>> Scheduler canceled');
@@ -167,7 +167,7 @@ var SchedulerHelper = function(app, db){
             }
         });
 
-        //prevent double invocation
+        //prevent double job invocation
         if ((currentSeconds >= 1 && currentSeconds <= 20) || (currentSeconds >= 31 && currentSeconds <= 50)){
             console.log('Invoked in : ' + currentSeconds);
             newScheduler.invoke();
