@@ -71,7 +71,7 @@ define([
         },
 
         clientsDetails: function (id) {
-            this.loadWrapperView('clients', {id: id}, REDIRECT.whenAuthorized, 'Item');
+            this.loadWrapperView('clients', {id: id}, REDIRECT.whenNOTAuthorized, 'Profile');
         },
 
         login: function (type, value) {

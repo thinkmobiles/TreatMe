@@ -3,7 +3,7 @@
 define([
     'views/customElements/ListView',
     'collections/clientsCollection',
-    'views/clients/clientsItemView',
+    'views/clients/clientsProfileView',
     'text!/templates/clients/clientsTemplate.html',
     'text!/templates/clients/clientsListTemplate.html'
 ], function (ListView, Collection, ClientProfile, MainTemplate, ListTemplate) {
@@ -12,6 +12,7 @@ define([
         Collection: Collection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
+
         navElement: '#nav_clients',
         url: '#clients',
 
@@ -30,7 +31,6 @@ define([
             var tr = target.closest('tr');
             var id = tr.attr('data-id');
             Backbone.history.navigate('clients/' + id, {trigger: true});
-            console.log('fgdfgdg');
         }
     });
 
