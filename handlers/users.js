@@ -900,6 +900,11 @@ var UserHandler = function (app, db) {
 
             uId = req.params.userId;
 
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(uId)){
+                return next(badRequests.InvalidValue({value: uId, param: 'userId'}));
+            }
+
+
         } else {
             uId = req.session.uId;
         }
