@@ -11,6 +11,7 @@ define([
         topBarView  : null,
 
         routes: {
+            "clients/:id"               :  "clientsDetails",
             "login(/:type/*value)"      :  "login",
             "signup"                    :  "signup",
             "dashboard"                 :  "dashboard",
@@ -67,6 +68,10 @@ define([
 
         any: function () {
             Backbone.history.navigate("dashboard", {trigger: true});
+        },
+
+        clientsDetails: function (id) {
+            this.loadWrapperView('clients', {id: id}, REDIRECT.whenAuthorized, 'Item');
         },
 
         login: function (type, value) {
