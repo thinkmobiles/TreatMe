@@ -1615,7 +1615,13 @@ var UserHandler = function (app, db) {
 
                     allId = (_.pluck(allServiceModels, '_id')).toStringObjectIds();
 
-                    stylistServiceId = (_.pluck(stylistServiceModel, 'serviceId._id')).toStringObjectIds();
+                    for (var i = stylistServiceModel.length; i--;){
+                        if (!stylistServiceModel.serviceId){
+                            return callback(badRequests.DatabaseError());
+                        }
+
+                        stylistServiceId[i] = stylistServiceModel[i].serviceId._id.toString();
+                    }
 
                     for (var i = 0, n = allServiceModels.length; i < n; i++){
                         ind = stylistServiceId.indexOf(allId[i]);
