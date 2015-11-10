@@ -12,6 +12,7 @@ define([
 
         routes: {
             "clients/:id"               :  "clientsDetails",
+            "clients/add"               :  "clientsAddDetails",
             "login(/:type/*value)"      :  "login",
             "signup"                    :  "signup",
             "dashboard"                 :  "dashboard",
@@ -72,6 +73,10 @@ define([
 
         clientsDetails: function (id) {
             this.loadWrapperView('clients', {id: id}, REDIRECT.whenNOTAuthorized, 'Profile');
+        },
+
+        clientsAddDetails: function (id) {
+            this.loadWrapperView('clients', {}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
         login: function (type, value) {
