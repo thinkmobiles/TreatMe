@@ -22,6 +22,8 @@ var SchedulerHelper = function(app, db){
         var room;
         var distance = CONSTANTS.SEARCH_DISTANCE.START;
         var maxDistance = CONSTANTS.SEARCH_DISTANCE.MAX;
+        var currentDate = new Date();
+        var currentSeconds = currentDate.getSeconds();
 
         var newScheduler = schedule.scheduleJob('*/30 * * * * *', function () {
             var availabilityObj;
@@ -29,7 +31,7 @@ var SchedulerHelper = function(app, db){
             console.log('>>> Scheduler starts for appointment id: ' + appointmentId + ' and distance: ' + distance / 1609.344 + ' miles');
 
             if (distance > maxDistance) {
-                console.log('>>>Scheduler canceled');
+                console.log('>>> Scheduler canceled');
                 newScheduler.cancel();
 
                 return;
@@ -41,12 +43,12 @@ var SchedulerHelper = function(app, db){
                 stylistId = goodStylistModel.get('_id');
                 availabilityObj = goodStylistModel.get('salonInfo.availability');
 
-                console.log('>>>Found stylist with id: ' + stylistId);
+                console.log('Found stylist with id: ' + stylistId);
 
-                stylistHandler.checkStylistAvailability(availabilityObj, appointmentId, function (err, appointmentModel) {
+                stylistHandler.checkStylistAvailability(availabilityObj, stylistId, appointmentId, function (err, appointmentModel) {
                     if (err) {
                         if (err.message.indexOf('was accepted') !== -1) {
-                            console.log('>>>Scheduler canceled');
+                            console.log('>>> Scheduler canceled');
                             newScheduler.cancel();
                             return;
                         }
@@ -58,7 +60,7 @@ var SchedulerHelper = function(app, db){
                         room = stylistId.toString();
 
                         io.to(room).send('new appointment', appointmentModel);
-                        return console.log('Sent appointment to stylist with id: ' + stylistId);
+                        return console.log('==> Sent appointment to stylist with id: ' + stylistId);
                     }
                 })
             } else {
@@ -130,16 +132,16 @@ var SchedulerHelper = function(app, db){
                                         stylistId = goodStylistModel.get('_id');
                                         availabilityObj = goodStylistModel.get('salonInfo.availability');
 
-                                        console.log('>>>Found stylist with id: ' + stylistId);
+                                        console.log('Found stylist with id: ' + stylistId);
                                     }
                                 } else {
                                     availabilityObj = {};
                                 }
 
-                                stylistHandler.checkStylistAvailability(availabilityObj, appointmentId, function (err, appointmentModel) {
+                                stylistHandler.checkStylistAvailability(availabilityObj, stylistId, appointmentId, function (err, appointmentModel) {
                                     if (err) {
                                         if (err.message.indexOf('was accepted') !== -1) {
-                                            console.log('>>>Scheduler canceled');
+                                            console.log('>>> Scheduler canceled');
                                             newScheduler.cancel();
                                             return;
                                         }
@@ -151,7 +153,7 @@ var SchedulerHelper = function(app, db){
                                         room = stylistId.toString();
 
                                         io.to(room).send('new appointment', appointmentModel);
-                                        console.log('Sent appointment to stylist with id: ' + stylistId);
+                                        console.log('==> Sent appointment to stylist with id: ' + stylistId);
                                     }
 
                                     if (!tenStylistsModelArray.length) {
@@ -165,7 +167,11 @@ var SchedulerHelper = function(app, db){
             }
         });
 
-        newScheduler.invoke();
+        //prevent double job invocation
+        if ((currentSeconds >= 1 && currentSeconds <= 20) || (currentSeconds >= 31 && currentSeconds <= 50)){
+            console.log('Invoked in : ' + currentSeconds);
+            newScheduler.invoke();
+        }
     };
 
 
