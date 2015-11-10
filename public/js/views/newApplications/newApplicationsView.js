@@ -13,7 +13,6 @@ define([
 
     View = ListView.extend({
 
-        //el: '#wrapper',
         Collection: StylistCollection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ContentTemplate),
@@ -22,18 +21,18 @@ define([
         navElement: '#newApplications',
         query: {status: 'requested'},
 
-        events: {
+        events: _.extend({
             "click #acceptCurrentBtn, #acceptSelectedBtn": "acceptStylist",
             "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest",
-            "click .date, .name, .salon": "sort",
-            "click .table td": "showDetails",
-            "click .checkAll": "checkAll"
-        },
+            "click .table td": "showDetails"
+        }, ListView.prototype.events),
 
-        initialize: function () {
+        initialize: function (options) {
+            options = options || {};
+            options.status = 'requested';
 
             App.Breadcrumbs.reset([{name: 'New Applicants', path: '#newApplications'}]);
-            ListView.prototype.initialize.call(this);
+            ListView.prototype.initialize.call(this, options);
 
         },
 

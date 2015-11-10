@@ -31,7 +31,7 @@
     <%if (user._id) { %>
     <label for="salonName">Salon Name</label>
     <% } %>
-    <input type="text"  name="salonName" id="salonName" disabled="<%= inputStatus %>" placeholder="Salon Name" /><br/>
+    <input type="text"  name="salonName" id="salonName" disabled="<%= inputStatus %>" placeholder="Salon Name" value="<%= (user._id) ? user.salonInfo.salonName : ''%>"/><br/>
     <%if (user._id) { %>
     <label for="businessRole">Business Role</label>
     <% } %>
@@ -47,7 +47,7 @@
     <%if (user._id) { %>
     <label for="salonAddress">Salon Address</label>
     <% } %>
-    <input type="text"  name="salonAddress" id="salonAddress" disabled="<%= inputStatus %>" placeholder="Salon Address"/><br/>
+    <input type="text"  name="salonAddress" id="salonAddress" disabled="<%= inputStatus %>" placeholder="Salon Address" value="<%= (user._id) ? user.salonInfo.address : ''%>"/><br/>
     <%if (user._id) { %>
     <label for="salonAddress2">Salon Address LIne 2</label>
     <% } %>
@@ -55,37 +55,37 @@
     <%if (user._id) { %>
     <label for="license">License Number</label>
     <% } %>
-    <input type="text" name="license" id="license" disabled="<%= inputStatus %>" placeholder="License Number"/><br/>
+    <input type="text" name="license" id="license" disabled="<%= inputStatus %>" placeholder="License Number" value="<%= (user._id) ? user.salonInfo.licenseNumber : ''%>"/><br/>
     <%if (user._id) { %>
     <label for="city">City</label>
     <% } %>
-    <input type="text"  name="city" id="city" disabled="<%= inputStatus %>" placeholder="City"/><br/>
+    <input type="text"  name="city" id="city" disabled="<%= inputStatus %>" placeholder="City" value="<%= (user._id) ? user.salonInfo.city : ''%>"/><br/>
     <%if (user._id) { %>
     <label for="region">State</label>
     <% } %>
-    <input type="text" name="region" id="region" disabled="<%= inputStatus %>" placeholder="State/Province/Region"/><br/>
+    <input type="text" name="region" id="region" disabled="<%= inputStatus %>" placeholder="State/Province/Region" value="<%= (user._id) ? user.salonInfo.state : ''%>"/><br/>
     <%if (user._id) { %>
     <label for="zip">Zip Code</label>
     <% } %>
-    <input type="text"  name="zip" id="zip" disabled="<%= inputStatus %>" placeholder="Zip Code"/><br/>
+    <input type="text"  name="zip" id="zip" disabled="<%= inputStatus %>" placeholder="Zip Code" value="<%= (user._id) ? user.salonInfo.zipCode : ''%>"/><br/>
     <%if (user._id) { %>
     <label for="country">Country</label>
     <% } %>
-    <input type="text"  name="country" id="country" disabled="<%= inputStatus %>" placeholder="Country"/><br/>
+    <input type="text"  name="country" id="country" disabled="<%= inputStatus %>" placeholder="Country" value="<%= (user._id) ? user.salonInfo.country : ''%>"/><br/>
 
-    <br class="services">
+    <div class="services">
         <br>Please contact stylist and negotiate services available and prices before approving </br> the application</br>
         <span>Services available*</span>
         <span>Service Price*</span>
         </p>
 
-        <input type="checkbox" id="Blowout">
-        <label for="Blowout">Blowout</label>
-        <input type="text" placeholder="0"></br>
-
-        <input type="checkbox" id="Manicure">
-        <label for="Manicure">Manicure</label>
-        <input type="text" placeholder="0">
+        <% _.forEach(user.services, function (service) {%>
+        <% var name = service.name %>
+        <% var checked = service.status === 'new' ? "" : "checked" %>
+        <input type="checkbox" id="<%= name %>" data_id="<%=service.id%>" <%= checked %>>
+        <label for="<%= name %>"><%= name %></label>
+        <input type="text" placeholder="<%= service.price%>"></br>
+        <%});%>
 
         <p>*To be filled in by TreatMe team based on negotiations with stylist</p>
     </div>
