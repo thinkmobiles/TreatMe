@@ -23,7 +23,8 @@ define([
             page  : 1,
             count : 5,
             order : '1',
-            filter: ''
+            filter: '',
+            status: ''
         },
         events: {
             'click .showPage': 'gotoPage',
@@ -43,7 +44,8 @@ define([
             params = {
                 page  : opts.page || defaults.page,
                 count : opts.countPerPage || defaults.count,
-                filter: opts.filter || defaults.filter
+                filter: opts.filter || defaults.filter,
+                status: opts.status || defaults.status
             };
 
             if (opts.orderBy) {
@@ -423,7 +425,7 @@ define([
 
 
             console.log(orderBy);
-        },
+        }
 
     });
 

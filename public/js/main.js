@@ -36,7 +36,7 @@ require(['app', 'socketio'], function(app, io){
     };
 
     Backbone.View.prototype.handleModelError = function (model, response, options) {
-        var errMessage = response.responseJSON.message;
+        var errMessage = response.responseJSON ? response.responseJSON.message : 'Something broke!';
         alert(errMessage);
     };
 
