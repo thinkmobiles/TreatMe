@@ -2,25 +2,20 @@
 
 define([
     'views/customElements/ListView',
-    'collections/stylistCollection',
-    'text!templates/stylists/stylistsTemplate.html',
-    'text!templates/stylists/stylistsListTemplate.html'
+    'collections/serviceCollection',
+    'text!templates/services/servicesTemplate.html', //TODO: ...
+    'text!templates/stylists/stylistsListTemplate.html' //TODO: ...
 ], function (ListView, Collection, MainTemplate, ListTemplate) {
 
     var View = ListView.extend({
         Collection: Collection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
-
-        navElement: '#nav_stylists',
-        url: '#stylists',
-
-        events: _.extend({
-            //put events here ...
-        }, ListView.prototype.events),
+        navElement: '#nav_pending_requests',
+        url: '#pendingRequests',
 
         initialize: function (options) {
-            App.Breadcrumbs.reset([{name: 'Stylist List', path: '#stylists'}]);
+            App.Breadcrumbs.reset([{name: 'Pending Requests', path: '#pendingRequests'}]);
 
             ListView.prototype.initialize.call(this, options);
         }

@@ -1,11 +1,15 @@
 'use strict';
 
+var ASC = '1';
+var DESC = '-1';
+
 define([
     'text!templates/customElements/paginationTemplate.html',
     'text!templates/customElements/mainTemplate.html'
 ], function (PaginationTemplate, MainTemplate) {
-    var View = Backbone.View.extend({
 
+    var View = Backbone.View.extend({
+        
         el: '#wrapper',
 
         listLength        : null,
@@ -23,13 +27,16 @@ define([
             page  : 1,
             count : 5,
             order : '1',
-            filter: ''
+            filter: '',
+            status: '' //TODO: ???
         },
         events: {
             'click .showPage': 'gotoPage',
             'click .showFirst': 'firstPage',
             'click .showLast': 'lastPage',
-            'click .sortable': 'sort'
+            'click .sortable': 'sort',
+            'click .searchBtn': 'filter',
+            'click .checkAll': 'checkAll'
         },
 
         initialize: function (options) {
@@ -43,7 +50,8 @@ define([
             params = {
                 page  : opts.page || defaults.page,
                 count : opts.countPerPage || defaults.count,
-                filter: opts.filter || defaults.filter
+                filter: opts.filter || defaults.filter,
+                status: opts.status || defaults.status
             };
 
             if (opts.orderBy) {
@@ -65,7 +73,7 @@ define([
             var navContainer = $('.sidebar-menu');
             var navElement = this.navElement;
 
-            this.$el.html(this.mainTemplate());
+            this.$el.html(this.mainTemplate(this.pageParams));
 
             navContainer.find('.active').removeClass('active');
             navContainer.find(navElement).addClass('active');
@@ -75,10 +83,28 @@ define([
 
         renderList: function () {
             var items = this.collection.toJSON();
+            var params = this.pageParams;
+            var orderBy = params.orderBy;
+            var order = params.order;
+            var orderClassName;
+            var currentClassName;
 
             this.$el.find('.items').html(this.listTemplate({items: items}));
             this.$el.find('.pagination').html(this.paginationTemplate());
             this.pageElementRender();
+
+            if (orderBy) {
+                order = order || ASC;
+
+                if (order === ASC) {
+                    orderClassName = 'asc';
+                } else {
+                    orderClassName = 'desc';
+                }
+
+                this.$el.find('.sortable[data-orderBy="' + orderBy + '"]')
+                    .addClass(orderClassName);
+            }
 
             return this;
         },
@@ -104,112 +130,6 @@ define([
             }
 
             Backbone.history.navigate(url);
-        },
-
-        nextPage: function(options){
-            var itemsNumber = $("#itemsNumber").text();
-            var page = parseInt($("#currentShowPage").val()) + 1;
-            var pageNumber = $("#lastPage").text();
-            var itemsOnPage = 7;
-
-            $("#pageList").empty();
-
-            if (pageNumber <= itemsOnPage) {
-                for (var i = 1; i <= pageNumber; i++) {
-                    $("#pageList").append('<li class="showPage">' + i + '</li>');
-                }
-            } else if (pageNumber >= itemsOnPage && page > 3 && page < pageNumber - 3) {
-                for (var i = page - 3; i <= page + 3; i++) {
-                    $("#pageList").append('<li class="showPage">' + i + '</li>');
-                }
-            } else if (pageNumber >= itemsOnPage && page <= itemsOnPage) {
-                for (var i = 1; i <= itemsOnPage; i++) {
-                    $("#pageList").append('<li class="showPage">' + i + '</li>');
-                }
-            } else if (page >= pageNumber - 3) {
-                for (var i = pageNumber - 6; i <= pageNumber; i++) {
-                    $("#pageList").append('<li class="showPage">' + i + '</li>');
-                }
-            }
-
-            $("#currentShowPage").val(page);
-            $("#gridStart").text((page - 1) * itemsNumber + 1);
-
-            if (this.listLength <= page * itemsNumber) {
-                $("#gridEnd").text(this.listLength);
-                $("#nextPage").prop("disabled", true);
-                $("#lastShowPage").prop("disabled", true);
-            } else {
-                $("#gridEnd").text(page * itemsNumber);
-            }
-
-            $("#previousPage").prop("disabled", false);
-            $("#firstShowPage").prop("disabled", false);
-
-            options = options || {
-                    count: itemsNumber,
-                    filter: this.filter
-                };
-
-            this.collection.getNextPage(options);
-            this.changeLocationHash(page, itemsNumber);
-        },
-
-        previousPage: function(options){
-            var itemsNumber = $("#itemsNumber").text();
-            var currentShowPage = $("#currentShowPage");
-            var page = parseInt(currentShowPage.val()) - 1;
-            var pageNumber;
-            var itemsOnPage;
-
-            currentShowPage.val(page);
-
-            if (page === 1) {
-                $("#previousPage").prop("disabled", true);
-                $("#firstShowPage").prop("disabled", true);
-            }
-
-            pageNumber = $("#lastPage").text();
-            itemsOnPage = 7;
-
-            $("#pageList").empty();
-
-            if (pageNumber <= itemsOnPage) {
-                for (var i = 1; i <= pageNumber; i++) {
-                    $("#pageList").append('<li class="showPage">' + i + '</li>');
-                }
-            } else if (pageNumber >= itemsOnPage && page <= itemsOnPage) {
-                for (var i = 1; i <= itemsOnPage; i++) {
-                    $("#pageList").append('<li class="showPage">' + i + '</li>');
-                }
-            } else if (pageNumber >= itemsOnPage && page > 3 && page <= pageNumber - 3) {
-                for (var i = page - 3; i <= page + 3; i++) {
-                    $("#pageList").append('<li class="showPage">' + i + '</li>');
-                }
-            } else if (page >= page - 3) {
-                for (var i = pageNumber - 6; i <= pageNumber; i++) {
-                    $("#pageList").append('<li class="showPage">' + i + '</li>');
-                }
-            }
-
-            $("#gridStart").text((page - 1) * itemsNumber + 1);
-
-            if (this.listLength <= page * itemsNumber) {
-                $("#gridEnd").text(this.listLength);
-            } else {
-                $("#gridEnd").text(page * itemsNumber);
-            }
-
-            $("#nextPage").prop("disabled", false);
-            $("#lastShowPage").prop("disabled", false);
-
-            options = options || {
-                    count: itemsNumber,
-                    filter: this.filter
-                };
-
-            this.collection.getPreviousPage(options);
-            this.changeLocationHash(page, itemsNumber);
         },
 
         firstPage: function(options){
@@ -326,8 +246,6 @@ define([
             var currentPage = this.pageParams.page;
             var html = '';
 
-            //html += '<li class="arrow showFirstPage">First</li>';
-
             for (var i=from; i<to; i++) {
                 if (i === currentPage) {
                     html+='<li class="showPage active">' + i + '</li>';
@@ -335,8 +253,6 @@ define([
                     html+='<li class="showPage">' + i + '</li>';
                 }
             }
-
-            //html += '<li class="arrow showLastPage">Last</li>';
 
             return html;
         },
@@ -419,11 +335,30 @@ define([
 
             this.collection.getPage(params.page, collectionParams);
             this.changeLocationHash();
-
-
-
-            console.log(orderBy);
         },
+
+        filter: function (e) {
+            var searchValue = this.$el.find('.search').val() || '';
+            var params = this.pageParams;
+            var collectionParams;
+            var page = 1;
+
+            params.page = page;
+            params.filter = searchValue;
+            collectionParams = _.extend({reset: true}, params);
+
+            this.collection.getPage(page, collectionParams);
+            this.changeLocationHash();
+        },
+
+        checkAll: function (e) {
+            var state = $(e.target).prop('checked');
+            var checkboxes = this.$el.find('.items .checkItem');
+
+            e.stopPropagation();
+
+            checkboxes.prop('checked', state);
+        }
 
     });
 
