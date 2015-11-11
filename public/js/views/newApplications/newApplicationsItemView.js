@@ -62,23 +62,36 @@ define([
 
         prepareSaveData: function (callback) {
             var form = this.$el.find('.stylistForm');
-            var email = form.find('.email').val();
-            var firstName = form.find('.firstName').val();
-            var lastName = form.find('.lastName').val();
-            var role = form.find('.role').val();
-            var phone = form.find('.phone').val();
-            var salonName = form.find('.salonName').val();
-            var businessRole = form.find('.businessRole').val();
-            var salonNumber = form.find('.salonNumber').val();
-            var salonEmail = form.find('.salonEmail').val();
-            var salonAddress = form.find('.salonAddress').val() + ' ' + form.find('.salonAddress2').val();
-            var license = form.find('.license').val();
-            var city = form.find('.city').val();
-            var region = form.find('.region').val();
-            var zip = form.find('.zip').val();
-            var country = form.find('.country').val();
+            var servicesBlock = form.find('.services');
+            var serviceList = servicesBlock.find('input:checkbox:checked');
+            var email = form.find('#email').val();
+            var firstName = form.find('#firstName').val();
+            var lastName = form.find('#lastName').val();
+            var role = form.find('#role').val();
+            var phone = form.find('#phone').val();
+            var salonName = form.find('#salonName').val();
+            var businessRole = form.find('#businessRole').val();
+            var salonNumber = form.find('#salonNumber').val();
+            var salonEmail = form.find('#salonEmail').val();
+            var salonAddress = form.find('#salonAddress').val() + ' ' + form.find('#salonAddress2').val();
+            var license = form.find('#license').val();
+            var city = form.find('#city').val();
+            var region = form.find('#region').val();
+            var zip = form.find('#zip').val();
+            var country = form.find('#country').val();
+            var services = [];
+            var service;
             var data;
 
+            serviceList.each(function (index, element) {
+                service = {};
+                service.price = $(element).siblings('input:text')[index].value || 0;
+                service.id = $(element).data('id');
+
+                services.push(service);
+
+                console.log(5);
+            });
             //validation ...
 
             data = {
@@ -100,7 +113,9 @@ define([
                     zipCode      : zip,
                     country      : country,
                     licenseNumber: license
-                }
+                },
+                services: services/*,
+                approved: true*/
             };
 
             callback(null, data);
@@ -119,7 +134,8 @@ define([
                 model = self.model;
                 model.updateCurrent(data, {
                     success: function () {
-                        alert('success created');
+                        console.log('success created');
+                        window.location.hash = 'newApplications';
                     },
                     error: self.handleModelError
                     /*error: function (model, response, options) {
