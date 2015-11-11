@@ -16,6 +16,10 @@ define([
         navElement: '#nav_pending_requests',
         url: '#pendingRequests',
 
+        events: _.extend({
+            //put events here ...
+        }, ListView.prototype.events),
+
         initialize: function (options) {
             App.Breadcrumbs.reset([{name: 'Pending Requests', path: '#pendingRequests'}]);
 

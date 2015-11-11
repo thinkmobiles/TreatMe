@@ -16,6 +16,10 @@ define([
         navElement: '#bookings',
         url: '#bookings',
 
+        events: _.extend({
+            //put events here ...
+        }, ListView.prototype.events),
+
         initialize: function (options) {
             App.Breadcrumbs.reset([{name: 'Bookings', path: '#bookings'}]);
 
