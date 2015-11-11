@@ -24,7 +24,8 @@ define([
             "clients(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clients",
             //"pendingRequests"           :  "pendingRequests",
             "pendingRequests(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "pendingRequests",
-            "bookings"                  :  "bookings",
+            //"bookings"                  :  "bookings",
+            "bookings(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "bookings",
             "stylistPayments"           :  "stylistPayments",
             "clientPackages"            :  "clientPackages",
             "gallery"                   :  "gallery",
@@ -137,14 +138,24 @@ define([
                 countPerPage: parseInt(countPerPage),
                 orderBy: orderBy,
                 order: order,
-                filter: filter
+                filter: filter,
+                status: 'Pending'
             };
 
-            this.loadWrapperView('services', options, REDIRECT.whenNOTAuthorized);
+            this.loadWrapperView('bookings', options, REDIRECT.whenNOTAuthorized);
         },
 
-        bookings: function () {
-            this.loadWrapperView('bookings', null, REDIRECT.whenNOTAuthorized);
+        bookings: function (page, countPerPage, orderBy, order, filter) {
+            var options = {
+                page: parseInt(page),
+                countPerPage: parseInt(countPerPage),
+                orderBy: orderBy,
+                order: order,
+                filter: filter,
+                status: 'Booked'
+            };
+
+            this.loadWrapperView('bookings', options, REDIRECT.whenNOTAuthorized);
         },
 
         stylistPayments: function () {
