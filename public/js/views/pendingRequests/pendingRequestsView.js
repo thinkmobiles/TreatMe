@@ -4,8 +4,8 @@
 define([
     'views/customElements/ListView',
     'collections/bookingCollection',
-    'text!/templates/bookings/bookingsTemplate.html',
-    'text!/templates/bookings/bookingsListTemplate.html'
+    'text!/templates/pendingRequests/pendingRequestsTemplate.html',
+    'text!/templates/pendingRequests/pendingRequestsListTemplate.html'
 ], function (ListView, Collection, MainTemplate, ListTemplate) {
 
     var View = ListView.extend({

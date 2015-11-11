@@ -142,7 +142,7 @@ define([
                 status: 'Pending'
             };
 
-            this.loadWrapperView('bookings', options, REDIRECT.whenNOTAuthorized);
+            this.loadWrapperView('pendingRequests', options, REDIRECT.whenNOTAuthorized);
         },
 
         bookings: function (page, countPerPage, orderBy, order, filter) {
