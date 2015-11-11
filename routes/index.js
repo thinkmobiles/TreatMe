@@ -61,8 +61,8 @@ module.exports = function (app, db) {
     app.post('/appointment/cancel', sessionHandler.authenticatedUser, sessionHandler.clientOrStylist, user.cancelByUser);
 
     app.get('/subscriptionTypes/:id?', sessionHandler.authenticatedUser, sessionHandler.clientOrAdmin, subscriptionHandler.getSubscriptionTypes);
-    app.post('/subscriptionTypes', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.createSubscriptionType);
-    app.put('/subscriptionTypes/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.updateSubscriptionType);
+    //app.post('/subscriptionTypes', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.createSubscriptionType);
+    //app.put('/subscriptionTypes/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.updateSubscriptionType);
 
 
     function notFound(req, res, next) {

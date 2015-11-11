@@ -89,7 +89,7 @@ var SubscriptionsHandler = function (db) {
         }
     };
 
-    this.createSubscriptionType = function(req, res, next){
+    /*this.createSubscriptionType = function(req, res, next){
         var body = req.body;
         var subscriptionTypeModel;
         var saveObj;
@@ -123,9 +123,9 @@ var SubscriptionsHandler = function (db) {
                     res.status(200).send({success: 'New subscription created successfully'});
                 })
         });
-    };
+    };*/
 
-    this.updateSubscriptionType = function(req, res, next){
+    /*this.updateSubscriptionType = function(req, res, next){
         var body = req.body;
         var subscriptionId = req.params.id;
         var updateObj = {};
@@ -206,7 +206,7 @@ var SubscriptionsHandler = function (db) {
 
             res.status(200).send({success: 'Subscription updated successfully'});
         });
-    };
+    };*/
 
 };
 
