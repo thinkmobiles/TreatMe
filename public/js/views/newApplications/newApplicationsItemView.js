@@ -26,11 +26,13 @@ define([
             if (!userId) {
                 this.model = new StylistModel();
                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/add'}]);
+                self.model.on('invalid', self.handleModelValidationError);
                 this.render();
 
             } else {
                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/' + userId}]);
                 model = new StylistModel({_id: userId});
+                model.on('invalid', self.handleModelValidationError);
                 model.fetch({
                     success: function (model) {
                         self.model = model;
@@ -90,8 +92,6 @@ define([
                 service.id = $(element).data('id');
 
                 services.push(service);
-
-                console.log(5);
             });
             //validation ...
 
@@ -152,7 +152,7 @@ define([
                 ids: [this.model.id]
             };
             data = JSON.stringify(data);
-            
+
             this.model.deleteRequest(data, function () {
                 console.log('success removed');
                 window.location.hash = 'newApplications';

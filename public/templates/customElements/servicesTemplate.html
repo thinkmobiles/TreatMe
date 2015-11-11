@@ -1,0 +1,13 @@
+<br>Please contact stylist and negotiate services available and prices before approving </br> the application</br>
+<span>Services available*</span>
+<span>Service Price*</span>
+</p>
+
+<% _.forEach(services, function (service) {%>
+<% var name = service.name %>
+<input type="checkbox" id="<%= name %>" data-id="<%= service._id %>" >
+<label for="<%= name %>"><%= name %></label>
+<input type="text" placeholder="0"></br>
+<%});%>
+
+<p>*To be filled in by TreatMe team based on negotiations with stylist</p>

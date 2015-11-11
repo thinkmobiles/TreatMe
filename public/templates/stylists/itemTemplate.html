@@ -1,4 +1,4 @@
-<div class="stylistForm">
+<div class="stylistForm" xmlns="http://www.w3.org/1999/html">
     <div class="userNameContainer">
         <span>
         <%if (user._id) { %>
@@ -9,13 +9,13 @@
         </span>
     </div>
 
-    <div class="accountInfo">
+    <br class="accountInfo">
         <div class="avatar"></div>
-        <input type="text" class="email" name="email" placeholder="Email"/><br/>
-        <input type="text" class="firstName" name="firstName" placeholder="First Name"/><br/>
-        <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><br/>
-        <input type="text" class="role" name="role" placeholder="Profession"/><br/>
-        <input type="text" class="phone" name="phone" placeholder="Personal Phone Number"/><br/>
+        <input type="text" class="email" name="email" placeholder="Email"/><span class="prompt"></span><br/>
+        <input type="text" class="firstName" name="firstName" placeholder="First Name"/><span class="prompt"></span><br/>
+        <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><span class="prompt"></span><br/>
+        <input type="text" class="role" name="role" placeholder="Profession"/><span class="prompt"></span><br/>
+        <input type="text" class="phone" name="phone" placeholder="Personal Phone Number"/><span class="prompt"></span><br/>
 
         <div class="phoneSettings">
             <span>Show</span>
@@ -25,18 +25,22 @@
 
         <div class="salonInfo">
             <span>Salon info</span><br/>
-            <input type="text" name="salonName" class="salonName" placeholder="Salon Name"/><br/>
-            <input type="text" name="businessRole" class="businessRole" placeholder="Business Role"/><br/>
-            <input type="text" name="salonNumber" class="salonNumber" placeholder="Salon Number"/><br/>
-            <input type="text" name="salonEmail" class="salonEmail" placeholder="Salon Email"/><br/>
-            <input type="text" name="salonAddress" class="salonAddress" placeholder="Salon Address"/><br/>
-            <input type="text" name="salonAddress2" class="salonAddress2" placeholder="Salon Address Line 2"/><br/>
-            <input type="text" name="license" class="license" placeholder="License Number"/><br/>
-            <input type="text" name="city" class="city" placeholder="City"/><br/>
-            <input type="text" name="region" class="region" placeholder="State/Province/Region"/><br/>
-            <input type="text" name="zip" class="zip" placeholder="Zip Code"/><br/>
-            <input type="text" name="country" class="country" placeholder="Country"/><br/>
+            <input type="text" name="salonName" class="salonName" placeholder="Salon Name"/><span class="prompt"></span><br/>
+            <input type="text" name="businessRole" class="businessRole" placeholder="Business Role"/><span class="prompt"></span><br/>
+            <input type="text" name="salonNumber" class="salonNumber" placeholder="Salon Number"/><span class="prompt"></span><br/>
+            <input type="text" name="salonEmail" class="salonEmail" placeholder="Salon Email"/><span class="prompt"></span><br/>
+            <input type="text" name="salonAddress" class="salonAddress" placeholder="Salon Address"/><span class="prompt"></span><br/>
+            <input type="text" name="salonAddress2" class="salonAddress2" placeholder="Salon Address Line 2"/><span class="prompt"></span><br/>
+            <input type="text" name="license" class="license" placeholder="License Number"/><span class="prompt"></span><br/>
+            <input type="text" name="city" class="city" placeholder="City"/><span class="prompt"></span><br/>
+            <input type="text" name="region" class="region" placeholder="State/Province/Region"/><span class="prompt"></span><br/>
+            <input type="text" name="zip" class="zip" placeholder="Zip Code"/><span class="prompt"></span><br/>
+            <input type="text" name="country" class="country" placeholder="Country"/><span class="prompt"></span><br/>
         </div>
+
+        <div class="services">
+
+        </div><span class="prompt"></span></br>
 
         <button class="saveBtn">Save</button>
 
