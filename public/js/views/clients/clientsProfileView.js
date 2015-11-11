@@ -2,7 +2,7 @@
 
 define([
     'models/clientModel',
-    'text!/templates/clients/clientsProfileView.html'
+    'text!/templates/clients/clientsProfileTemplate.html'
 ], function (Model, ClientProfile) {
     var View = Backbone.View.extend({
         el: '#wrapper',
@@ -27,17 +27,18 @@ define([
                     },
                     error: self.handleModelError
                 });
-
+                console.log(model);
             } else {
                 model = new Model();
                 this.model = model;
                 this.render();
+                console.log(model);
             }
 
         },
 
         render: function () {
-            var model = this.model;
+            var model = this.model.toJSON();
 
             this.$el.html(this.template({item: model}));
 
