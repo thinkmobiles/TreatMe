@@ -13,7 +13,7 @@ define([
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
 
-        navElement: '#bookings',
+        navElement: '#nav_bookings',
         url: '#bookings',
 
         events: _.extend({

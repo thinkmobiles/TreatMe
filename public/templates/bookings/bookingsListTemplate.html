@@ -1,9 +1,10 @@
 <% _.forEach(items, function (item, index) {%>
-<tr class="item" data-id="<%= user._id%>">
+<tr class="item" data-id="<%= item._id%>">
     <td><input type="checkbox" class="checkItem"></td>
-    <td><%= item.createdAt %></td>
-    <td><%= item.personalInfo.firstName + ' ' + item.personalInfo.lastName %></td>
-    <td><%= item.service %></td>
+    <td><%= item.bookingDate %></td>
+    <td><%= item.client.personalInfo.firstName + ' ' + item.client.personalInfo.lastName %></td>
+    <td><%= item.stylist.personalInfo.firstName + ' ' + item.stylist.personalInfo.lastName %></td>
+    <td><span class="<%= item.status %>"><%= item.status %></span></td>
     <td><button id="suspendCurrentBtn">Suspend</button></td>
     <td><button id="deleteCurrentBtn">Delete</button></td>
 </tr>
