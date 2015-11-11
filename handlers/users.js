@@ -71,17 +71,13 @@ var UserHandler = function (app, db) {
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
-            if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Service') {
+            if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Service' && sortParam !== 'Stylist') {
                 return callback(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
             }
 
             if (sortParam === 'Name' || !sortParam) {
                 sortObj['client.personalInfo.firstName'] = order;
                 sortObj['client.personalInfo.lastName'] = order;
-            }
-
-            if (sortParam === 'Service') {
-                sortObj['serviceType.name'] = order;
             }
 
             projectionObj = {
@@ -94,6 +90,10 @@ var UserHandler = function (app, db) {
                     sortObj.requestDate = order;
                 }
 
+                if (sortParam === 'Service') {
+                    sortObj['serviceType.name'] = order;
+                }
+
                 projectionObj.bookingDate = 0;
 
                 findObj.status = {$in : [CONSTANTS.STATUSES.APPOINTMENT.CREATED, CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED]}
@@ -104,7 +104,13 @@ var UserHandler = function (app, db) {
                     sortObj.bookingDate = order;
                 }
 
+                if (sortParam === 'Stylist') {
+                    sortObj['stylist.personalInfo.firstName'] = order;
+                    sortObj['stylist.personalInfo.lastName'] = order;
+                }
+
                 projectionObj.requestDate = 0;
+                projectionObj.serviceType = 0;
 
                 findObj.status = {$in : [
                     CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
