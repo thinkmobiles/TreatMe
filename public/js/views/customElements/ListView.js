@@ -28,7 +28,7 @@ define([
             count : 5,
             order : '1',
             filter: '',
-            status: ''
+            status: '' //TODO: ???
         },
         events: {
             'click .showPage': 'gotoPage',

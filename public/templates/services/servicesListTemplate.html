@@ -1,0 +1,10 @@
+<% _.forEach(items, function (item, index) {%>
+<tr class="item" data-id="<%= user._id%>">
+    <td><input type="checkbox" class="checkItem"></td>
+    <td><%= item.createdAt %></td>
+    <td><%= item.personalInfo.firstName + ' ' + item.personalInfo.lastName %></td>
+    <td><%= item.service %></td>
+    <td><button id="suspendCurrentBtn">Suspend</button></td>
+    <td><button id="deleteCurrentBtn">Delete</button></td>
+</tr>
+<%});%>
