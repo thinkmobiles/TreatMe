@@ -41,9 +41,7 @@ var UserHandler = function (app, db) {
     function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, order, callback){
         var findObj = {};
         var projectionObj;
-        var populateArray = [
-            {path: 'serviceType', select: 'name'}
-        ];
+        var populateArray = [];
         var sortObj = {};
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
@@ -55,7 +53,7 @@ var UserHandler = function (app, db) {
                 requestDate: 0,
                 status: 0
             };
-            populateArray.push({path: 'stylist', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
+            populateArray.push({path: 'serviceType', select: 'name'}, {path: 'stylist', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
         }
 
         if (role === CONSTANTS.USER_ROLE.STYLIST){
@@ -67,7 +65,7 @@ var UserHandler = function (app, db) {
                 requestDate: 0,
                 status: 0
             };
-            populateArray.push({path: 'client', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
+            populateArray.push({path: 'serviceType', select: 'name'}, {path: 'client', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
@@ -97,6 +95,8 @@ var UserHandler = function (app, db) {
                 projectionObj.bookingDate = 0;
 
                 findObj.status = {$in : [CONSTANTS.STATUSES.APPOINTMENT.CREATED, CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED]}
+
+                populateArray.push({path: 'serviceType', select: 'name'});
             }
 
             if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.BOOKED){
