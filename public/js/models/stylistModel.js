@@ -11,6 +11,18 @@ define([], function () {
             options.url = '/profile' + this.id;
 
             return Backbone.Model.prototype.save.call(this, options, callbackObj);
+        },
+
+        deleteRequest: function (data, callback) {
+            $.ajax({
+                type: 'DELETE',
+                dataType: 'json',
+                contentType: 'application/json',
+                url: '/admin/stylist',
+                data: data,
+                success: callback,
+                error: this.handleModelError //TODO
+            })
         }
     });
 

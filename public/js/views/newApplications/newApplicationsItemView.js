@@ -14,7 +14,8 @@ define([
         events: {
             "click .saveBtn": "saveStylist",
             "click #editBtn": "edit",
-            "click #acceptBtn": "saveStylist"
+            "click #acceptBtn": "saveStylist",
+            "click #removeBtn": "removeStylist"
         },
 
         initialize: function (options) {
@@ -143,6 +144,18 @@ define([
                      self.handleError(errMessage);
                      }*/
                 });
+            });
+        },
+
+        removeStylist: function () {
+            var data = {
+                ids: [this.model.id]
+            };
+            data = JSON.stringify(data);
+            
+            this.model.deleteRequest(data, function () {
+                console.log('success removed');
+                window.location.hash = 'newApplications';
             });
         },
 
