@@ -41,9 +41,7 @@ var UserHandler = function (app, db) {
     function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, order, callback){
         var findObj = {};
         var projectionObj;
-        var populateArray = [
-            {path: 'serviceType', select: 'name'}
-        ];
+        var populateArray = [];
         var sortObj = {};
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
@@ -55,7 +53,7 @@ var UserHandler = function (app, db) {
                 requestDate: 0,
                 status: 0
             };
-            populateArray.push({path: 'stylist', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
+            populateArray.push({path: 'serviceType', select: 'name'}, {path: 'stylist', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
         }
 
         if (role === CONSTANTS.USER_ROLE.STYLIST){
@@ -67,21 +65,17 @@ var UserHandler = function (app, db) {
                 requestDate: 0,
                 status: 0
             };
-            populateArray.push({path: 'client', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
+            populateArray.push({path: 'serviceType', select: 'name'}, {path: 'client', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
-            if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Service') {
+            if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Service' && sortParam !== 'Stylist') {
                 return callback(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
             }
 
             if (sortParam === 'Name' || !sortParam) {
                 sortObj['client.personalInfo.firstName'] = order;
                 sortObj['client.personalInfo.lastName'] = order;
-            }
-
-            if (sortParam === 'Service') {
-                sortObj['serviceType.name'] = order;
             }
 
             projectionObj = {
@@ -94,9 +88,15 @@ var UserHandler = function (app, db) {
                     sortObj.requestDate = order;
                 }
 
+                if (sortParam === 'Service') {
+                    sortObj['serviceType.name'] = order;
+                }
+
                 projectionObj.bookingDate = 0;
 
                 findObj.status = {$in : [CONSTANTS.STATUSES.APPOINTMENT.CREATED, CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED]}
+
+                populateArray.push({path: 'serviceType', select: 'name'});
             }
 
             if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.BOOKED){
@@ -104,7 +104,13 @@ var UserHandler = function (app, db) {
                     sortObj.bookingDate = order;
                 }
 
+                if (sortParam === 'Stylist') {
+                    sortObj['stylist.personalInfo.firstName'] = order;
+                    sortObj['stylist.personalInfo.lastName'] = order;
+                }
+
                 projectionObj.requestDate = 0;
+                projectionObj.serviceType = 0;
 
                 findObj.status = {$in : [
                     CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
@@ -121,37 +127,60 @@ var UserHandler = function (app, db) {
             );
         }
 
-        Appointment
-            .find(findObj, projectionObj)
-            .populate(populateArray)
-            .sort(sortObj)
-            .skip(limit * (page -1))
-            .limit(limit)
-            .exec(function(err, appointmentModelsArray){
-                var avatarName;
 
+        async.parallel({
+            appointmentCount: function(cb){
+                Appointment
+                    .count(findObj, function(err, count){
+                       if (err){
+                           return cb(err);
+                       }
+
+                        cb(null, count);
+                    });
+            },
+
+            appointments: function(cb){
+                Appointment
+                    .find(findObj, projectionObj)
+                    .populate(populateArray)
+                    .sort(sortObj)
+                    .skip(limit * (page -1))
+                    .limit(limit)
+                    .exec(function(err, appointmentModelsArray){
+                        var avatarName;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        appointmentModelsArray.map(function(appointmentModel){
+
+                            if (role === CONSTANTS.USER_ROLE.CLIENT){
+                                avatarName = appointmentModel.get('stylist.personalInfo.avatar');
+
+                                if (avatarName){
+                                    appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                                }
+                            } else {
+                                avatarName = appointmentModel.get('client.personalInfo.avatar');
+
+                                if (avatarName){
+                                    appointmentModel.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                                }
+                            }
+                        });
+
+                        cb(null, appointmentModelsArray);
+                    });
+            }},
+
+            function(err, result){
                 if (err){
                     return callback(err);
                 }
 
-                appointmentModelsArray.map(function(appointmentModel){
-
-                    if (role === CONSTANTS.USER_ROLE.CLIENT){
-                        avatarName = appointmentModel.get('stylist.personalInfo.avatar');
-
-                        if (avatarName){
-                            appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
-                        }
-                    } else {
-                        avatarName = appointmentModel.get('client.personalInfo.avatar');
-
-                        if (avatarName){
-                            appointmentModel.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
-                        }
-                    }
-                });
-
-                callback(null, appointmentModelsArray);
+                callback(null, {total: result.appointmentCount, data: result.appointments})
             });
     }
 
@@ -551,14 +580,10 @@ var UserHandler = function (app, db) {
 
     this.confirmRegistration = function (req, res, next) {
 
-       // var registrationHTML = fs.readFileSync('public/templates/registration/registrationTemplate.html', encoding = "utf-8");
-        //var registrationTemplate = _.template(registrationHTML);
-
         var url;
 
         var token = req.params.token;
         var uId;
-        var sendObj = {};
         var header = req.headers['user-agent'];
 
         User
@@ -646,12 +671,10 @@ var UserHandler = function (app, db) {
 
     this.confirmForgotPass = function (req, res, next) {
 
-        var confirmPassHTML = fs.readFileSync('public/templates/registration/confirmPassword.html', encoding = "utf-8");
-        var confirmPassTemplate = _.template(confirmPassHTML);
         var forgotToken = req.query.token;
         var userRole = req.query.role;
         var header = req.headers['user-agent'];
-        var sendObj = {};
+        var url;
 
         User
             .findOneAndUpdate({forgotToken: forgotToken, role: userRole}, {$set: {forgotToken: ''}}, function (err, userModel) {
@@ -663,14 +686,15 @@ var UserHandler = function (app, db) {
                     return next(badRequests.TokenWasUsed());
                 }
 
-
                 if (checkHeader(header)){
-                    sendObj.url = 'treatme://login/changePass'
+                    url = 'treatme://login/changePass'
                 } else {
-                    sendObj.url = process.env.EXT_HOST;
+                    url = process.env.EXT_HOST;
                 }
 
-                res.status(200).send(confirmPassTemplate(sendObj));
+                res.render('confirmPassword', {
+                    url: url
+                });
 
             });
     };
@@ -1123,7 +1147,7 @@ var UserHandler = function (app, db) {
          * @instance
          */
 
-        var userId = req.params.id || req.session.uId;
+        var userId = req.params.userId || req.session.uId;
         var projectionObj;
 
         if (req.params.id && !CONSTANTS.REG_EXP.OBJECT_ID.test(userId)) {
@@ -1620,7 +1644,13 @@ var UserHandler = function (app, db) {
 
                     allId = (_.pluck(allServiceModels, '_id')).toStringObjectIds();
 
-                    stylistServiceId = (_.pluck(stylistServiceModel, 'serviceId._id')).toStringObjectIds();
+                    for (var i = stylistServiceModel.length; i--;){
+                        if (!stylistServiceModel.serviceId){
+                            return callback(badRequests.DatabaseError());
+                        }
+
+                        stylistServiceId[i] = stylistServiceModel[i].serviceId._id.toString();
+                    }
 
                     for (var i = 0, n = allServiceModels.length; i < n; i++){
                         ind = stylistServiceId.indexOf(allId[i]);
