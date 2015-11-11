@@ -26,7 +26,7 @@ define([
                 model.fetch({
                     success: function (userModel) {
                         self.model = userModel;
-                       // self.render();
+                        self.renderClient();
                     },
                     error: self.handleModelError
                 });
@@ -44,11 +44,20 @@ define([
         },
 
         render: function () {
-           // var model = this.model.toJSON();
-
-            this.$el.html(this.template({item: {}}));
-
+            this.$el.html(this.template());
             return this;
+        },
+
+        renderClient: function () {
+            var container = this.$el.find('.accountInfo');
+            var model = this.model;
+            var item = model.toJSON();
+
+            this.$el.find('.clientName').html(item.name);
+
+            container.find('.name').html(item.name);
+            container.find('.phone').html(item.phone);
+            container.find('.email').html(item.email);
         }
     });
 
