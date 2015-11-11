@@ -121,37 +121,60 @@ var UserHandler = function (app, db) {
             );
         }
 
-        Appointment
-            .find(findObj, projectionObj)
-            .populate(populateArray)
-            .sort(sortObj)
-            .skip(limit * (page -1))
-            .limit(limit)
-            .exec(function(err, appointmentModelsArray){
-                var avatarName;
 
+        async.parallel({
+            appointmentCount: function(cb){
+                Appointment
+                    .count(findObj, function(err, count){
+                       if (err){
+                           return cb(err);
+                       }
+
+                        cb(null, count);
+                    });
+            },
+
+            appointments: function(cb){
+                Appointment
+                    .find(findObj, projectionObj)
+                    .populate(populateArray)
+                    .sort(sortObj)
+                    .skip(limit * (page -1))
+                    .limit(limit)
+                    .exec(function(err, appointmentModelsArray){
+                        var avatarName;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        appointmentModelsArray.map(function(appointmentModel){
+
+                            if (role === CONSTANTS.USER_ROLE.CLIENT){
+                                avatarName = appointmentModel.get('stylist.personalInfo.avatar');
+
+                                if (avatarName){
+                                    appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                                }
+                            } else {
+                                avatarName = appointmentModel.get('client.personalInfo.avatar');
+
+                                if (avatarName){
+                                    appointmentModel.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                                }
+                            }
+                        });
+
+                        cb(null, appointmentModelsArray);
+                    });
+            }},
+
+            function(err, result){
                 if (err){
                     return callback(err);
                 }
 
-                appointmentModelsArray.map(function(appointmentModel){
-
-                    if (role === CONSTANTS.USER_ROLE.CLIENT){
-                        avatarName = appointmentModel.get('stylist.personalInfo.avatar');
-
-                        if (avatarName){
-                            appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
-                        }
-                    } else {
-                        avatarName = appointmentModel.get('client.personalInfo.avatar');
-
-                        if (avatarName){
-                            appointmentModel.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
-                        }
-                    }
-                });
-
-                callback(null, appointmentModelsArray);
+                callback(null, {total: result.appointmentCount, data: result.appointments})
             });
     }
 
