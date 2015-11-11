@@ -1,5 +1,5 @@
 /**
- * @description admin profile managment module
+ * @description admin profile management module
  * @module adminHandler
  *
  */
@@ -52,7 +52,24 @@ var AdminHandler = function (db) {
                     return callback(err);
                 }
 
-                Services
+                userObj = resultModel.toJSON();
+
+                user.getService(sId, function(err, resultServices){
+
+                    if (err){
+                        return callback(err);
+                    }
+
+                    if (resultServices.length){
+                        userObj.services = resultServices;
+                    } else {
+                        userObj.services = []
+                    }
+
+                    callback(null, userObj);
+                });
+
+                /*Services
                     .find({stylist: ObjectId(sId), approved: true}, {price: 1, _id: 0, serviceId: 1})
                     .populate({path: 'serviceId', select: '-_id name'})
                     .exec(function(err, serviceModels){
@@ -70,7 +87,7 @@ var AdminHandler = function (db) {
                         }
 
                         callback(null, userObj);
-                    });
+                    });*/
             });
     }
 
@@ -120,36 +137,6 @@ var AdminHandler = function (db) {
 
     function getCountByCriterion(findObj, callback){
 
-       /* var roleObj = {
-            role: role
-        };
-
-        var statusObj = {};
-        var searchRegExp;
-        var searchObj = {};
-        var findObj;
-
-        if (!callback && typeof status === 'function'){
-            callback = status;
-        } else {
-            if (status === 'requested'){
-                statusObj.approved = false;
-            } else if (status === 'approved') {
-                statusObj.approved = true;
-            }
-        }
-
-        if (search){
-            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
-
-            searchObj['$or'] = [
-                {'personalInfo.firstName': {$regex: searchRegExp}},
-                {'personalInfo.lastName': {$regex: searchRegExp}},
-                {'email': {$regex: searchRegExp}},
-                {'salon.firstName': {$regex: searchRegExp}}
-            ];
-        }*/
-
         User
             .count(findObj, function(err, resultCount){
 
@@ -160,99 +147,6 @@ var AdminHandler = function (db) {
                 callback(null, resultCount);
 
             });
-    };
-
-    this.getStylistCount = function(req, res, next){
-
-        /**
-         * __Type__ __`GET`__
-         *
-         * __Content-Type__ `application/json`
-         *
-         * __HOST: `http://projects.thinkmobiles.com:8871`__
-         *
-         * __URL: `/admin/stylist/count`__
-         *
-         * __Query params: status [requested, approved, all], search_
-         *
-         * This __method__ allows get stylist count by some criterion for _Admin_
-         *
-         * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/stylist/count?status=requested
-         *
-         * @example Response example:
-         *
-         *  Response status: 200
-         *
-         * [
-         *       {
-         *          count: 3
-         *       }
-         *  ]
-         *
-         *
-         * @method getStylistCount
-         * @instance
-         */
-
-        var status = req.query.status;
-        var search = req.query.search;
-
-        getCountByCriterion(search, CONSTANTS.USER_ROLE.STYLIST, status, function(err, resultCount){
-
-            if (err){
-                return next(err);
-            }
-
-            res.status(200).send({count: resultCount});
-
-        });
-    };
-
-    this.getClientCount = function(req, res, next){
-
-        /**
-         * __Type__ __`GET`__
-         *
-         * __Content-Type__ `application/json`
-         *
-         * __HOST: `http://projects.thinkmobiles.com:8871`__
-         *
-         * __URL: `/admin/client/count`__
-         *
-         * __Query params: search_
-         *
-         * This __method__ allows get client count by some criterion for _Admin_
-         *
-         * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/client/count?search=misha
-         *
-         * @example Response example:
-         *
-         *  Response status: 200
-         *
-         * [
-         *       {
-         *          count: 3
-         *       }
-         *  ]
-         *
-         *
-         * @method getClientCount
-         * @instance
-         */
-
-        var search = req.query.search;
-
-        getCountByCriterion(search, CONSTANTS.USER_ROLE.CLIENT, function(err, resultCount){
-
-            if (err){
-                return next(err);
-            }
-
-            res.status(200).send({count: resultCount});
-
-        });
     };
 
     this.getStylistList = function(req, res, next){
@@ -872,7 +766,8 @@ var AdminHandler = function (db) {
          * @example Body example:
          * {
          *  "serviceId": "563342cf1480ea7c109dc385",
-         *  "stylistId": "563342cf1480ea7c109dc385"
+         *  "stylistId": "563342cf1480ea7c109dc385",
+         *  "price": 25
          * }
          *
          * @example Response example:
@@ -887,13 +782,14 @@ var AdminHandler = function (db) {
         var body = req.body;
         var serviceId = body.serviceId;
         var stylistId = body.stylistId;
+        var price = body.price;
 
-        if (!body.serviceId || !body.stylistId) {
-            return next(badRequests.NotEnParams({reqParams: 'serviceId or stylistId'}));
+        if (!body.serviceId || !body.stylistId || !body.price) {
+            return next(badRequests.NotEnParams({reqParams: 'serviceId or stylistId or price'}));
         }
 
         Services
-            .findOneAndUpdate({stylist: stylistId, serviceId: serviceId}, {$set: {approved: true}}, function (err) {
+            .findOneAndUpdate({stylist: stylistId, serviceId: serviceId}, {$set: {approved: true, price: body.price}}, function (err) {
 
                 if (err) {
                     return next(err);

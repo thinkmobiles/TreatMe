@@ -1,6 +1,6 @@
 <% _.forEach(items, function (user, index) {%>
-<tr data-id="<%= user._id%>">
-    <td><input type="checkbox"></td>
+<tr class="item" data-id="<%= user._id%>">
+    <td><input type="checkbox" class="checkItem"></td>
     <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
     <td><%= user.salonInfo.salonName %></td>
     <td><span class="<%= (user.approved) ? 'confirmed' : 'pending' %>"></span></td>

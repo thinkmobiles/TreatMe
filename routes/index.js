@@ -60,7 +60,6 @@ module.exports = function (app, db) {
     app.get('/appointment', sessionHandler.authenticatedUser, user.getAppointments); //can accept query ?id=123 [&status=Pending //or Booked &page=2&limit=20] status for admin only
     app.post('/appointment/cancel', sessionHandler.authenticatedUser, sessionHandler.clientOrStylist, user.cancelByUser);
 
-
     app.get('/subscriptionTypes/:id?', sessionHandler.authenticatedUser, sessionHandler.clientOrAdmin, subscriptionHandler.getSubscriptionTypes);
     app.post('/subscriptionTypes', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.createSubscriptionType);
     app.put('/subscriptionTypes/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.updateSubscriptionType);

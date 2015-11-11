@@ -52,8 +52,9 @@ var StylistHandler = function (app, db) {
 
                 bookingDate = appointmentModel.get('bookingDate');
                 bookDay = bookingDate.getDay();
-                console.log('Appointment booked on ' + bookDay + ' day');
                 bookedHoursAndMinutes = bookingDate.getHours() + ':' + bookingDate.getMinutes();
+
+                console.log('Appointment booked on ' + bookDay + ' day and Booked hours: ' + bookedHoursAndMinutes);
 
                 if (availabilityObj && Object.keys(availabilityObj).length) {
 
