@@ -417,7 +417,7 @@ var AdminHandler = function (db) {
 
         if (!body.email || !personal.firstName || !personal.lastName || !personal.profession || !personal.phoneNumber
             || !salon.salonName || !salon.businessRole || !salon.phoneNumber
-            || !salon.email || !salon.address || !salon.licenseNumber
+            || !salon.address || !salon.licenseNumber
             || !salon.city || !salon.zipCode || !salon.country) {
 
             return next(badRequests.NotEnParams());
@@ -907,14 +907,14 @@ var AdminHandler = function (db) {
          */
 
         var id = req.params.id;
-        var findObj = {};
-        var findType = 'find';
+        var criteria = {};
 
         if (id) {
-            findObj._id = id;
+            criteria._id = id;
         }
 
-        ServiceType[findType](findObj, {__v: 0})
+        ServiceType
+            .find(criteria, {__v: 0})
             .exec(function (err, resultModel) {
 
                 if (err) {
