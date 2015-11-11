@@ -1,0 +1,51 @@
+<div class="buttons">
+    <%- item.name %>
+    <button id="editSelectedBtn">Edit</button>
+    <button id="suspendSelectedBtn">Suspend</button>
+    <button id="removeProfileBtn">Delete</button>
+</div>
+
+<div class="stylistForm">
+    <div class="accountInfo">
+        <dl>
+            <dt>Name</dt>
+            <dd><%- item.name%></dd>
+            <dt>Phone Number</dt>
+            <dd><%- item.phone%></dd>
+            <dt>Email Address</dt>
+            <dd><%- item.email%></dd>
+        </dl>
+
+        <ol>Client History</ol>
+    </div>
+</div>
+
+<div class="list">
+    <table class="table">
+        <thead>
+        <tr>
+            <th class="sortable" data-orderby="Date">Booking For</th>
+            <th class="sortable" data-orderby="Name">Stylist Name</th>
+            <th class="sortable" data-orderby="">Service</th>
+            <th class="sortable" data-orderby="">Payment</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody class="items">
+        <!-- put items here -->
+        </tbody>
+    </table>
+    <table class="table">
+        <thead>
+        <tr>
+            <th><input type="checkbox" class="checkAll"></th>
+            <th class="sortable" data-orderby="Date">Purchasing Date</th>
+            <th class="sortable" data-orderby="Name">Package</th>
+        </tr>
+        </thead>
+        <tbody class="items">
+        <!-- put items here -->
+        </tbody>
+    </table>
+    <div class="pagination"></div>
+</div>
