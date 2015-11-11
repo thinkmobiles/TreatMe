@@ -2,8 +2,11 @@
 
 define([
     'models/clientModel',
+    'views/clients/clientsAppointmentView',
+    'views/clients/clientsPurchasedView',
+    'collections/clientsCollection',
     'text!/templates/clients/clientsProfileTemplate.html'
-], function (Model, ClientProfile) {
+], function (Model, ClientsAppointment, ClientsPurchased, Collection, ClientProfile) {
     var View = Backbone.View.extend({
         el: '#wrapper',
 
@@ -23,24 +26,27 @@ define([
                 model.fetch({
                     success: function (userModel) {
                         self.model = userModel;
-                        self.render();
+                       // self.render();
                     },
                     error: self.handleModelError
                 });
-                console.log(model);
             } else {
                 model = new Model();
                 this.model = model;
                 this.render();
-                console.log(model);
             }
+            this.render();
+
+            this.clientsAppointment = new ClientsAppointment({item: model});
+
+            this.clientsPurchased = new ClientsPurchased({item: model});
 
         },
 
         render: function () {
-            var model = this.model.toJSON();
+           // var model = this.model.toJSON();
 
-            this.$el.html(this.template({item: model}));
+            this.$el.html(this.template({item: {}}));
 
             return this;
         }
