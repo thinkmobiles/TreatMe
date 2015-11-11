@@ -16,9 +16,10 @@ define([
         navElement: '#nav_clients',
         url: '#clients',
 
-        events: {
-          'click .item': 'showProfile'
-        },
+        events: _.extend({
+            //put events here ...
+            'click .item': 'showProfile'
+        }, ListView.prototype.events),
 
         initialize: function (options) {
             App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}]);

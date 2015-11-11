@@ -5,7 +5,10 @@ define([
     'models/serviceModel'
 ], function (ParentCollection, Model) {
     var Collection = ParentCollection.extend({
-        model: Model
+        model: Model,
+        url: function () {
+            return '/admin/services/requested';
+        }
     });
 
     return Collection;

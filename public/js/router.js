@@ -23,8 +23,10 @@ define([
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
             "clients(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clients",
-            "pendingRequests"           :  "pendingRequests",
-            "bookings"                  :  "bookings",
+            //"pendingRequests"           :  "pendingRequests",
+            "pendingRequests(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "pendingRequests",
+            //"bookings"                  :  "bookings",
+            "bookings(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "bookings",
             "stylistPayments"           :  "stylistPayments",
             "clientPackages"            :  "clientPackages",
             "gallery"                   :  "gallery",
@@ -135,12 +137,30 @@ define([
             this.loadWrapperView('clients', options, REDIRECT.whenNOTAuthorized);
         },
 
-        pendingRequests: function () {
-            this.loadWrapperView('pendingRequests', null, REDIRECT.whenNOTAuthorized);
+        pendingRequests: function (page, countPerPage, orderBy, order, filter) {
+            var options = {
+                page: parseInt(page),
+                countPerPage: parseInt(countPerPage),
+                orderBy: orderBy,
+                order: order,
+                filter: filter,
+                status: 'Pending'
+            };
+
+            this.loadWrapperView('pendingRequests', options, REDIRECT.whenNOTAuthorized);
         },
 
-        bookings: function () {
-            this.loadWrapperView('bookings', null, REDIRECT.whenNOTAuthorized);
+        bookings: function (page, countPerPage, orderBy, order, filter) {
+            var options = {
+                page: parseInt(page),
+                countPerPage: parseInt(countPerPage),
+                orderBy: orderBy,
+                order: order,
+                filter: filter,
+                status: 'Booked'
+            };
+
+            this.loadWrapperView('bookings', options, REDIRECT.whenNOTAuthorized);
         },
 
         stylistPayments: function () {
