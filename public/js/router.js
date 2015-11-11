@@ -11,6 +11,7 @@ define([
         topBarView  : null,
 
         routes: {
+            "clients/:id"               :  "clientsDetails",
             "login(/:type/*value)"      :  "login",
             "signup"                    :  "signup",
             "dashboard"                 :  "dashboard",
@@ -21,8 +22,10 @@ define([
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
             "clients(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clients",
-            "pendingRequests"           :  "pendingRequests",
-            "bookings"                  :  "bookings",
+            //"pendingRequests"           :  "pendingRequests",
+            "pendingRequests(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "pendingRequests",
+            //"bookings"                  :  "bookings",
+            "bookings(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "bookings",
             "stylistPayments"           :  "stylistPayments",
             "clientPackages"            :  "clientPackages",
             "gallery"                   :  "gallery",
@@ -67,6 +70,10 @@ define([
 
         any: function () {
             Backbone.history.navigate("dashboard", {trigger: true});
+        },
+
+        clientsDetails: function (id) {
+            this.loadWrapperView('clients', {id: id}, REDIRECT.whenNOTAuthorized, 'Profile');
         },
 
         login: function (type, value) {
@@ -125,12 +132,30 @@ define([
             this.loadWrapperView('clients', options, REDIRECT.whenNOTAuthorized);
         },
 
-        pendingRequests: function () {
-            this.loadWrapperView('pendingRequests', null, REDIRECT.whenNOTAuthorized);
+        pendingRequests: function (page, countPerPage, orderBy, order, filter) {
+            var options = {
+                page: parseInt(page),
+                countPerPage: parseInt(countPerPage),
+                orderBy: orderBy,
+                order: order,
+                filter: filter,
+                status: 'Pending'
+            };
+
+            this.loadWrapperView('bookings', options, REDIRECT.whenNOTAuthorized);
         },
 
-        bookings: function () {
-            this.loadWrapperView('bookings', null, REDIRECT.whenNOTAuthorized);
+        bookings: function (page, countPerPage, orderBy, order, filter) {
+            var options = {
+                page: parseInt(page),
+                countPerPage: parseInt(countPerPage),
+                orderBy: orderBy,
+                order: order,
+                filter: filter,
+                status: 'Booked'
+            };
+
+            this.loadWrapperView('bookings', options, REDIRECT.whenNOTAuthorized);
         },
 
         stylistPayments: function () {

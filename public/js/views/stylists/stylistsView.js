@@ -11,8 +11,13 @@ define([
         Collection: Collection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
+
         navElement: '#nav_stylists',
         url: '#stylists',
+
+        events: _.extend({
+            //put events here ...
+        }, ListView.prototype.events),
 
         initialize: function (options) {
             App.Breadcrumbs.reset([{name: 'Stylist List', path: '#stylists'}]);
