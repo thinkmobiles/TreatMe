@@ -1682,10 +1682,14 @@ var AdminHandler = function (db) {
                                 if (modelJSON.serviceType){
                                     modelJSON.serviceType = modelJSON.serviceType.name;
                                 } else {
-                                    modelJSON.serviceType = '';
+                                    modelJSON.serviceType = 'Service was removed';
                                 }
 
-                                modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
+                                if (modelJSON.stylist){
+                                    modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
+                                } else {
+                                    modelJSON.stylist = 'Stylist was removed'
+                                }
 
                                 return modelJSON;
                             });
@@ -1715,8 +1719,14 @@ var AdminHandler = function (db) {
                                 var modelJSON = model.toJSON();
                                 var activeSubscription;
 
-                                modelJSON.package = modelJSON.subscriptionType.name;
-                                modelJSON.price = modelJSON.subscriptionType.price;
+                                if (modelJSON.subscriptionType){
+                                    modelJSON.package = modelJSON.subscriptionType.name;
+                                    modelJSON.price = modelJSON.subscriptionType.price;
+                                } else {
+                                    modelJSON.package = 'Package was removed';
+                                    modelJSON.price = '';
+                                }
+
                                 delete modelJSON.subscriptionType;
 
                                 if (modelJSON.expirationDate >= currentDate){
