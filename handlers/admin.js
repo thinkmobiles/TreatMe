@@ -1548,28 +1548,6 @@ var AdminHandler = function (db) {
          *         "history": []
          *     },
          *     "avatar": "http://localhost:8871/uploads/development/images/563b04c0b3b4c5300f06c983.png",
-         *     "bookedAppointments": [
-         *         {
-         *             "_id": "563b06bc29ff2808236d3280",
-         *             "serviceType": "",
-         *             "bookingDate": "2015-12-05T10:23:51.060Z",
-         *             "stylist": "Stylistname Abramovich",
-         *             "status": "Confirmed"
-         *         },
-         *         {
-         *             "_id": "563b068e29ff2808236d327f",
-         *             "serviceType": "",
-         *             "bookingDate": "2015-11-05T10:23:51.060Z",
-         *             "stylist": "Stylistname Abramovich",
-         *             "status": "Confirmed"
-         *         }
-         *     ],
-         *     "purchasedPackages": [
-         *         {
-         *             "purchaseDate": "2015-11-05T09:19:32.436Z",
-         *             "package": "Unlimited Blowout"
-         *         }
-         *     ],
          *     "currentPackages": [
          *         {
          *             "purchaseDate": "2015-11-05T09:19:32.436Z",
@@ -1585,40 +1563,10 @@ var AdminHandler = function (db) {
 
         var clientId = req.params.id;
         var resultObj = {};
-        var sortParam = req.query.sort;
-        var order = (req.query.order === '1') ? 1 : -1;
-        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_BOOKED_APPOINTMENTS;
-        var sortObj = {};
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
             return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
         }
-
-        if (sortParam && sortParam !== 'Booking' && sortParam !== 'Name' && sortParam !== 'Service' && sortParam !== 'Payment' && sortParam !== 'Status') {
-            return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
-        }
-
-        if (sortParam === 'Booking' || !sortParam) {
-            sortObj.bookingDate = order;
-        }
-
-        if (sortParam === 'Name') {
-            sortObj['stylist.personalInfo.firstName'] = order;
-            sortObj['stylist.personalInfo.lastName'] = order;
-        }
-
-        if (sortParam === 'Service') {
-            sortObj['serviceType.name'] = order;
-        }
-
-        if (sortParam === 'Payment') {
-            //TODO: sortObj['payment'] = order;
-        }
-
-        if (sortParam === 'Status') {
-            sortObj.status = order;
-        }
-
 
         async.parallel([
 
@@ -1653,96 +1601,37 @@ var AdminHandler = function (db) {
                 },
 
                 function(cb){
-                    var projectionObj = {
-                        bookingDate: 1,
-                        stylist: 1,
-                        serviceType: 1,
-                        //TODO: payment: 1,
-                        status: 1
-                    };
+                    Subscription
+                        .find({client: clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
+                        .populate({path: 'subscriptionType', select: 'name price logo'})
+                        .exec(function (err, subscriptionModelsArray) {
+                            var currentSubscriptions;
 
-                    Appointment
-                        .find({client: clientId, status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}}, projectionObj)
-                        .populate([{path: 'serviceType', select: 'name'}, {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}])
-                        .sort(sortObj)
-                        .limit(limit)
-                        .exec(function(err, appointmentModelsArray){
-                            var bookedAppointmentsArray;
-
-                            if (err){
+                            if (err) {
                                 return cb(err);
                             }
 
-                            bookedAppointmentsArray = appointmentModelsArray.map(function(model){
+                            currentSubscriptions = subscriptionModelsArray.map(function(model){
                                 var modelJSON = model.toJSON();
-
-                                if (modelJSON.serviceType){
-                                    modelJSON.serviceType = modelJSON.serviceType.name;
-                                } else {
-                                    modelJSON.serviceType = 'Service was removed';
-                                }
-
-                                if (modelJSON.stylist){
-                                    modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
-                                } else {
-                                    modelJSON.stylist = 'Stylist was removed'
-                                }
-
-                                return modelJSON;
-                            });
-
-                            resultObj.bookedAppointments = bookedAppointmentsArray;
-
-                            cb();
-                        });
-                },
-
-                function(cb){
-                    Subscription
-                        .find({client: clientId}, {_id: 0, purchaseDate: 1, expirationDate: 1, subscriptionType: 1})
-                        .populate({path: 'subscriptionType', select: 'name price'})
-                        .sort({purchaseDate: -1})
-                        .limit(CONSTANTS.LIMIT.REQUESTED_PURCHASED_PACKAGES)
-                        .exec(function(err, subscriptionModelsArray){
-                            var subscriptionArray;
-                            var activeSubscriptionArray = [];
-                            var currentDate = new Date();
-
-                            if (err){
-                                return cb(err)
-                            }
-
-                            subscriptionArray = subscriptionModelsArray.map(function(model){
-                                var modelJSON = model.toJSON();
-                                var activeSubscription;
 
                                 if (modelJSON.subscriptionType){
                                     modelJSON.package = modelJSON.subscriptionType.name;
                                     modelJSON.price = modelJSON.subscriptionType.price;
                                 } else {
                                     modelJSON.package = 'Package was removed';
-                                    modelJSON.price = '';
+                                    modelJSON.price = '-';
                                 }
 
                                 delete modelJSON.subscriptionType;
-
-                                if (modelJSON.expirationDate >= currentDate){
-
-                                    delete modelJSON.expirationDate;
-                                    activeSubscription = _.clone(modelJSON);
-
-                                    activeSubscriptionArray.push(activeSubscription);
-                                }
-
-                                delete modelJSON.price;
+                                delete modelJSON.expirationDate;
 
                                 return modelJSON;
                             });
 
-                            resultObj.purchasedPackages = subscriptionArray;
-                            resultObj.currentPackages = activeSubscriptionArray;
+                            resultObj.currentSubscriptions = currentSubscriptions;
 
                             cb();
+
                         });
                 }
             ],
