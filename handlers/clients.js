@@ -5,6 +5,7 @@ var mongoose = require('mongoose');
 var CONSTANTS = require('../constants');
 var geocoder = require('geocoder');
 var SchedulerHelper = require('../helpers/scheduler');
+var _ = require('lodash');
 
 var ClientsHandler = function (app, db) {
 
@@ -113,7 +114,7 @@ var ClientsHandler = function (app, db) {
      };
      */
 
-    this.getActiveSubscriptions = function (req, res, next) {
+    this.getActiveSubscriptionsOnServices = function (req, res, next) {
         var clientId = req.session.uId;
 
         Subscription
@@ -159,6 +160,94 @@ var ClientsHandler = function (app, db) {
             });
     };
 
+    this.getCurrentSubscriptions = function (req, res, next) {
+        var clientId = req.session.uId;
+        var role = req.session.role;
+
+        if (role === CONSTANTS.USER_ROLE.ADMIN){
+            clientId = req.params.clientId;
+
+            if (!clientId){
+                return next(badRequests.NotEnParams({reqParams: 'clientId'}));
+            }
+
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
+                return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+            }
+        }
+
+        Subscription
+            .find({client: clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
+            .populate({path: 'subscriptionType', select: 'name price logo'})
+            .exec(function (err, subscriptionModelsArray) {
+                var currentSubscriptions;
+
+                if (err) {
+                    return next(err);
+                }
+
+                if (role === CONSTANTS.USER_ROLE.CLIENT){
+                    SubscriptionType
+                        .find({}, {__v: 0}, function (err, subscriptionTypeModels) {
+                            var resultArray;
+                            var subscriptionIds;
+
+                            if (err) {
+                                return next(err);
+                            }
+
+                            subscriptionIds = subscriptionModelsArray.map(function(model){
+                                if (model.subscriptionType){
+                                    return (model.get('subscriptionType._id')).toString();
+                                }
+                            });
+
+                            resultArray = subscriptionTypeModels.map(function (model) {
+                                var modelJSON = model.toJSON();
+                                var typeId = modelJSON._id.toString();
+
+                                if (subscriptionIds.indexOf(typeId) !== -1) {
+                                    modelJSON.purchased = true;
+                                } else {
+                                    modelJSON.purchased = false;
+                                }
+
+                                if (modelJSON.logo){
+                                    modelJSON.logo = imageHandler.computeUrl(modelJSON.logo, CONSTANTS.BUCKET.IMAGES);
+                                } else {
+                                    modelJSON.logo = '';
+                                }
+
+                                return modelJSON;
+                            });
+
+                            res.status(200).send(resultArray);
+                        });
+                } else {
+                    currentSubscriptions = subscriptionModelsArray.map(function(model){
+                        var modelJSON = model.toJSON();
+
+                        if (modelJSON.subscriptionType){
+                            modelJSON.package = modelJSON.subscriptionType.name;
+                            modelJSON.price = modelJSON.subscriptionType.price;
+                        } else {
+                            modelJSON.package = 'Package was removed';
+                            modelJSON.price = '-';
+                        }
+
+                        delete modelJSON.subscriptionType;
+                        delete modelJSON.expirationDate;
+
+                        return modelJSON;
+                    });
+
+                    res.status(200).send(currentSubscriptions);
+                }
+
+
+            });
+    };
+
     this.buySubscriptions = function(req, res, next){
         var clientId = req.session.uId;
         var body = req.body;
@@ -174,6 +263,10 @@ var ClientsHandler = function (app, db) {
             }
 
             clientId = req.params.clientId;
+
+            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
+                return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+            }
         }
 
         ids = body.ids.toObjectId();

@@ -1277,7 +1277,7 @@ var AdminHandler = function (db) {
             });
     };
 
-    this.removeSubscriptions = function (req, res, next) {
+    this.removePackages = function (req, res, next) {
         var arrayOfIds = req.body.packagesArray;
 
         if (!arrayOfIds) {
@@ -1756,6 +1756,201 @@ var AdminHandler = function (db) {
                 }
 
                 res.status(200).send(resultObj);
+        });
+    };
+
+    this.getBookedAppointment = function(req, res, next){
+        var clientId = req.params.clientId;
+        var query = req.query;
+        var sortParam = query.sort;
+        var page = (query.page >=1) ? query.page : 1;
+        var order = (query.order === '1') ? 1 : -1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_BOOKED_APPOINTMENTS;
+        var sortObj = {};
+        var projection = {
+            bookingDate: 1,
+            stylist: 1,
+            serviceType: 1,
+            //TODO: payment: 1,
+            status: 1
+        };
+        var criteria = {
+            client: clientId,
+            status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
+        };
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
+            return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
+        }
+
+        if (sortParam && sortParam !== 'Booking' && sortParam !== 'Stylist' && sortParam !== 'Service' && sortParam !== 'Payment' && sortParam !== 'Status') {
+            return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+        }
+
+        if (sortParam === 'Booking' || !sortParam) {
+            sortObj.bookingDate = order;
+        }
+
+        if (sortParam === 'Stylist') {
+            sortObj['stylist.personalInfo.firstName'] = order;
+            sortObj['stylist.personalInfo.lastName'] = order;
+        }
+
+        if (sortParam === 'Service') {
+            sortObj['serviceType.name'] = order;
+        }
+
+        if (sortParam === 'Payment') {
+            //TODO: sortObj['payment'] = order;
+        }
+
+        if (sortParam === 'Status') {
+            sortObj.status = order;
+        }
+
+        async.parallel({
+
+            appointmentCount: function(cb){
+                Appointment
+                    .count(criteria, function(err, count){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, count);
+                    });
+            },
+
+            appointment: function(cb){
+                Appointment
+                    .find(criteria, projection)
+                    .populate([{path: 'serviceType', select: 'name'}, {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}])
+                    .sort(sortObj)
+                    .skip(limit * (page -1))
+                    .limit(limit)
+                    .exec(function(err, appointmentModelsArray){
+                        var bookedAppointmentsArray;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        bookedAppointmentsArray = appointmentModelsArray.map(function(model){
+                            var modelJSON = model.toJSON();
+
+                            if (modelJSON.serviceType){
+                                modelJSON.serviceType = modelJSON.serviceType.name;
+                            } else {
+                                modelJSON.serviceType = 'Service was removed';
+                            }
+
+                            if (modelJSON.stylist){
+                                modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
+                            } else {
+                                modelJSON.stylist = 'Stylist was removed'
+                            }
+
+                            return modelJSON;
+                        });
+
+                        cb(null, bookedAppointmentsArray);
+                    });
+            }
+
+        }, function(err, result){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({total: result.appointmentCount, data: result.appointment});
+        });
+
+
+    };
+
+    this.getClientSubscriptions = function(req, res, next){
+        var clientId = req.params.clientId;
+        var query = req.query;
+        var sortParam = query.sort;
+        var page = (query.page >=1) ? query.page : 1;
+        var order = (query.order === '1') ? 1 : -1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_PURCHASED_PACKAGES;
+        var sortObj = {};
+        var projection = {
+            _id: 0,
+            purchaseDate: 1,
+            subscriptionType: 1
+        };
+        var criteria = {
+            client: clientId
+        };
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
+            return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
+        }
+
+        if (sortParam && sortParam !== 'Date' && sortParam !== 'Package') {
+            return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+        }
+
+        if (sortParam === 'Date' || !sortParam) {
+            sortObj.purchaseDate = order;
+        }
+
+        if (sortParam === 'Package') {
+            sortObj['subscriptionType.name'] = order;
+        }
+
+        async.parallel({
+
+            subscriptionCount: function(cb){
+                Subscription.count(criteria, function(err, count){
+                    if (err){
+                        return cb(err);
+                    }
+
+                    cb(null, count);
+                });
+            },
+
+            subscriptions: function(cb){
+                Subscription
+                    .find(criteria, projection)
+                    .populate({path: 'subscriptionType', select: 'name'})
+                    .sort(sortObj)
+                    .skip(limit * (page - 1))
+                    .limit(limit)
+                    .exec(function(err, subscriptionModelsArray){
+                        var subscriptionArray;
+
+                        if (err){
+                            return cb(err)
+                        }
+
+                        subscriptionArray = subscriptionModelsArray.map(function(model){
+                            var modelJSON = model.toJSON();
+
+                            if (modelJSON.subscriptionType){
+                                modelJSON.package = modelJSON.subscriptionType.name;
+                            } else {
+                                modelJSON.package = 'Package was removed';
+                            }
+
+                            delete modelJSON.subscriptionType;
+
+                            return modelJSON;
+                        });
+
+                        cb(null, subscriptionArray);
+                    });
+            }
+
+        }, function(err, result){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({total: result.subscriptionCount, data: result.subscriptions});
         });
     };
 
