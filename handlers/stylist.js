@@ -337,7 +337,10 @@ var StylistHandler = function (app, db) {
                             return next(err);
                         }
 
-                        res.status(200).send({success: 'Your online status changed successfully'});
+                        res.status(200).send({
+                            success: 'Your online status changed successfully',
+                            online: online
+                        });
                     });
             });
     };

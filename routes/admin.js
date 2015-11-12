@@ -21,8 +21,6 @@ module.exports = function(db){
     router.put('/services/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateService);
     router.delete('/services/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeService);
 
-    //router.get('/stylist/count', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistCount);
-
     // CRUD Stylists
     router.get('/stylist/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistList);
     router.get('/stylist/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistById);
@@ -30,7 +28,6 @@ module.exports = function(db){
     router.put('/stylist/:userId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, user.updateUserProfile);
 
     router.delete('/stylist/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeStylist);
-    //router.get('/client/count/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientCount);
 
     router.post('/stylist/approve/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveStylist);
 
@@ -46,6 +43,9 @@ module.exports = function(db){
 
     router.delete('/user/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeUserById);
 
+    router.get('/subscriptions/:clientId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientSubscriptions);
+
+    router.get('/appointments/:clientId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getBookedAppointment);
     router.post('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendAppointments);
     router.delete('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeAppointments);
@@ -56,8 +56,8 @@ module.exports = function(db){
     router.put('/subscriptionType/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateSubscriptionType);
     router.delete('/subscriptionType/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeSubscriptionType);
 
-    router.get('/subscriptions/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientPackages);
-    router.delete('/subscriptions/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeSubscriptions);
+    router.get('/packages/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientPackages);
+    router.delete('/packages/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removePackages);
 
     return router;
 };

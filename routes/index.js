@@ -35,21 +35,22 @@ module.exports = function (app, db) {
         next();
     });
 
+
+    // signUp signIn
     app.post('/signUp', user.signUp);
     app.post('/signIn', user.signIn);
     app.get('/signOut', user.signOut);
 
-    app.put('/profile/:userId?', sessionHandler.authenticatedUser, user.updateUserProfile);
-    
+
     app.get('/confirm/:token', user.confirmRegistration);
     app.post('/forgot', user.forgotPassword);
     app.get('/passwordChange', user.confirmForgotPass);
     app.post('/passwordChange', user.changePassword);
-    app.get('/profile/:id?', sessionHandler.authenticatedUser, user.getProfile);
 
+    app.get('/profile/:userId?', sessionHandler.authenticatedUser, user.getProfile);
+    app.put('/profile/:userId?', sessionHandler.authenticatedUser, user.updateUserProfile);
     app.post('/avatar', sessionHandler.authenticatedUser, user.uploadAvatar);
     app.delete('/avatar/:id?', sessionHandler.authenticatedUser, user.removeAvatar);
-
     app.put('/coordinates', sessionHandler.authenticatedUser, user.updateLocation);
 
     app.get('/service/:stylistId?', sessionHandler.authenticatedUser, sessionHandler.stylistOrAdmin, user.getStylistServices);
@@ -61,8 +62,8 @@ module.exports = function (app, db) {
     app.post('/appointment/cancel', sessionHandler.authenticatedUser, sessionHandler.clientOrStylist, user.cancelByUser);
 
     app.get('/subscriptionTypes/:id?', sessionHandler.authenticatedUser, sessionHandler.clientOrAdmin, subscriptionHandler.getSubscriptionTypes);
-    app.post('/subscriptionTypes', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.createSubscriptionType);
-    app.put('/subscriptionTypes/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.updateSubscriptionType);
+    //app.post('/subscriptionTypes', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.createSubscriptionType);
+    //app.put('/subscriptionTypes/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.updateSubscriptionType);
 
 
     function notFound(req, res, next) {

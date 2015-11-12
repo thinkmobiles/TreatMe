@@ -93,7 +93,8 @@ body{
 }
 .searchBlock{
   padding-left: 33px;
-  margin-top: 30px;
+  height: 44px;
+  margin: 30px 0 40px 0;
   input.search{
     width: 100%;
     height: 44px;
@@ -204,10 +205,11 @@ body{
 /* Buttons*/
 .buttons{
   padding-left: 30px;
-  margin: 40px 0 7px 0;
+  margin-bottom: 7px;
 }
 #acceptSelectedBtn,
-#removeSelectedBtn{
+#removeSelectedBtn,
+#suspendSelectedBtn{
   border-radius: 2px;
   width: 90px;
   height: 44px;
@@ -225,17 +227,26 @@ body{
 #acceptCurrentBtn{
   .i("check.png", transparent);
 }
-#removeCurrentBtn{
+#removeCurrentBtn, #deleteCurrentBtn{
   .i("trash.png", transparent);
 }
+#suspendSelectedBtn{
+  .i("ban.png", #E0E0E0);
+  background-position: center;
+}
+#suspendCurrentBtn{
+  .i("ban.png", transparent);
+}
 #removeCurrentBtn,
-#acceptCurrentBtn{
+#acceptCurrentBtn,
+#deleteCurrentBtn,
+#suspendCurrentBtn{
   width: 50px;
   height: 25px;
   text-indent: -99999px;
   background-position: center;
 }
-a.addApp {
+a.addApp, button#addBtn {
   border-radius: 2px;
   .i('plus.png', @mainColor);
   background-position: 15px center;

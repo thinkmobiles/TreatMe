@@ -481,7 +481,8 @@ body {
 }
 .searchBlock {
   padding-left: 33px;
-  margin-top: 30px;
+  height: 44px;
+  margin: 30px 0 40px 0;
 }
 .searchBlock input.search {
   width: 100%;
@@ -588,10 +589,11 @@ body {
 /* Buttons*/
 .buttons {
   padding-left: 30px;
-  margin: 40px 0 7px 0;
+  margin-bottom: 7px;
 }
 #acceptSelectedBtn,
-#removeSelectedBtn {
+#removeSelectedBtn,
+#suspendSelectedBtn {
   border-radius: 2px;
   width: 90px;
   height: 44px;
@@ -651,17 +653,28 @@ body {
 #acceptCurrentBtn {
   background: transparent url("../images/check.png") no-repeat;
 }
-#removeCurrentBtn {
+#removeCurrentBtn,
+#deleteCurrentBtn {
   background: transparent url("../images/trash.png") no-repeat;
 }
+#suspendSelectedBtn {
+  background: #e0e0e0 url("../images/ban.png") no-repeat;
+  background-position: center;
+}
+#suspendCurrentBtn {
+  background: transparent url("../images/ban.png") no-repeat;
+}
 #removeCurrentBtn,
-#acceptCurrentBtn {
+#acceptCurrentBtn,
+#deleteCurrentBtn,
+#suspendCurrentBtn {
   width: 50px;
   height: 25px;
   text-indent: -99999px;
   background-position: center;
 }
-a.addApp {
+a.addApp,
+button#addBtn {
   border-radius: 2px;
   background: #2175cc url("../images/plus.png") no-repeat;
   background-position: 15px center;
@@ -723,11 +736,11 @@ input[type=checkbox]:checked:after {
   top: -1px;
   transform: rotate(180deg);
 }
-#pageList {
+.pagination {
   margin: 50px auto;
   text-align: center;
 }
-#pageList li {
+.pagination li {
   display: inline-block;
   text-transform: uppercase;
   font-weight: bold;
@@ -736,20 +749,12 @@ input[type=checkbox]:checked:after {
   height: 30px;
   line-height: 30px;
 }
-#pageList li.active {
+.pagination li.active {
   background-color: #2175cc;
   border-radius: 50px;
   color: #fff;
 }
-#pageList li:hover {
-  color: #2175cc;
-  cursor: pointer;
-}
-#pageList li.active:hover {
-  color: inherit;
-}
-
-#pageList li.arrow {
+.pagination li.arrow {
   margin: 0 10px;
 }
 .edit {
