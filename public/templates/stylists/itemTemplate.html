@@ -2,14 +2,14 @@
     <div class="userNameContainer">
         <span>
         <%if (user._id) { %>
-            <%= user.firstName + ' ' + user.lastName%>
+            <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%>
         <% } else { %>
             Add stylist profile
         <% } %>
         </span>
     </div>
 
-    <br class="accountInfo">
+    <div class="accountInfo">
         <div class="avatar"></div>
         <input type="text" class="email" name="email" placeholder="Email"/><span class="prompt"></span><br/>
         <input type="text" class="firstName" name="firstName" placeholder="First Name"/><span class="prompt"></span><br/>
