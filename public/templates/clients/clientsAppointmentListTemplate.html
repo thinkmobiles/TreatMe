@@ -1,7 +1,9 @@
 <% _.forEach(items, function (item, index) {%>
 <tr class="item" data-id="<%= item._id%>">
-    <td><button id="suspendCurrentBtn">Suspend</button></td>
-    <td><button id="deleteCurrentBtn">Delete</button></td>
-
+    <td><%= item.bookingDate %></td>
+    <td><%= item.stylist %></td>
+    <td><%= item.serviceType %></td>
+    <td>Payment</td>
+    <td><%= item.status %></td>
 </tr>
 <%});%>

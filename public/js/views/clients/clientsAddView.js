@@ -2,7 +2,7 @@
 
 define([
     'models/clientModel',
-    'text!templates/client/clientAddTemplate.html'
+    'text!templates/clients/newClientsTemplate.html'
 ], function (ClientModel, ClientAddTemplate) {
 
     var View = Backbone.View.extend({
@@ -15,17 +15,12 @@ define([
         },
 
         initialize: function (options) {
-            var self = this;
+            App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {name: 'Add client', path: '#client/add'}]);
+            this.render();
         },
 
-        render: function () {
-            var self = this;
-            var $el = self.$el;
-            var user = self.model.toJSON();
-
-            console.log(user);
-            $('.searchBlock').html('');
-            $el.html(self.mainTemplate({user: user}));
+        render: function(){
+            this.$el.html(this.ClientAddTemplate());
 
             return this;
         }

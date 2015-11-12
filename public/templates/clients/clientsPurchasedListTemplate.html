@@ -1,5 +1,7 @@
 <% _.forEach(items, function (item, index) {%>
 <tr class="item" data-id="<%= item._id%>">
     <td><input type="checkbox" class="checkItem"></td>
+    <td><%= item.purchaseDate %></td>
+    <td><%= item.package %></td>
 </tr>
 <%});%>
