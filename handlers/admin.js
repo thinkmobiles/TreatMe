@@ -626,19 +626,16 @@ var AdminHandler = function (db) {
 
         User
             .update({_id: {$in: ids}},
-            {
-                $set: {
-                    suspend: {
-                        isSuspend: true,
-                        $push: {
-                            history: {
-                                from: Date.now(),
-                                reason: 'Suspended by admin'
-                            }
+                {
+                    $set: {'suspend.isSuspend': true},
+                    $push: {
+                        'suspend.history': {
+                            from: Date.now(),
+                            reason: 'Suspended by admin'
                         }
                     }
-                }
-            }, {multi: true})
+
+                }, {multi: true})
             .exec(function (err) {
 
                 if (err) {
@@ -690,7 +687,7 @@ var AdminHandler = function (db) {
         ids = body.ids.toObjectId();
 
         User
-            .update({_id: {$in: ids}}, {$set: {suspend: {isSuspend: false}}}, {multi: true})
+            .update({_id: {$in: ids}}, {$set: {'suspend.isSuspend': false}}, {multi: true})
             .exec(function(err){
 
                 if (err) {
