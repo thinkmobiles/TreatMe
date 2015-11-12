@@ -1,12 +1,9 @@
 <div class="stylistForm" xmlns="http://www.w3.org/1999/html">
     <div class="userNameContainer">
-        <span>
-        <%if (user._id) { %>
-            <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%>
-        <% } else { %>
-            Add stylist profile
-        <% } %>
-        </span>
+        <span> <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%> </span>
+        <button class="edit">Edit</button>
+        <button class="suspend">Suspend</button>
+        <button class="delete">Delete</button>
     </div>
 
     <div class="accountInfo">
@@ -46,9 +43,23 @@
 
             </tbody>
         </table>
+        <div class="suspendStatus">
+            <p>
+                <%if (user.suspend.isSuspend) { %>
+                SUSPENDED FROM <%= new Date(user.suspend.history[0].from).getDate() + '/' + new Date(user.suspend.history[0].from).getMonth()  + '/' + String.prototype.slice.call(new Date(user.suspend.history[0].from).getFullYear(),2,4) %>
+                <% } %>
+            </p>
+        </div>
 
-
-
+        <div class="stylistsClients"></div>
+        <div class="suspendHistory">
+            <% _.forEach(user.suspend.history, function (suspend) {%>
+            <span>
+            <%= new Date(suspend.from).getDate() + '/' + new Date(suspend.from).getMonth() + '/' + String.prototype.slice.call(new Date(suspend.from).getFullYear(),2,4) %> - Suspension
+            </span>
+            <span><%= suspend.reason %></span>
+            <% }) %>
+        </div>
 
     </div>
 
