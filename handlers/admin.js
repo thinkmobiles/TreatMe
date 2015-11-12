@@ -1764,9 +1764,7 @@ var AdminHandler = function (db) {
         var sortObj = {};
         var projection = {
             bookingDate: 1,
-            client: 1,
-            serviceType: 1,
-            status: 1
+            client: 1
         };
         var criteria = {
             stylist: stylistId,
@@ -1806,7 +1804,7 @@ var AdminHandler = function (db) {
             appointment: function(cb){
                 Appointment
                     .find(criteria, projection)
-                    .populate([{path: 'serviceType', select: 'name'}, {path: 'client', select: 'personalInfo.firstName personalInfo.lastName'}])
+                    .populate({path: 'client', select: 'personalInfo.firstName personalInfo.lastName'})
                     .sort(sortObj)
                     .skip(limit * (page -1))
                     .limit(limit)
@@ -1819,12 +1817,6 @@ var AdminHandler = function (db) {
 
                         stylistClientsArray = appointmentModelsArray.map(function(model){
                             var modelJSON = model.toJSON();
-
-                            if (modelJSON.serviceType){
-                                modelJSON.serviceType = modelJSON.serviceType.name;
-                            } else {
-                                modelJSON.serviceType = 'Service was removed';
-                            }
 
                             if (modelJSON.client){
                                 modelJSON.client = modelJSON.client.personalInfo.firstName + ' ' + modelJSON.client.personalInfo.lastName;
