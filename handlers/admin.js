@@ -687,7 +687,7 @@ var AdminHandler = function (db) {
         ids = body.ids.toObjectId();
 
         User
-            .update({_id: {$in: ids}}, {$set: {suspend: {isSuspend: false}}}, {multi: true})
+            .update({_id: {$in: ids}}, {$set: {'suspend.isSuspend': false}}, {multi: true})
             .exec(function(err){
 
                 if (err) {
