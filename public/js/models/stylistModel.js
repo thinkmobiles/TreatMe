@@ -6,12 +6,12 @@ define(['Validator'], function (validator) {
         urlRoot : '/admin/stylist',
         idAttribute: "_id",
 
-        validate: function (attrs) {
-            //var errors = this.checkRequiredFields(attrs);
-            var errors = this.checkFieldsTypes(attrs);
+       /* validate: function (attrs) {
+            var errors = this.checkRequiredFields(attrs);
+            //var errors = this.checkFieldsTypes(attrs);
 
             return errors.length > 0 ? errors : false;
-        },
+        },*/
 
         checkRequiredFields: function (attrs) {
             var errors = [];
