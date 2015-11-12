@@ -10,7 +10,7 @@ define([
         baseUrl: '/admin/client',
         url: function () {
             return this.baseUrl;
-        },
+        }/*,
         initialize: function (options) {
             if (options && options.id) {
                 this.baseUrl += '/' + options.id;
@@ -18,7 +18,7 @@ define([
         },
         parse: function (res) {
             return res.appointment;
-        }
+        }*/
     });
 
     return Collection;

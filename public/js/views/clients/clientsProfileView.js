@@ -37,9 +37,9 @@ define([
             }
             this.render();
 
-            this.clientsAppointment = new ClientsAppointment({item: model});
+            this.clientsAppointment = new ClientsAppointment({_id: options.id});
 
-            this.clientsPurchased = new ClientsPurchased({item: model});
+            this.clientsPurchased = new ClientsPurchased({_id: options.id});
 
         },
 

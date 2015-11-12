@@ -3,7 +3,7 @@
 define([
     'views/customElements/ListView',
     'models/clientModel',
-    'collections/clientsCollection',
+    'collections/clientsAppointmentCollection',
     'text!/templates/clients/clientsAppointmentTemplate.html',
     'text!/templates/clients/clientsAppointmentListTemplate.html'
 ], function (ListView, Model, Collection, ClientAppointment, ClientListAppointment) {
