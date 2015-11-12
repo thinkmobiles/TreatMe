@@ -26,7 +26,11 @@ require.config({
     }
 });
 
-require(['app', 'socketio'], function(app, io){
+require(['app', 'socketio', 'Validator'], function(app, io, validator){
+
+    validator.extend('isPhoneNumber', function (str) {
+        return /^\+?[1-9]\d{4,14}$/.test(str);
+    });
 
     Backbone.View.prototype.handleError = function (err) {
         if (err.message) {
