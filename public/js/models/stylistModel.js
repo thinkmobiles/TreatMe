@@ -1,12 +1,14 @@
 'use strict';
 
-define([], function () {
+define(['Validator'], function (validator) {
     var Model = Backbone.Model.extend({
+        validator: validator,
         urlRoot : '/admin/stylist',
         idAttribute: "_id",
 
         validate: function (attrs) {
-            var errors = this.checkRequiredFields(attrs);
+            //var errors = this.checkRequiredFields(attrs);
+            var errors = this.checkFieldsTypes(attrs);
 
             return errors.length > 0 ? errors : false;
         },
@@ -70,6 +72,17 @@ define([], function () {
                 }
             }
             return errors;
+        },
+
+        checkFieldsTypes: function (attrs) {
+            var validator = this.validator;
+            var errors = [];
+
+            if (!validator.isEmail(attrs.email)) {
+                errors.push({name: 'email', message: 'Incorrect Email.'});
+            }
+
+            console.log(5);
         },
 
         updateCurrent: function (options, callbackObj) {
