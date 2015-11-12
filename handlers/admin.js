@@ -1666,7 +1666,7 @@ var AdminHandler = function (db) {
         };
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
-            return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
+            return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
         }
 
         if (sortParam && sortParam !== 'Booking' && sortParam !== 'Stylist' && sortParam !== 'Service' && sortParam !== 'Payment' && sortParam !== 'Status') {
@@ -1740,6 +1740,102 @@ var AdminHandler = function (db) {
                         });
 
                         cb(null, bookedAppointmentsArray);
+                    });
+            }
+
+        }, function(err, result){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({total: result.appointmentCount, data: result.appointment});
+        });
+
+
+    };
+
+    this.getStylistClients = function(req, res, next){
+        var stylistId = req.params.stylistId;
+        var query = req.query;
+        var sortParam = query.sort;
+        var page = (query.page >=1) ? query.page : 1;
+        var order = (query.order === '1') ? 1 : -1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_CLIENTS;
+        var sortObj = {};
+        var projection = {
+            bookingDate: 1,
+            client: 1,
+            serviceType: 1,
+            status: 1
+        };
+        var criteria = {
+            stylist: stylistId,
+            status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
+        };
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)){
+            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
+        }
+
+        if (sortParam && sortParam !== 'Client' && sortParam !== 'Date') {
+            return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+        }
+
+        if (sortParam === 'Client' || !sortParam) {
+            sortObj['client.personalInfo.firstName'] = order;
+            sortObj['client.personalInfo.lastName'] = order;
+        }
+
+        if (sortParam === 'Date') {
+            sortObj.bookingDate = order;
+        }
+
+        async.parallel({
+
+            appointmentCount: function(cb){
+                Appointment
+                    .count(criteria, function(err, count){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, count);
+                    });
+            },
+
+            appointment: function(cb){
+                Appointment
+                    .find(criteria, projection)
+                    .populate([{path: 'serviceType', select: 'name'}, {path: 'client', select: 'personalInfo.firstName personalInfo.lastName'}])
+                    .sort(sortObj)
+                    .skip(limit * (page -1))
+                    .limit(limit)
+                    .exec(function(err, appointmentModelsArray){
+                        var stylistClientsArray;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        stylistClientsArray = appointmentModelsArray.map(function(model){
+                            var modelJSON = model.toJSON();
+
+                            if (modelJSON.serviceType){
+                                modelJSON.serviceType = modelJSON.serviceType.name;
+                            } else {
+                                modelJSON.serviceType = 'Service was removed';
+                            }
+
+                            if (modelJSON.client){
+                                modelJSON.client = modelJSON.client.personalInfo.firstName + ' ' + modelJSON.client.personalInfo.lastName;
+                            } else {
+                                modelJSON.client = 'Client was removed'
+                            }
+
+                            return modelJSON;
+                        });
+
+                        cb(null, stylistClientsArray);
                     });
             }
 
