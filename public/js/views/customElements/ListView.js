@@ -69,8 +69,6 @@ define([
             this.pageParams = params;
             this.render();
             this.collection = new Collection(fetchParams);
-            this.collection.on('reset', function () {
-            this.collection = new Collection(collectionParams);
             this.collection.on('reset remove', function () {
                 self.renderList();
             });
