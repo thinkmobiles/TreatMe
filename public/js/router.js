@@ -113,6 +113,14 @@ define([
                 status: 'Booked'
             };
 
+            if (type === 'pendingRequests') {
+                options.status = 'Pending';
+            }
+
+            if (type === 'bookings') {
+                options.status = 'Booked';
+            }
+
             this.loadWrapperView(type, options, REDIRECT.whenNOTAuthorized);
         },
         
