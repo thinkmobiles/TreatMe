@@ -45,7 +45,8 @@ module.exports = function(db){
 
     router.get('/subscriptions/:clientId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientSubscriptions);
 
-    //router.get('/stylistPayments/', admin.getStylistPayments);
+    router.get('/stylistPayments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistPayments);
+
     router.get('/clients/:stylistId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistClients);
     router.get('/appointments/:clientId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getBookedAppointment);
     router.post('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.bookAppointment);
