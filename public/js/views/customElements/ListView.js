@@ -43,7 +43,8 @@ define([
             'click .sortable'         : 'sort',
             'click .searchBtn'        : 'search',
             'keydown .search'         : 'searchKeyDown',
-            'click .checkAll'         : 'checkAll',
+            'click .checkAll'         : 'checkAllClick',
+            'click .checkItem'        : 'checkItemClick',
             'click #removeSelectedBtn': 'removeSelectedItems',
             'click .deleteCurrentBtn' : 'deleteCurrentItem'
         },
@@ -374,13 +375,21 @@ define([
             }
         },
 
-        checkAll: function (e) {
+        checkAllClick: function (e) {
             var state = $(e.target).prop('checked');
             var checkboxes = this.$el.find('tbody .checkItem');
 
             e.stopPropagation();
 
             checkboxes.prop('checked', state);
+        },
+
+        checkItemClick: function (e) {
+            var state = $(e.target).prop('checked');
+
+            if (!state) {
+                this.$el.find('.checkAll').prop('checked', false);
+            }
         },
 
         getSelectedIds: function () {
