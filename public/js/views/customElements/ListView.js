@@ -363,6 +363,15 @@ define([
             e.stopPropagation();
 
             checkboxes.prop('checked', state);
+        },
+
+        getSelectedIds: function () {
+            var checkboxes = this.$el.find('.checkItem:checked');
+            var ids = _.map(checkboxes, function (checkbox) {
+                return $(checkbox).closest('tr').data('id');
+            });
+
+            return ids;
         }
 
     });

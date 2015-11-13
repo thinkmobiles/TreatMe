@@ -1,1 +1,26 @@
-Client Packages ...
+<div class="list">
+    <div class="searchBlock">
+        <input class="search" type="text" value="<%= (filter) ? filter : ''%>">
+        <button class="searchBtn" type="button">SEARCH</button>
+    </div>
+
+    <div class="buttons">
+        <button id="removeSelectedBtn">Delete</button>
+        <button id="export">Export</button>
+    </div>
+    <table class="table">
+        <thead>
+        <tr>
+            <th><input type="checkbox" class="checkAll"></th>
+            <th class="sortable" data-orderby="">Date</th>
+            <th class="sortable" data-orderby="">Client Name</th>
+            <th class="sortable" data-orderby="">Package</th>
+            <th>Delete</th>
+        </tr>
+        </thead>
+        <tbody class="items">
+        <!-- put items here -->
+        </tbody>
+    </table>
+    <div class="pagination"></div>
+</div>

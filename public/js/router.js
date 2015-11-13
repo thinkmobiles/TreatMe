@@ -28,7 +28,8 @@ define([
             //"bookings"                  :  "bookings",
             "bookings(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "bookings",
             "stylistPayments"           :  "stylistPayments",
-            "clientPackages"            :  "clientPackages",
+            //"clientPackages"            :  "clientPackages",
+            "clientPackages(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clientPackages",
             "gallery"                   :  "gallery",
             "*any"                      :  "any"
         },
@@ -167,9 +168,19 @@ define([
             this.loadWrapperView('stylistPayments', null, REDIRECT.whenNOTAuthorized);
         },
 
-        clientPackages: function () {
-            this.loadWrapperView('clientPackages', null, REDIRECT.whenNOTAuthorized);
+        clientPackages: function (page, countPerPage, orderBy, order, filter) {
+            var options = {
+                page: parseInt(page),
+                countPerPage: parseInt(countPerPage),
+                orderBy: orderBy,
+                order: order,
+                filter: filter
+            };
+
+            this.loadWrapperView('clientPackages', options, REDIRECT.whenNOTAuthorized);
         },
+
+
 
         gallery: function () {
             this.loadWrapperView('gallery', null, REDIRECT.whenNOTAuthorized);
