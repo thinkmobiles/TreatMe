@@ -58,6 +58,7 @@ define([
                 });
 
             }
+
         },
 
         render: function (user) {
@@ -69,25 +70,9 @@ define([
                 ? $el.html(self.previewStylistTemplate({user: user}))
                 : $el.html(self.mainTemplate({user: {}}));
 
-                self.renderClientsList();
-                self.afterRender(user);
+            this.stylistsClientsView = new StylistsClientsView({id: user._id});
+            self.afterRender(user);
             return this;
-        },
-
-        renderClientsList : function () {
-            $.ajax({
-                type: 'GET',
-                dataType: 'json',
-                contentType: 'application/json',
-                url: '/admin/clients/' + this.model.id,
-                success: function (data) {
-                    new StylistsClientsView(data);
-                },
-                error: function (err) {
-                    alert(err);
-                }
-            })
-
         },
 
         afterRender: function (user) {

@@ -55,6 +55,7 @@
 
         </div>
         <div class="suspendHistory">
+            <span>HISTORY</span>
             <% _.forEach(user.suspend.history, function (suspend) {%>
             <span>
             <%= new Date(suspend.from).getDate() + '/' + new Date(suspend.from).getMonth() + '/' + String.prototype.slice.call(new Date(suspend.from).getFullYear(),2,4) %> - Suspension
