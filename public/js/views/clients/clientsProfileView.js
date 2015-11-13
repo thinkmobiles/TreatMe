@@ -13,24 +13,28 @@ define([
         template: _.template(ClientProfile),
 
         events: {
+            'click #editSelectedBtn': 'editProfile'
         },
 
         initialize: function (options) {
             var self = this;
             var model;
-            console.log(options);
 
-            App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {name: 'Client profile', path: '#profile'}]);
             if (options && options.id) {
 
                 model = new Model({_id: options.id});
                 model.fetch({
                     success: function (userModel) {
                         self.model = userModel;
+                        App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {
+                            name: userModel.toJSON().name,
+                            path: '#clients/:id'
+                        }]);
                         self.renderClient();
                     },
                     error: self.handleModelError
                 });
+
             } else {
                 model = new Model();
                 this.model = model;
@@ -42,6 +46,11 @@ define([
 
             this.clientsPurchased = new ClientsPurchased({id: options.id});
 
+        },
+
+        editProfile: function () {
+            var id = this.model.id;
+            Backbone.history.navigate('clients/' + id + '/edit', {trigger: true});
         },
 
         render: function () {
@@ -56,10 +65,10 @@ define([
 
             this.$el.find('.clientName').html(item.name);
 
-            if (item.currentPackages[0]) {
-                this.$el.find('#currentPackage .purchaseDate').html(item.currentPackages[0].purchaseDate);
-                this.$el.find('#currentPackage .package').html(item.currentPackages[0].package);
-                this.$el.find('#currentPackage .price').html(item.currentPackages[0].price);
+            if (item.currentSubscriptions[0]) {
+                this.$el.find('#currentPackage .purchaseDate').html(item.currentSubscriptions[0].purchaseDate);
+                this.$el.find('#currentPackage .package').html(item.currentSubscriptions[0].package);
+                this.$el.find('#currentPackage .price').html(item.currentSubscriptions[0].price);
             }
 
             container.find('.name').html(item.name);

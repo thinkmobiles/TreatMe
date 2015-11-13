@@ -4,7 +4,7 @@ define([
     'views/customElements/ListView',
     'collections/clientsCollection',
     'views/clients/clientsProfileView',
-    'views/clients/clientsAddView',
+    'views/clients/clientsAddAndEditView',
     'text!/templates/clients/clientsTemplate.html',
     'text!/templates/clients/clientsListTemplate.html'
 ], function (ListView, Collection, ClientProfile, NewClients, MainTemplate, ListTemplate) {

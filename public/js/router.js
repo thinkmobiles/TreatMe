@@ -11,6 +11,7 @@ define([
         topBarView  : null,
 
         routes: {
+            "clients/:id/edit"          :  "clientsEdit",
             "clients/add"               :  "clientsAddDetails",
             "clients/:id"               :  "clientsDetails",
             "login(/:type/*value)"      :  "login",
@@ -66,8 +67,12 @@ define([
             Backbone.history.navigate("dashboard", {trigger: true});
         },
 
+        clientsEdit: function (id) {
+            this.loadWrapperView('clients', {id: id}, REDIRECT.whenNOTAuthorized, 'AddAndEdit');
+        },
+
         clientsAddDetails: function () {
-            this.loadWrapperView('clients', null, REDIRECT.whenNOTAuthorized, 'Add');
+            this.loadWrapperView('clients', {}, REDIRECT.whenNOTAuthorized, 'AddAndEdit');
         },
 
         clientsDetails: function (id) {
