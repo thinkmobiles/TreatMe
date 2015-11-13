@@ -27,22 +27,24 @@ define([
             page  : 1,
             count : 5,
             order : '1',
-            filter: '',
+            search: '',
             status: '' //TODO: ???
         },
-
-        removeParams: {
+        removeParams      : {
             url           : null,
             confirmMessage: 'Are You sure want to delete?'
         },
 
         events: {
+            'click .item'             : 'showItem',
             'click .showPage'         : 'gotoPage',
             'click .showFirst'        : 'firstPage',
             'click .showLast'         : 'lastPage',
             'click .sortable'         : 'sort',
-            'click .searchBtn'        : 'filter',
-            'click .checkAll'         : 'checkAll',
+            'click .searchBtn'        : 'search',
+            'keydown .search'         : 'searchKeyDown',
+            'click .checkAll'         : 'checkAllClick',
+            'click .checkItem'        : 'checkItemClick',
             'click #removeSelectedBtn': 'removeSelectedItems',
             'click .deleteCurrentBtn' : 'deleteCurrentItem'
         },
@@ -59,7 +61,7 @@ define([
             params = {
                 page  : opts.page || defaults.page,
                 count : opts.countPerPage || defaults.count,
-                filter: opts.filter || defaults.filter,
+                search: opts.search || defaults.search,
                 status: opts.status || defaults.status
             };
 
@@ -80,6 +82,10 @@ define([
             this.collection.on('reset remove', function () {
                 self.renderList();
             });
+
+            if (opts.search) {
+                this.$el.find('.search').val(opts.search);
+            }
         },
 
         render: function () {
@@ -100,7 +106,6 @@ define([
             var orderBy = params.orderBy;
             var order = params.order;
             var orderClassName;
-            var currentClassName;
 
             this.$el.find('.items').html(this.listTemplate({items: items}));
             this.$el.find('.pagination').html(this.paginationTemplate());
@@ -129,7 +134,7 @@ define([
             var count = params.count;
             var orderBy = params.orderBy;
             var order = params.order || this.defaults.order;
-            var filter = params.filter;
+            var search = params.search;
 
             url += '/p=' + page;
             url += '/c=' + count;
@@ -138,8 +143,8 @@ define([
                 url += '/orderBy=' + orderBy + '/order=' + order;
             }
 
-            if (filter) {
-                url += '/filter=' + encodeURIComponent(JSON.stringify(filter));
+            if (search) {
+                url += '/search=' + search;
             }
 
             Backbone.history.navigate(url);
@@ -350,27 +355,41 @@ define([
             this.changeLocationHash();
         },
 
-        filter: function (e) {
+        search: function (e) {
             var searchValue = this.$el.find('.search').val() || '';
             var params = this.pageParams;
             var collectionParams;
             var page = 1;
 
             params.page = page;
-            params.filter = searchValue;
+            params.search = searchValue;
             collectionParams = _.extend({reset: true}, params);
 
             this.collection.getPage(page, collectionParams);
             this.changeLocationHash();
         },
 
-        checkAll: function (e) {
+        searchKeyDown: function (e) {
+            if (e.keyCode == 13) {
+                this.search();
+            }
+        },
+
+        checkAllClick: function (e) {
             var state = $(e.target).prop('checked');
             var checkboxes = this.$el.find('tbody .checkItem');
 
             e.stopPropagation();
 
             checkboxes.prop('checked', state);
+        },
+
+        checkItemClick: function (e) {
+            var state = $(e.target).prop('checked');
+
+            if (!state) {
+                this.$el.find('.checkAll').prop('checked', false);
+            }
         },
 
         getSelectedIds: function () {
@@ -459,6 +478,14 @@ define([
                 },
                 error      : self.handleErrorResponse //TODO
             });
+        },
+
+        showItem: function (e) {
+            var target = $(e.target);
+            var itemId = target.closest('tr').data('id');
+            var url = this.url + '/' + itemId;
+
+            Backbone.history.navigate(url, {trigger: true});
         }
 
     });

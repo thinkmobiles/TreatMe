@@ -34,7 +34,6 @@ define([
                     name: 'Add Application',
                     path: '#stylists/add'
                 }]);
-
                 self.model.on('invalid', self.handleModelValidationError);
 
                 return self.render();
@@ -55,6 +54,7 @@ define([
                         return self.render(JSONmodel);
                     },
                     error: self.handleModelError
+
                 });
 
             }
@@ -65,6 +65,7 @@ define([
             var self = this;
             var $el = self.$el;
             //user = user || {}; //new user
+            console.log(user);
 
             user
                 ? $el.html(self.previewStylistTemplate({user: user}))

@@ -1,0 +1,44 @@
+<div class="stylistForm" xmlns="http://www.w3.org/1999/html">
+    <div class="userNameContainer">
+        <span>
+            <% if (item._id) { %>
+                <%= item.name%>
+            <% } else { %>
+                Add stylist profile
+            <% } %>
+        </span>
+    </div>
+    <div class="infoAccount">
+        <br class="accountInfo">
+        <div class="avatar"></div>
+        <input type="text" class="firstName" name="firstName" placeholder="First Name"/><span class="prompt"></span><br/>
+        <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><span class="prompt"></span><br/>
+        <input type="text" class="phone" name="phone" placeholder="Phone Number"/><span class="prompt"></span><br/>
+        <input type="text" class="email" name="email" placeholder="Email"/><span class="prompt"></span><br/>
+        <input type="text" class="password" name="password" placeholder="Password"/><span class="prompt"></span><br/>
+    </div>
+    <div class="userNameContainer">
+        <span>
+            Add credit card
+        </span>
+    </div>
+
+    <div class="addPackage">
+        <span>Add package that client would like to book</span>
+
+        <p>Package*</p>
+
+
+        <input type="checkbox" id="<% %>" data-id="" >
+        <input type="checkbox" id="<% %>" data-id="" >
+        <input type="checkbox" id="<% %>" data-id="" >
+
+    </div>
+
+
+    <button class="saveBtn">Save</button>
+
+</div>
+
+</div>
+
