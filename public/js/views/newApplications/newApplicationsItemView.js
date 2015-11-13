@@ -14,7 +14,8 @@ define([
         events: {
             "click .saveBtn": "saveStylist",
             "click #editBtn": "edit",
-            "click #acceptBtn": "saveStylist"
+            "click #acceptBtn": "saveStylist",
+            "click #removeBtn": "removeStylist"
         },
 
         initialize: function (options) {
@@ -25,11 +26,13 @@ define([
             if (!userId) {
                 this.model = new StylistModel();
                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/add'}]);
+                self.model.on('invalid', self.handleModelValidationError);
                 this.render();
 
             } else {
                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/' + userId}]);
                 model = new StylistModel({_id: userId});
+                model.on('invalid', self.handleModelValidationError);
                 model.fetch({
                     success: function (model) {
                         self.model = model;
@@ -89,8 +92,6 @@ define([
                 service.id = $(element).data('id');
 
                 services.push(service);
-
-                console.log(5);
             });
             //validation ...
 
@@ -143,6 +144,18 @@ define([
                      self.handleError(errMessage);
                      }*/
                 });
+            });
+        },
+
+        removeStylist: function () {
+            var data = {
+                ids: [this.model.id]
+            };
+            data = JSON.stringify(data);
+
+            this.model.deleteRequest(data, function () {
+                console.log('success removed');
+                window.location.hash = 'newApplications';
             });
         },
 

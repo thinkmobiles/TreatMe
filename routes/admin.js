@@ -43,6 +43,12 @@ module.exports = function(db){
 
     router.delete('/user/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeUserById);
 
+    router.get('/subscriptions/:clientId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientSubscriptions);
+
+    router.get('/stylistPayments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistPayments);
+
+    router.get('/clients/:stylistId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistClients);
+    router.get('/appointments/:clientId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getBookedAppointment);
     router.post('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendAppointments);
     router.delete('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeAppointments);
@@ -53,8 +59,8 @@ module.exports = function(db){
     router.put('/subscriptionType/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateSubscriptionType);
     router.delete('/subscriptionType/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeSubscriptionType);
 
-    router.get('/subscriptions/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientPackages);
-    router.delete('/subscriptions/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeSubscriptions);
+    router.get('/packages/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientPackages);
+    router.delete('/packages/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removePackages);
 
     return router;
 };

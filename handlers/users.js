@@ -1630,7 +1630,7 @@ var UserHandler = function (app, db) {
         ServiceType.find({}, function(err, allServiceModels){
 
             if (err){
-                return next(err);
+                return callback(err);
             }
 
             Services
@@ -1645,7 +1645,7 @@ var UserHandler = function (app, db) {
                     allId = (_.pluck(allServiceModels, '_id')).toStringObjectIds();
 
                     for (var i = stylistServiceModel.length; i--;){
-                        if (!stylistServiceModel.serviceId){
+                        if (!stylistServiceModel[i].serviceId){
                             return callback(badRequests.DatabaseError());
                         }
 

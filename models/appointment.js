@@ -41,7 +41,9 @@ module.exports = function (db) {
             type: ObjectId,
             ref: 'User'
         },
-        bookingDate: Date
+        bookingDate: Date,
+        oneTimeService: {type: Boolean, default: true},
+        price: Number
 
     }, {
         collection: 'Appointments'

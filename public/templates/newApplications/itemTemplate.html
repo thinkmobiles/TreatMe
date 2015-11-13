@@ -19,59 +19,59 @@
     <%if (user._id) { %>
     <label for="firstName">First Name</label>
     <% } %>
-    <input type="text"  id="firstName" name="firstName" placeholder="First Name" value="<%= (user._id) ? user.personalInfo.firstName : ''%>" disabled="<%= inputStatus %>"/><br/>
+    <input type="text"  id="firstName" class="firstName" name="firstName" placeholder="First Name" value="<%= (user._id) ? user.personalInfo.firstName : ''%>" disabled="<%= inputStatus %>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="lastName">Last Name</label>
     <% } %>
-    <input type="text" id="lastName" disabled="<%= inputStatus %>" name="lastName" placeholder="Last Name"  value="<%= (user._id) ? user.personalInfo.lastName : ''%>"/><br/>
+    <input type="text" id="lastName" class="lastName" disabled="<%= inputStatus %>" name="lastName" placeholder="Last Name"  value="<%= (user._id) ? user.personalInfo.lastName : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="role">Profession</label>
     <% } %>
-    <input type="text"  id="role" disabled="<%= inputStatus %>" name="role" placeholder="Profession"  value="<%= (user._id) ? user.role : ''%>"/><br/>
+    <input type="text"  id="role" class="role" disabled="<%= inputStatus %>" name="role" placeholder="Profession"  value="<%= (user._id) ? user.role : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="salonName">Salon Name</label>
     <% } %>
-    <input type="text"  name="salonName" id="salonName" disabled="<%= inputStatus %>" placeholder="Salon Name" value="<%= (user._id) ? user.salonInfo.salonName : ''%>"/><br/>
+    <input type="text"  name="salonName" class="salonName" id="salonName" disabled="<%= inputStatus %>" placeholder="Salon Name" value="<%= (user._id) ? user.salonInfo.salonName : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="businessRole">Business Role</label>
     <% } %>
-    <input type="text"  name="businessRole" id="businessRole" placeholder="Business Role"  disabled="<%= inputStatus %>" value="<%= (user._id) ? user.salonInfo.businessRole : ''%>"/><br/>
+    <input type="text"  name="businessRole" class="businessRole" id="businessRole" placeholder="Business Role"  disabled="<%= inputStatus %>" value="<%= (user._id) ? user.salonInfo.businessRole : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="phone">Phone Number</label>
     <% } %>
-    <input type="text"  id="phone" name="phone" placeholder="Phone Number" disabled="<%= inputStatus %>" value="<%= (user._id) ? user.personalInfo.phone : ''%>"/><br/>
+    <input type="text"  id="phone" class="phone" name="phone" placeholder="Phone Number" disabled="<%= inputStatus %>" value="<%= (user._id) ? user.personalInfo.phone : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="email">Email</label>
     <% } %>
-    <input type="text" id="email" name="email" placeholder="Email" disabled="<%= inputStatus %>"  value="<%= (user._id) ? user.email : ''%>"/><br/>
+    <input type="text" id="email" class="email" name="email" placeholder="Email" disabled="<%= inputStatus %>"  value="<%= (user._id) ? user.email : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="salonAddress">Salon Address</label>
     <% } %>
-    <input type="text"  name="salonAddress" id="salonAddress" disabled="<%= inputStatus %>" placeholder="Salon Address" value="<%= (user._id) ? user.salonInfo.address : ''%>"/><br/>
+    <input type="text"  name="salonAddress" class="salonAddress" id="salonAddress" disabled="<%= inputStatus %>" placeholder="Salon Address" value="<%= (user._id) ? user.salonInfo.address : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="salonAddress2">Salon Address LIne 2</label>
     <% } %>
-    <input type="text"  name="salonAddress2" id="salonAddress2" disabled="<%= inputStatus %>" placeholder="Salon Address Line 2"/><br/>
+    <input type="text"  name="salonAddress2" class="salonAddress2" id="salonAddress2" disabled="<%= inputStatus %>" placeholder="Salon Address Line 2"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="license">License Number</label>
     <% } %>
-    <input type="text" name="license" id="license" disabled="<%= inputStatus %>" placeholder="License Number" value="<%= (user._id) ? user.salonInfo.licenseNumber : ''%>"/><br/>
+    <input type="text" name="license" class="license" id="license" disabled="<%= inputStatus %>" placeholder="License Number" value="<%= (user._id) ? user.salonInfo.licenseNumber : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="city">City</label>
     <% } %>
-    <input type="text"  name="city" id="city" disabled="<%= inputStatus %>" placeholder="City" value="<%= (user._id) ? user.salonInfo.city : ''%>"/><br/>
+    <input type="text"  name="city" id="city" class="city" disabled="<%= inputStatus %>" placeholder="City" value="<%= (user._id) ? user.salonInfo.city : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="region">State</label>
     <% } %>
-    <input type="text" name="region" id="region" disabled="<%= inputStatus %>" placeholder="State/Province/Region" value="<%= (user._id) ? user.salonInfo.state : ''%>"/><br/>
+    <input type="text" name="region" class="region" id="region" disabled="<%= inputStatus %>" placeholder="State/Province/Region" value="<%= (user._id) ? user.salonInfo.state : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="zip">Zip Code</label>
     <% } %>
-    <input type="text"  name="zip" id="zip" disabled="<%= inputStatus %>" placeholder="Zip Code" value="<%= (user._id) ? user.salonInfo.zipCode : ''%>"/><br/>
+    <input type="text"  name="zip" id="zip" class="zip" disabled="<%= inputStatus %>" placeholder="Zip Code" value="<%= (user._id) ? user.salonInfo.zipCode : ''%>"/><span class="prompt"></span><br/>
     <%if (user._id) { %>
     <label for="country">Country</label>
     <% } %>
-    <input type="text"  name="country" id="country" disabled="<%= inputStatus %>" placeholder="Country" value="<%= (user._id) ? user.salonInfo.country : ''%>"/><br/>
+    <input type="text"  name="country" id="country" class="country" disabled="<%= inputStatus %>" placeholder="Country" value="<%= (user._id) ? user.salonInfo.country : ''%>"/><span class="prompt"></span><br/>
 
     <div class="services">
         <br>Please contact stylist and negotiate services available and prices before approving </br> the application</br>
@@ -88,7 +88,7 @@
         <%});%>
 
         <p>*To be filled in by TreatMe team based on negotiations with stylist</p>
-    </div>
+    </div><span class="prompt"></span></br>
 
     <div class="buttonContainer">
         <%if (user._id) { %>

@@ -44,7 +44,8 @@ define([
             var Collection = this.Collection;
             var defaults = this.defaults;
             var self = this;
-            var collectionParams;
+            var collectionParams = {};
+            var fetchParams;
             var params;
 
             params = {
@@ -59,12 +60,16 @@ define([
                 params.order = opts.order || defaults.order;
             }
 
-            collectionParams = _.extend({}, params);
+            if (opts.id) {
+                collectionParams.id = opts.id;
+            }
+
+            fetchParams = _.extend(collectionParams, params);
 
             this.pageParams = params;
             this.render();
-            this.collection = new Collection(collectionParams);
-            this.collection.on('reset', function () {
+            this.collection = new Collection(fetchParams);
+            this.collection.on('reset remove', function () {
                 self.renderList();
             });
         },
@@ -358,6 +363,15 @@ define([
             e.stopPropagation();
 
             checkboxes.prop('checked', state);
+        },
+
+        getSelectedIds: function () {
+            var checkboxes = this.$el.find('.checkItem:checked');
+            var ids = _.map(checkboxes, function (checkbox) {
+                return $(checkbox).closest('tr').data('id');
+            });
+
+            return ids;
         }
 
     });
