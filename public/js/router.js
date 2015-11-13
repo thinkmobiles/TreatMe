@@ -21,6 +21,7 @@ define([
             "stylists(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "stylists",
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
+            "stylists/edit/:id"         :  "editStylistDetails",
             "clients(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clients",
             //"pendingRequests"           :  "pendingRequests",
             "pendingRequests(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "pendingRequests",
@@ -176,6 +177,10 @@ define([
 
         stylistDetails: function (id) {
             this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
+        },
+
+        editStylistDetails: function (id) {
+            this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Edit');
         }
 
     });
