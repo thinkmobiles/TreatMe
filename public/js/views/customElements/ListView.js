@@ -30,8 +30,7 @@ define([
             search: '',
             status: '' //TODO: ???
         },
-
-        removeParams: {
+        removeParams      : {
             url           : null,
             confirmMessage: 'Are You sure want to delete?'
         },
@@ -43,6 +42,7 @@ define([
             'click .showLast'         : 'lastPage',
             'click .sortable'         : 'sort',
             'click .searchBtn'        : 'search',
+            'keydown .search'         : 'searchKeyDown',
             'click .checkAll'         : 'checkAll',
             'click #removeSelectedBtn': 'removeSelectedItems',
             'click .deleteCurrentBtn' : 'deleteCurrentItem'
@@ -368,6 +368,12 @@ define([
             this.changeLocationHash();
         },
 
+        searchKeyDown: function (e) {
+            if (e.keyCode == 13) {
+                this.search();
+            }
+        },
+
         checkAll: function (e) {
             var state = $(e.target).prop('checked');
             var checkboxes = this.$el.find('tbody .checkItem');
@@ -465,7 +471,7 @@ define([
             });
         },
 
-        showItem: function(e) {
+        showItem: function (e) {
             var target = $(e.target);
             var itemId = target.closest('tr').data('id');
             var url = this.url + '/' + itemId;
