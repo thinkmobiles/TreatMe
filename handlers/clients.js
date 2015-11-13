@@ -317,6 +317,7 @@ var ClientsHandler = function (app, db) {
         var clientId = req.session.uId;
         var clientLoc;
         var locationAddress;
+        var oneTimeService = true;
 
         if (!body.serviceType || !body.bookingDate) {
             return next(badRequests.NotEnParams({reqParams: 'clientId and serviceType and bookingDate'}));
@@ -409,13 +410,44 @@ var ClientsHandler = function (app, db) {
                     });
             },
 
+            //onetime service or not
+            function(cb){
+                Subscription
+                    .find({client: clientId, expirationDate: {gte: body.bookingDate}})
+                    .populate({path: 'subscriptionType', select: 'allowServices'})
+                    .exec(function(err, subscriptionModelsArray){
+                        var allovedServices = [];
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        subscriptionModelsArray.map(function(model){
+                            var servicesIds;
+
+                            if (model.subscriptionType){
+
+                                servicesIds = model.get('subscriptionType.allowedServices');
+                                servicesIds = servicesIds.toStringObjectIds();
+
+                                allovedServices = allovedServices.concat(servicesIds);
+                            }
+                        });
+
+                        if (allovedServices.indexOf(body.serviceType) !== -1){
+                            oneTimeService = false
+                        }
+                    });
+            },
+
             function (cb) {
                 saveObj = {
                     client: ObjectId(clientId),
                     clientLoc: clientLoc,
                     serviceType: ObjectId(body.serviceType),
                     bookingDate: body.bookingDate,
-                    status: CONSTANTS.STATUSES.APPOINTMENT.CREATED
+                    status: CONSTANTS.STATUSES.APPOINTMENT.CREATED,
+                    oneTimeService: oneTimeService
                 };
 
                 appointmentModel = new Appointment(saveObj);
