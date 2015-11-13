@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-
-</body>
-</html>
+<% _.forEach(items, function (item) {%>
+<tr data-id="<%= item._id%>">
+    <td><input type="checkbox" class="checkItem"></td>
+    <td><%= item.purchaseDate %></td>
+    <td><%= item.client %></td>
+    <td><%= item.subscriptionType%></td>
+    <td><button id="deleteCurrentBtn">Delete</button></td>
+</tr>
+<%});%>
