@@ -5,8 +5,9 @@ define([
     'text!templates/stylists/itemTemplate.html',
     'text!templates/customElements/servicesTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html',
-    'views/stylists/stylistsEditView'
-], function (StylistModel, MainTemplate, ServicesTemplate, PreviewStylistTemplate, EditView) {
+    'views/stylists/stylistsEditView',
+    'views/stylists/stylistsClientsView'
+], function (StylistModel, MainTemplate, ServicesTemplate, PreviewStylistTemplate, EditView, StylistsClientsView) {
 
     var View = Backbone.View.extend({
 
@@ -68,8 +69,25 @@ define([
                 ? $el.html(self.previewStylistTemplate({user: user}))
                 : $el.html(self.mainTemplate({user: {}}));
 
+                self.renderClientsList();
                 self.afterRender(user);
             return this;
+        },
+
+        renderClientsList : function () {
+            $.ajax({
+                type: 'GET',
+                dataType: 'json',
+                contentType: 'application/json',
+                url: '/admin/clients/' + this.model.id,
+                success: function (data) {
+                    new StylistsClientsView(data);
+                },
+                error: function (err) {
+                    alert(err);
+                }
+            })
+
         },
 
         afterRender: function (user) {

@@ -1,0 +1,6 @@
+<% _.forEach(items, function (item, index) {%>
+<tr class="item" data-id="<%= item._id%>">
+    <td><%= item.client %></td>
+    <td><%= item.bookingDate %></td>
+</tr>
+<%});%>
