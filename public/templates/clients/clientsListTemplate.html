@@ -1,9 +1,9 @@
 <% _.forEach(items, function (user, index) {%>
-<tr data-id="<%= user._id%>">
+<tr class="item" data-id="<%= user._id%>">
     <td><input type="checkbox"></td>
     <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
     <td><%= user.email %></td>
-    <td><a href="#clients/<%= user._id%>" class="edit">Edit</a></td>
-    <td><button id="suspendCurrentBtn">Suspend</button></td>
+    <td><button class="editBtn">Edit</button></td>
+    <td><button class="suspendCurrentBtn">Suspend</button></td>
 </tr>
 <%});%>

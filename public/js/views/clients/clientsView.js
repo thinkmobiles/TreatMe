@@ -10,17 +10,18 @@ define([
 ], function (ListView, Collection, ClientProfile, NewClients, MainTemplate, ListTemplate) {
 
     var View = ListView.extend({
-        Collection: Collection,
+        Collection  : Collection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
 
         navElement: '#nav_clients',
-        url: '#clients',
+        url       : '#clients',
 
         events: _.extend({
             //put events here ...
-            'click .item'  : 'showProfile',
-            'click #addClient': 'addClient'
+            'click .item'     : 'showProfile',
+            'click #addClient': 'addClient',
+            'click .editBtn'  : 'edit'
         }, ListView.prototype.events),
 
         initialize: function (options) {
@@ -38,6 +39,17 @@ define([
 
         addClient: function () {
             Backbone.history.navigate('clients/add', {trigger: true});
+        },
+
+        edit: function (e) {
+            console.log('>>> suspend');
+            var target = $(e.target);
+            var id = target.closest('tr').data('id');
+            var url = 'clients/' + id + '/edit';
+
+            e.stopPropagation();
+
+            Backbone.history.navigate(url, {trigger: true});
         }
     });
 
