@@ -16,22 +16,23 @@ define([
             "login(/:type/*value)"      :  "login",
             "signup"                    :  "signup",
             "dashboard"                 :  "dashboard",
-            "newApplications"           :  "newApplications",
+            //"newApplications"           :  "newApplications",
             "newApplications/add"       :  "newApplicationDetails",
             "newApplications/:id"       :  "newApplicationDetails",
-            "stylists(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "stylists",
+            //"stylists(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "stylists",
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
             "stylists/edit/:id"         :  "editStylistDetails",
-            "clients(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clients",
+            //"clients(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clients",
             //"pendingRequests"           :  "pendingRequests",
-            "pendingRequests(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "pendingRequests",
+            //"pendingRequests(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "pendingRequests",
             //"bookings"                  :  "bookings",
-            "bookings(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "bookings",
-            "stylistPayments"           :  "stylistPayments",
+            //"bookings(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "bookings",
+            //"stylistPayments"           :  "stylistPayments",
             //"clientPackages"            :  "clientPackages",
-            "clientPackages(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clientPackages",
+            //"clientPackages(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clientPackages",
             "gallery"                   :  "gallery",
+            ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "list",
             "*any"                      :  "any"
         },
 
@@ -180,9 +181,21 @@ define([
 
             this.loadWrapperView('clientPackages', options, REDIRECT.whenNOTAuthorized);
         },
+        
+        list: function (type, page, countPerPage, orderBy, order, filter) {
+            console.log('>>> list', type);
+            var options = {
+                page: parseInt(page),
+                countPerPage: parseInt(countPerPage),
+                orderBy: orderBy,
+                order: order,
+                filter: filter,
+                status: 'Booked'
+            };
 
-
-
+            this.loadWrapperView(type, options, REDIRECT.whenNOTAuthorized);
+        },
+        
         gallery: function () {
             this.loadWrapperView('gallery', null, REDIRECT.whenNOTAuthorized);
         },
