@@ -1135,15 +1135,15 @@ var AdminHandler = function (db) {
         appointmentModel = new Appointment(saveObj);
 
         Appointment
-            .findOne({stylist: stylistId, bookingDate: bookingDate}, function (err, someModel) {
+            .find({bookingDate: bookingDate, $or: [{stylist: stylistId}, {client: clientId}]}, function (err, someModelsArray) {
                 var error;
 
                 if (err) {
                     return next(err);
                 }
 
-                if (someModel) {
-                    error = new Error('Stylist already have an appointment for this time');
+                if (someModelsArray.length) {
+                    error = new Error('Stylist or client already have an appointment for this time');
                     error.status = 400;
 
                     return next(error);
@@ -1238,6 +1238,9 @@ var AdminHandler = function (db) {
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
+        var criteria = {
+            expirationDate: {$gte: new Date()}
+        };
 
         if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Package') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
@@ -1256,22 +1259,63 @@ var AdminHandler = function (db) {
             sortObj['subscriptionType.name'] = order;
         }
 
-        Subscription
-            .find({expirationDate: {$gte: new Date()}})
-            .populate([{path: 'subscriptionType', select: 'name'}, {
-                path: 'client',
-                select: 'personalInfo.firstName personalInfo.lastName'
-            }])
-            .sort(sortObj)
-            .skip(limit * (page - 1))
-            .limit(limit)
-            .exec(function (err, subscriptionModelsArray) {
-                if (err) {
-                    return next(err);
-                }
+        async.parallel({
+            subscriptionCount: function(cb){
+                Subscription
+                    .count(criteria, function(err, count){
+                        if (err){
+                            return cb(err);
+                        }
 
-                res.status(200).send(subscriptionModelsArray);
-            });
+                        cb(null, count);
+                    });
+            },
+
+            subscriptions: function(cb){
+                Subscription
+                    .find(criteria, {__v: 0, expirationDate: 0})
+                    .populate([{path: 'subscriptionType', select: 'name'}, {
+                        path: 'client',
+                        select: 'personalInfo.firstName personalInfo.lastName'
+                    }])
+                    .sort(sortObj)
+                    .skip(limit * (page - 1))
+                    .limit(limit)
+                    .exec(function (err, subscriptionModelsArray) {
+                        var resultArray;
+
+                        if (err) {
+                            return next(err);
+                        }
+
+                        resultArray = subscriptionModelsArray.map(function(model){
+                            var modelJson = model.toJSON();
+
+                            if (model.client){
+                                modelJson.client = modelJson.client.personalInfo.firstName + ' ' + modelJson.client.personalInfo.lastName;
+                            } else {
+                                modelJson.client = 'Client was removed'
+                            }
+                            if (model.subscriptionType){
+                                modelJson.subscriptionType = modelJson.subscriptionType.name;
+                            } else {
+                                modelJson.subscriptionType = 'Subscription was removed';
+                            }
+
+                            return modelJson
+                        });
+
+                        cb(null, resultArray);
+                    });
+            }
+
+        }, function(err, result){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({total: result.subscriptionCount, data: result.subscriptions});
+        });
     };
 
     this.removePackages = function (req, res, next) {
@@ -1765,6 +1809,96 @@ var AdminHandler = function (db) {
         var projection = {
             bookingDate: 1,
             client: 1
+        };
+        var criteria = {
+            stylist: stylistId,
+            status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
+        };
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)){
+            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
+        }
+
+        if (sortParam && sortParam !== 'Client' && sortParam !== 'Date') {
+            return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+        }
+
+        if (sortParam === 'Client' || !sortParam) {
+            sortObj['client.personalInfo.firstName'] = order;
+            sortObj['client.personalInfo.lastName'] = order;
+        }
+
+        if (sortParam === 'Date') {
+            sortObj.bookingDate = order;
+        }
+
+        async.parallel({
+
+            appointmentCount: function(cb){
+                Appointment
+                    .count(criteria, function(err, count){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, count);
+                    });
+            },
+
+            appointment: function(cb){
+                Appointment
+                    .find(criteria, projection)
+                    .populate({path: 'client', select: 'personalInfo.firstName personalInfo.lastName'})
+                    .sort(sortObj)
+                    .skip(limit * (page -1))
+                    .limit(limit)
+                    .exec(function(err, appointmentModelsArray){
+                        var stylistClientsArray;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        stylistClientsArray = appointmentModelsArray.map(function(model){
+                            var modelJSON = model.toJSON();
+
+                            if (modelJSON.client){
+                                modelJSON.client = modelJSON.client.personalInfo.firstName + ' ' + modelJSON.client.personalInfo.lastName;
+                            } else {
+                                modelJSON.client = 'Client was removed'
+                            }
+
+                            return modelJSON;
+                        });
+
+                        cb(null, stylistClientsArray);
+                    });
+            }
+
+        }, function(err, result){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({total: result.appointmentCount, data: result.appointment});
+        });
+
+
+    };
+
+    this.getStylistPayments = function(req, res, next){
+
+        var query = req.query;
+        var sortParam = query.sort;
+        var page = (query.page >=1) ? query.page : 1;
+        var order = (query.order === '1') ? 1 : -1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_CLIENTS;
+        var sortObj = {};
+        var projection = {
+            bookingDate: 1,
+            stylist: 1,
+            serviceType: 1,
+
         };
         var criteria = {
             stylist: stylistId,
