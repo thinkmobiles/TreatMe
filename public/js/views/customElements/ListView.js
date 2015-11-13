@@ -27,7 +27,7 @@ define([
             page  : 1,
             count : 5,
             order : '1',
-            filter: '',
+            search: '',
             status: '' //TODO: ???
         },
 
@@ -42,7 +42,7 @@ define([
             'click .showFirst'        : 'firstPage',
             'click .showLast'         : 'lastPage',
             'click .sortable'         : 'sort',
-            'click .searchBtn'        : 'filter',
+            'click .searchBtn'        : 'search',
             'click .checkAll'         : 'checkAll',
             'click #removeSelectedBtn': 'removeSelectedItems',
             'click .deleteCurrentBtn' : 'deleteCurrentItem'
@@ -60,7 +60,7 @@ define([
             params = {
                 page  : opts.page || defaults.page,
                 count : opts.countPerPage || defaults.count,
-                filter: opts.filter || defaults.filter,
+                search: opts.search || defaults.search,
                 status: opts.status || defaults.status
             };
 
@@ -81,6 +81,10 @@ define([
             this.collection.on('reset remove', function () {
                 self.renderList();
             });
+
+            if (opts.search) {
+                this.$el.find('.search').val(opts.search);
+            }
         },
 
         render: function () {
@@ -101,7 +105,6 @@ define([
             var orderBy = params.orderBy;
             var order = params.order;
             var orderClassName;
-            var currentClassName;
 
             this.$el.find('.items').html(this.listTemplate({items: items}));
             this.$el.find('.pagination').html(this.paginationTemplate());
@@ -130,7 +133,7 @@ define([
             var count = params.count;
             var orderBy = params.orderBy;
             var order = params.order || this.defaults.order;
-            var filter = params.filter;
+            var search = params.search;
 
             url += '/p=' + page;
             url += '/c=' + count;
@@ -139,8 +142,8 @@ define([
                 url += '/orderBy=' + orderBy + '/order=' + order;
             }
 
-            if (filter) {
-                url += '/filter=' + encodeURIComponent(JSON.stringify(filter));
+            if (search) {
+                url += '/search=' + search;
             }
 
             Backbone.history.navigate(url);
@@ -351,14 +354,14 @@ define([
             this.changeLocationHash();
         },
 
-        filter: function (e) {
+        search: function (e) {
             var searchValue = this.$el.find('.search').val() || '';
             var params = this.pageParams;
             var collectionParams;
             var page = 1;
 
             params.page = page;
-            params.filter = searchValue;
+            params.search = searchValue;
             collectionParams = _.extend({reset: true}, params);
 
             this.collection.getPage(page, collectionParams);

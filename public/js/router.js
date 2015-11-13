@@ -23,7 +23,7 @@ define([
             "stylists/:id"              :  "stylistDetails",
             "stylists/edit/:id"         :  "editStylistDetails",
             "gallery"                   :  "gallery",
-            ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "list",
+            ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/search=:search)":  "list",
             "*any"                      :  "any"
         },
 
@@ -107,15 +107,13 @@ define([
             this.loadWrapperView('newApplications', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
-        list: function (type, page, countPerPage, orderBy, order, filter) {
-            console.log('>>> list', type);
+        list: function (type, page, countPerPage, orderBy, order, search) {
             var options = {
                 page: parseInt(page),
                 countPerPage: parseInt(countPerPage),
                 orderBy: orderBy,
                 order: order,
-                filter: filter,
-                status: 'Booked'
+                search: search
             };
 
             if (type === 'pendingRequests') {
