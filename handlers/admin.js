@@ -91,22 +91,31 @@ var AdminHandler = function (db) {
             });
     }
 
-    this.getStylistByCriterion = function(criterion, page, sortObj, limit, callback){
+    this.getUserByCriteria = function(role, criteria, page, sortObj, limit, callback){
 
         var resultArray = [];
         var obj;
         var total;
+        var projection;
 
-        criterion.role = CONSTANTS.USER_ROLE.STYLIST;
-
-        User
-            .find(criterion, {
+        if (role === CONSTANTS.USER_ROLE.STYLIST){
+            projection = {
                 'personalInfo.firstName': 1,
                 'personalInfo.lastName': 1,
                 'salonInfo': 1,
                 'createdAt': 1,
                 'approved': 1
-            })
+            };
+        } else {
+            projection = {
+                'personalInfo.firstName': 1,
+                'personalInfo.lastName': 1,
+                'email': 1
+            };
+        }
+
+        User
+            .find(criteria, projection)
             .sort(sortObj)
             .skip(limit * (page - 1))
             .limit(limit)
@@ -119,6 +128,7 @@ var AdminHandler = function (db) {
 
                 for (var i = resultModel.length; i--; ){
 
+                    if (role === CONSTANTS.USER_ROLE.STYLIST){
                         obj = {
                             _id: resultModel[i]._id,
                             personalInfo: resultModel[i].personalInfo,
@@ -126,6 +136,15 @@ var AdminHandler = function (db) {
                             createdAt: resultModel[i].createdAt,
                             approved:  resultModel[i].approved
                         };
+                    } else {
+
+                        obj = {
+                            _id: resultModel[i]._id,
+                            personalInfo: resultModel[i].personalInfo,
+                            email: resultModel[i].email
+                        }
+                    }
+
 
                     resultArray.push(obj);
                 }
@@ -253,7 +272,7 @@ var AdminHandler = function (db) {
                 },
 
                 function(cb){
-                    self.getStylistByCriterion(criterion, page, sortObj, limit, cb)
+                    self.getUserByCriteria(CONSTANTS.USER_ROLE.STYLIST, criterion, page, sortObj, limit, cb)
                 }
             ], function(err, result){
 
@@ -1331,19 +1350,41 @@ var AdminHandler = function (db) {
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/admin/subscriptions/`__
+         * __URL: `/admin/packages/`__
          *
-         * This __method__ allows get list subscription by _Admin_
+         * This __method__ allows get list packages by _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/subscriptions/
+         *         http://projects.thinkmobiles.com:8871/admin/packages/
          *
          * @example Response example:
          *
-         *  Response status: 200
-         * {"success":}
+         * Response status: 200
+         * {
+         *   "total": 20,
+         *   "data": [
+         *           {
+         *               "_id": "5645bec0499bf1d80facd36a",
+         *               "client": "Petya Lyashenko",
+         *               "subscriptionType": "Unlimited Pass",
+         *               "purchaseDate": "2015-11-13T10:43:12.932Z"
+         *           },
+         *           {
+         *               "_id": "5645bbeb9b6b6df41f426357",
+         *               "client": "Petya Lyashenko",
+         *               "subscriptionType": "Unlimited Pass",
+         *               "purchaseDate": "2015-11-13T10:31:07.975Z"
+         *           },
+         *           {
+         *               "_id": "5645bbd49b6b6df41f426356",
+         *               "client": "Petya Lyashenko",
+         *               "subscriptionType": "Unlimited Blowout",
+         *               "purchaseDate": "2015-11-13T10:30:44.051Z"
+         *           }
+         *       ]
+         * }
          *
-         * @method addSubscriptionType
+         * @method getClientPackages
          * @instance
          */
 
@@ -1433,6 +1474,36 @@ var AdminHandler = function (db) {
     };
 
     this.removePackages = function (req, res, next) {
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/packages/`__
+         *
+         * This __method__ allows get list packages by _Admin_
+         *
+         * @example Request example:
+         *        http://projects.thinkmobiles.com:8871/admin/packages/
+         *
+         * @example Body example:
+         *
+         * {
+         *      "packagesArray": ["5645bec0499bf1d80facd36a", "5645bec0499bf1d80facd36b"]
+         * }
+         *
+         * @example Response example:
+         *
+         * Response status: 200
+         * {"success": "Subscriptions removed successfully"}
+         *
+         * @method removePackages
+         * @instance
+         */
+
         var arrayOfIds = req.body.packagesArray;
 
         if (!arrayOfIds) {
@@ -1452,6 +1523,63 @@ var AdminHandler = function (db) {
 
     this.getSubscriptionType = function (req, res, next) {
 
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/subscriptionType/`__
+         *
+         * This __method__ allows get list subscriptions by _Admin_
+         *
+         * @example Request example:
+         *        http://projects.thinkmobiles.com:8871/admin/subscriptionType/
+         *
+         * @example Response example:
+         *
+         * Response status: 200
+         *
+         * [
+         *     {
+         *        "_id": "5638b946f8c11d9c0408133f",
+         *        "name": "Unlimited Pass",
+         *        "logo": "5638b946f8c11d9c0408133e",
+         *        "__v": 0,
+         *        "allowServices": [
+         *            "563757004397730a2be12f0a",
+         *            "56387644a2e4362617283dce"
+         *        ],
+         *        "price": 135
+         *     },
+         *     {
+         *        "_id": "5638b965f8c11d9c04081341",
+         *        "name": "Unlimited Maniqure",
+         *        "logo": "5638b965f8c11d9c04081340",
+         *        "__v": 0,
+         *        "allowServices": [
+         *            "563757004397730a2be12f0a"
+         *        ],
+         *        "price": 49
+         *     },
+         *     {
+         *        "_id": "5638b976f8c11d9c04081343",
+         *        "name": "Unlimited BlowJOB :) ",
+         *        "logo": "5638b976f8c11d9c04081342",
+         *        "__v": 0,
+         *        "allowServices": [
+         *            "56387644a2e4362617283dce"
+         *        ],
+         *        "price": 99
+         *     }
+         *  ]
+         *
+         *
+         * @method getListSubscription
+         * @instance
+         */
+
         SubscriptionType
             .find({}, function (err, subscriptionModelsArray) {
                 if (err) {
@@ -1463,9 +1591,45 @@ var AdminHandler = function (db) {
     };
 
     this.updateSubscriptionType = function (req, res, next) {
+
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/subscriptionType/:id`__
+         *
+         * This __method__ allows update subscription by _Admin_
+         *
+         * @example Request example:
+         *        http://projects.thinkmobiles.com:8871/admin/subscriptionType/56387644a2e4362617283dc1
+         *
+         * @example Body example:
+         *
+         *  {
+         *      "name": "BlowOut",
+         *      "price": 99,
+         *      "logo": "data:image/png;base64, /9j/4AAQSkZJRgABAQAAAQABAAD/2",
+         *      "allowServices": ["56387644a2e4362617283dce"]
+         *  }
+         *
+         * @example Response example:
+         *
+         * Response status: 200
+         *
+         * {"success": "Subscription type was updated successfully"}
+         *
+         *
+         * @method updateSubscriptionType
+         * @instance
+         */
+
+        var body = req.body;
         var subscriptionTypeId = req.params.id;
-        var name = req.body.name;
-        var price = req.body.price;
+        var name = body.name;
+        var price = body.price;
         var imageString = body.logo;
         var imageName;
         var allowServices = body.allowServices;
@@ -1480,7 +1644,6 @@ var AdminHandler = function (db) {
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionTypeId)) {
             return next(badRequests.InvalidValue({value: subscriptionTypeId, param: 'id'}));
         }
-
 
         if (name) {
             updateObj.name = name;
@@ -1503,6 +1666,10 @@ var AdminHandler = function (db) {
         async.series([
 
                 function (cb) {
+                    if (!imageString){
+                        return cb(null);
+                    }
+
                     image.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, cb);
                 },
 
@@ -1524,7 +1691,7 @@ var AdminHandler = function (db) {
                 },
 
                 function(cb){
-                    if (!oldLogoName){
+                    if (!imageString || !oldLogoName){
                         return cb();
                     }
 
@@ -1544,6 +1711,34 @@ var AdminHandler = function (db) {
     };
 
     this.removeSubscriptionType = function (req, res, next) {
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/subscriptionType/`__
+         *
+         * This __method__ allows delete subscription by _Admin_
+         *
+         * @example Request example:
+         *        http://projects.thinkmobiles.com:8871/admin/subscriptionType/
+         *
+         * @example Body example:
+         *
+         * @example Response example:
+         *
+         * Response status: 200
+         *
+         * {"success": "Subscription type was updated successfully"}
+         *
+         * @method updateSubscriptionType
+         * @instance
+         */
+
+
         var subscriptionTypeId = req.params.id;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionTypeId)) {
@@ -1619,7 +1814,7 @@ var AdminHandler = function (db) {
         var search = req.query.search;
         var searchRegExp;
         var sortObj = {};
-        var findObj;
+        var criteria;
         var roleObj = {};
         var searchObj = {};
 
@@ -1648,23 +1843,18 @@ var AdminHandler = function (db) {
 
         roleObj['role'] = CONSTANTS.USER_ROLE.CLIENT;
 
-        findObj = {
+        criteria = {
             $and: [roleObj, searchObj]
         };
 
         async
             .parallel([
                 function(cb){
-                    getCountByCriterion(findObj, cb);
+                    getCountByCriterion(criteria, cb);
                 },
 
                 function(cb){
-                    User
-                        .find(findObj, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
-                        .sort(sortObj)
-                        .skip(limit * (page - 1))
-                        .limit(limit)
-                        .exec(cb)
+                   self.getUserByCriteria(CONSTANTS.USER_ROLE.CLIENT, criteria, page, sortObj, limit, cb)
                 }
             ], function(err, result){
                 if (err){
