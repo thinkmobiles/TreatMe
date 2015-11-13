@@ -1515,6 +1515,12 @@ var UserHandler = function (app, db) {
 
                             if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
                                 delete modelJSON.client;
+
+                                if (modelJSON.stylist.personalInfo.avatar){
+                                    modelJSON.avatar = image.computeUrl(modelJSON.stylist.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
+                                } else {
+                                    modelJSON.avatar = '';
+                                }
                             }
 
                             if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
@@ -1524,14 +1530,6 @@ var UserHandler = function (app, db) {
                             if (modelJSON.stylist){
                                 if (modelJSON.stylist.salonInfo){
                                     modelJSON.salon = modelJSON.stylist.salonInfo.salonName;
-                                }
-
-                                if (modelJSON.stylist.personalInfo.avatar){
-                                    modelJSON.avatar = image.computeUrl(modelJSON.stylist.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
-                                } else {
-                                    if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
-                                        modelJSON.avatar = '';
-                                    }
                                 }
 
                                 modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
