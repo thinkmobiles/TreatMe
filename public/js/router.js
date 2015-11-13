@@ -11,6 +11,7 @@ define([
         topBarView  : null,
 
         routes: {
+            "clients/add"               :  "clientsAddDetails",
             "clients/:id"               :  "clientsDetails",
             "login(/:type/*value)"      :  "login",
             "signup"                    :  "signup",
@@ -21,13 +22,15 @@ define([
             "stylists(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "stylists",
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
+            "stylists/edit/:id"         :  "editStylistDetails",
             "clients(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clients",
             //"pendingRequests"           :  "pendingRequests",
             "pendingRequests(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "pendingRequests",
             //"bookings"                  :  "bookings",
             "bookings(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "bookings",
             "stylistPayments"           :  "stylistPayments",
-            "clientPackages"            :  "clientPackages",
+            //"clientPackages"            :  "clientPackages",
+            "clientPackages(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clientPackages",
             "gallery"                   :  "gallery",
             "*any"                      :  "any"
         },
@@ -70,6 +73,10 @@ define([
 
         any: function () {
             Backbone.history.navigate("dashboard", {trigger: true});
+        },
+
+        clientsAddDetails: function () {
+            this.loadWrapperView('clients', null, REDIRECT.whenNOTAuthorized, 'Add');
         },
 
         clientsDetails: function (id) {
@@ -162,9 +169,19 @@ define([
             this.loadWrapperView('stylistPayments', null, REDIRECT.whenNOTAuthorized);
         },
 
-        clientPackages: function () {
-            this.loadWrapperView('clientPackages', null, REDIRECT.whenNOTAuthorized);
+        clientPackages: function (page, countPerPage, orderBy, order, filter) {
+            var options = {
+                page: parseInt(page),
+                countPerPage: parseInt(countPerPage),
+                orderBy: orderBy,
+                order: order,
+                filter: filter
+            };
+
+            this.loadWrapperView('clientPackages', options, REDIRECT.whenNOTAuthorized);
         },
+
+
 
         gallery: function () {
             this.loadWrapperView('gallery', null, REDIRECT.whenNOTAuthorized);
@@ -176,6 +193,10 @@ define([
 
         stylistDetails: function (id) {
             this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
+        },
+
+        editStylistDetails: function (id) {
+            this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Edit');
         }
 
     });

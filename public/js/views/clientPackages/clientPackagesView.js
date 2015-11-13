@@ -1,41 +1,29 @@
 'use strict';
 
 define([
-    'text!templates/clientPackages/clientPackagesTemplate.html'
+    'views/customElements/ListView',
+    'collections/clientPackagesCollection',
+    'text!templates/clientPackages/clientPackagesTemplate.html',
+    'text!templates/clientPackages/clientPackagesListTemplate.html'
+], function (ListView, Collection, MainTemplate, ListTemplate) {
 
-], function (MainTemplate) {
+    var View = ListView.extend({
+        Collection: Collection,
+        mainTemplate: _.template(MainTemplate),
+        listTemplate: _.template(ListTemplate),
 
-    var View;
+        navElement: '#nav_client_packages',
+        url: '#clientPackages',
 
-    View = Backbone.View.extend({
+        events: _.extend({
+            //put events here ...
+        }, ListView.prototype.events),
 
-        el : '#wrapper',
+        initialize: function (options) {
+            App.Breadcrumbs.reset([{name: 'Client Packages', path: '#clientPackages'}]);
 
-        mainTemplate : _.template(MainTemplate),
-
-        events: {
-        },
-
-        initialize: function () {
-            this.render();
-        },
-
-        render: function () {
-            var self = this;
-            var $el = self.$el;
-
-            $el.html(self.mainTemplate());
-
-            return this;
-        },
-
-        afterRender: function (){
-            var navContainer = $('.sidebar-menu');
-
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_client_packages').addClass('active')
+            ListView.prototype.initialize.call(this, options);
         }
-
     });
 
     return View;

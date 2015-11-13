@@ -4,9 +4,10 @@ define([
     'views/customElements/ListView',
     'collections/clientsCollection',
     'views/clients/clientsProfileView',
+    'views/clients/clientsAddView',
     'text!/templates/clients/clientsTemplate.html',
     'text!/templates/clients/clientsListTemplate.html'
-], function (ListView, Collection, ClientProfile, MainTemplate, ListTemplate) {
+], function (ListView, Collection, ClientProfile, NewClients, MainTemplate, ListTemplate) {
 
     var View = ListView.extend({
         Collection: Collection,
@@ -18,7 +19,8 @@ define([
 
         events: _.extend({
             //put events here ...
-            'click .item': 'showProfile'
+            'click .item'  : 'showProfile',
+            'click #addClient': 'addClient'
         }, ListView.prototype.events),
 
         initialize: function (options) {
@@ -32,6 +34,10 @@ define([
             var tr = target.closest('tr');
             var id = tr.attr('data-id');
             Backbone.history.navigate('clients/' + id, {trigger: true});
+        },
+
+        addClient: function () {
+            Backbone.history.navigate('clients/add', {trigger: true});
         }
     });
 
