@@ -124,6 +124,12 @@ define([], function () {
 
             options.sort = options.orderBy;
             delete options.orderBy;
+
+            if (options.filter) {
+                options.search = options.filter;
+                delete options.filter;
+            }
+
             var _opts = this.dataComposer(page, options);
 
             return this.fetch(_opts);

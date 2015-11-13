@@ -11,6 +11,7 @@ define([
         topBarView  : null,
 
         routes: {
+            "clients/:id/edit"          :  "clientsEdit",
             "clients/add"               :  "clientsAddDetails",
             "clients/:id"               :  "clientsDetails",
             "login(/:type/*value)"      :  "login",
@@ -22,7 +23,7 @@ define([
             "stylists/:id"              :  "stylistDetails",
             "stylists/edit/:id"         :  "editStylistDetails",
             "gallery"                   :  "gallery",
-            ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "list",
+            ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/search=:search)":  "list",
             "*any"                      :  "any"
         },
 
@@ -66,8 +67,12 @@ define([
             Backbone.history.navigate("dashboard", {trigger: true});
         },
 
+        clientsEdit: function (id) {
+            this.loadWrapperView('clients', {id: id}, REDIRECT.whenNOTAuthorized, 'AddAndEdit');
+        },
+
         clientsAddDetails: function () {
-            this.loadWrapperView('clients', null, REDIRECT.whenNOTAuthorized, 'Add');
+            this.loadWrapperView('clients', {}, REDIRECT.whenNOTAuthorized, 'AddAndEdit');
         },
 
         clientsDetails: function (id) {
@@ -102,15 +107,13 @@ define([
             this.loadWrapperView('newApplications', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
-        list: function (type, page, countPerPage, orderBy, order, filter) {
-            console.log('>>> list', type);
+        list: function (type, page, countPerPage, orderBy, order, search) {
             var options = {
                 page: parseInt(page),
                 countPerPage: parseInt(countPerPage),
                 orderBy: orderBy,
                 order: order,
-                filter: filter,
-                status: 'Booked'
+                search: search
             };
 
             if (type === 'pendingRequests') {
