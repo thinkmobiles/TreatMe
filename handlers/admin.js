@@ -1887,7 +1887,6 @@ var AdminHandler = function (db) {
     };
 
     this.getStylistPayments = function(req, res, next){
-
         var query = req.query;
         var sortParam = query.sort;
         var page = (query.page >=1) ? query.page : 1;
@@ -1898,29 +1897,34 @@ var AdminHandler = function (db) {
             bookingDate: 1,
             stylist: 1,
             serviceType: 1,
+            price: 1
 
         };
         var criteria = {
-            stylist: stylistId,
             status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
         };
 
-        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)){
-            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
-        }
-
-        if (sortParam && sortParam !== 'Client' && sortParam !== 'Date') {
+        if (sortParam && sortParam !== 'Stylist' && sortParam !== 'Date' && sortParam !== 'Service' && sortParam !== 'Payment') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'Client' || !sortParam) {
-            sortObj['client.personalInfo.firstName'] = order;
-            sortObj['client.personalInfo.lastName'] = order;
-        }
-
-        if (sortParam === 'Date') {
+        if (sortParam === 'Date' || !sortParam) {
             sortObj.bookingDate = order;
         }
+
+        if (sortParam === 'Stylist') {
+            sortObj['stylist.personalInfo.firstName'] = order;
+            sortObj['stylist.personalInfo.lastName'] = order;
+        }
+
+        if (sortParam === 'Service') {
+            sortObj['serviceType.name'] = order;
+        }
+
+        if (sortParam === 'Payment') {
+            sortObj.price = order;
+        }
+
 
         async.parallel({
 
@@ -1938,30 +1942,40 @@ var AdminHandler = function (db) {
             appointment: function(cb){
                 Appointment
                     .find(criteria, projection)
-                    .populate({path: 'client', select: 'personalInfo.firstName personalInfo.lastName'})
+                    .populate([{path: 'serviceType', select: 'name'}, {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}])
                     .sort(sortObj)
                     .skip(limit * (page -1))
                     .limit(limit)
                     .exec(function(err, appointmentModelsArray){
-                        var stylistClientsArray;
+                        var stylistPaymentsArray;
 
                         if (err){
                             return cb(err);
                         }
 
-                        stylistClientsArray = appointmentModelsArray.map(function(model){
+                        stylistPaymentsArray = appointmentModelsArray.map(function(model){
                             var modelJSON = model.toJSON();
 
-                            if (modelJSON.client){
-                                modelJSON.client = modelJSON.client.personalInfo.firstName + ' ' + modelJSON.client.personalInfo.lastName;
+                            if (modelJSON.stylist){
+                                modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
                             } else {
-                                modelJSON.client = 'Client was removed'
+                                modelJSON.stylist = 'Stylist was removed'
+                            }
+
+                            if (modelJSON.serviceType){
+                                modelJSON.serviceType = modelJSON.serviceType.name;
+                            } else {
+                                modelJSON.serviceType = 'Service was removed';
+                            }
+
+                            if (!modelJSON.price){
+                                modelJSON.price = '-';
                             }
 
                             return modelJSON;
                         });
 
-                        cb(null, stylistClientsArray);
+                        cb(null, stylistPaymentsArray);
                     });
             }
 

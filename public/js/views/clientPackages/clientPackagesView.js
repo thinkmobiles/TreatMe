@@ -1,41 +1,69 @@
 'use strict';
 
 define([
-    'text!templates/clientPackages/clientPackagesTemplate.html'
+    'views/customElements/ListView',
+    'collections/clientPackagesCollection',
+    'text!templates/clientPackages/clientPackagesTemplate.html',
+    'text!templates/clientPackages/clientPackagesListTemplate.html'
+], function (ListView, Collection, MainTemplate, ListTemplate) {
 
-], function (MainTemplate) {
+    var View = ListView.extend({
+        Collection: Collection,
+        mainTemplate: _.template(MainTemplate),
+        listTemplate: _.template(ListTemplate),
 
-    var View;
+        navElement: '#nav_client_packages',
+        url: '#clientPackages',
 
-    View = Backbone.View.extend({
+        events: _.extend({
+            //put events here ...
+            'click #removeSelectedBtn': 'deleteAllPackages',
+            'click .deleteCurrentBtn': 'deleteCurrentPackage'
+        }, ListView.prototype.events),
 
-        el : '#wrapper',
+        initialize: function (options) {
+            App.Breadcrumbs.reset([{name: 'Client Packages', path: '#clientPackages'}]);
 
-        mainTemplate : _.template(MainTemplate),
-
-        events: {
+            ListView.prototype.initialize.call(this, options);
         },
 
-        initialize: function () {
-            this.render();
+        deleteAllPackages: function (e) {
+            var ids = this.getSelectedIds();
+
+            this.deletePackages(ids);
         },
 
-        render: function () {
+        deleteCurrentPackage: function (e) {
+            var target = $(e.target);
+            var itemId = target.closest('tr').data('id');
+            var ids = [itemId];
+
+            this.deletePackages(ids);
+        },
+
+        deletePackages: function (ids) {
+            var data = {
+                packagesArray: ids
+            };
+            var dataStr = JSON.stringify(data);
             var self = this;
-            var $el = self.$el;
 
-            $el.html(self.mainTemplate());
+            $.ajax({
+                type: 'DELETE',
+                dataType: 'json',
+                contentType: 'application/json',
+                url: 'admin/packages',
+                data: dataStr,
+                success: function () {
+                    var params = self.pageParams;
+                    var page = params.page;
+                    var fetchParams = _.extend({reset: true}, params);
 
-            return this;
-        },
-
-        afterRender: function (){
-            var navContainer = $('.sidebar-menu');
-
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_client_packages').addClass('active')
+                    self.collection.getPage(page, fetchParams); //fetch and re-render
+                },
+                error: self.handleErrorResponse //TODO
+            });
         }
-
     });
 
     return View;

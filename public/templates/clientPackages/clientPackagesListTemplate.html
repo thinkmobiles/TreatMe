@@ -1,0 +1,9 @@
+<% _.forEach(items, function (item) {%>
+<tr data-id="<%= item._id%>">
+    <td><input type="checkbox" class="checkItem"></td>
+    <td><%= item.purchaseDate %></td>
+    <td><%= item.client %></td>
+    <td><%= item.subscriptionType%></td>
+    <td><button class="deleteCurrentBtn">Delete</button></td>
+</tr>
+<%});%>

@@ -356,6 +356,23 @@ table {
   border-collapse: collapse;
   border-spacing: 0;
 }
+dl {
+  margin-bottom:50px;
+}
+  dl dt {
+    color: #253c54;
+    float:left;
+    font-size: 13px;
+    font-weight:bolder;
+    margin-right:10px;
+    padding:5px;
+    width:100px;
+  }
+  dl dd {
+    font-size: 13px;
+    margin:2px 0;
+    padding:5px 0;
+  }
 td,
 th {
   padding: 0;
@@ -583,6 +600,33 @@ body {
   border: none;
   text-indent: -99999px;
 }
+#removeProfileBtn {
+  border-radius: 4px;
+  width: 120px;
+  height: 44px;
+  border: none;
+  text-indent: 11px;
+  position: absolute;
+  right: 55px;
+}
+#editSelectedBtn {
+  border-radius: 4px;
+  width: 120px;
+  height: 44px;
+  border: none;
+  text-indent: 11px;
+  position: absolute;
+  right: 332px;
+}
+#suspendSelectedBtn {
+  border-radius: 4px;
+  width: 120px;
+  height: 44px;
+  border: none;
+  text-indent: 11px;
+  position: absolute;
+  right: 193px;
+}
 #acceptSelectedBtn {
   background: #e0e0e0 url("../images/check.png") no-repeat;
   background-position: center;
@@ -590,6 +634,21 @@ body {
 #removeSelectedBtn {
   background: #e0e0e0 url("../images/trash.png") no-repeat;
   background-position: center;
+}
+#removeProfileBtn {
+  background: #ff0000 url("../images/trash-white.png") no-repeat;
+  background-position: 15px;
+  color: #fff;
+}
+#editSelectedBtn {
+  background: #2175cc url("../images/note.png") no-repeat;
+  background-position: 15px;
+  color: #fff;
+}
+#suspendSelectedBtn {
+  background: #ff0000 url("../images/ban.png") no-repeat;
+  background-position: 12px;
+  color: #fff;
 }
 #acceptCurrentBtn {
   background: transparent url("../images/check.png") no-repeat;
