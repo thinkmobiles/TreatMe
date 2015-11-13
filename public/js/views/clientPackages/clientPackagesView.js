@@ -14,6 +14,10 @@ define([
 
         navElement: '#nav_client_packages',
         url: '#clientPackages',
+        removeParams: {
+            url           : 'admin/packages',
+            confirmMessage: 'Are you sure want to remove this package(s)?'
+        },
 
         events: _.extend({
             //put events here ...
