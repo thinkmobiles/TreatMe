@@ -33,7 +33,8 @@ module.exports = {
         REQUESTED_BOOKED_APPOINTMENTS: 5,
         REQUESTED_PURCHASED_PACKAGES: 4,
         //for getStylistById in CMS
-        REQUESTED_CLIENTS: 4
+        REQUESTED_CLIENTS: 4,
+        REQUESTED_PHOTOS: 10
     },
     SEARCH_DISTANCE: {
         START: 1609.344, // start search stylists from 1 mile
