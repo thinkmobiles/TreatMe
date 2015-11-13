@@ -2,43 +2,26 @@
 
 define([
     'models/stylistModel',
-    'text!templates/stylists/itemTemplate.html',
-    'text!templates/customElements/servicesTemplate.html',
-    'text!templates/stylists/previewStylistTemplate.html',
-    'views/stylists/stylistsEditView',
-    'views/stylists/stylistsClientsView'
-], function (StylistModel, MainTemplate, ServicesTemplate, PreviewStylistTemplate, EditView, StylistsClientsView) {
+    'text!templates/stylists/editStylistTemplate.html'
+], function (StylistModel, MainTemplate) {
 
     var View = Backbone.View.extend({
 
         el: '#wrapper',
 
+        model: new StylistModel(),
+
         mainTemplate: _.template(MainTemplate),
 
-        servicesTemplate: _.template(ServicesTemplate),
-
-        previewStylistTemplate: _.template(PreviewStylistTemplate),
-
         events: {
-            "click .saveBtn": "saveStylist",
-            "click .edit": "renderEdit"
+            "click .saveBtn": "saveStylist"
         },
 
         initialize: function (options) {
             var self = this;
-            var userId = (options && options.id) ? options.id : null;
 
-            if (!userId) {
-                self.model = new StylistModel();
-                App.Breadcrumbs.reset([{name: 'New Applications', path: '#stylists'}, {
-                    name: 'Add Application',
-                    path: '#stylists/add'
-                }]);
-                self.model.on('invalid', self.handleModelValidationError);
-
-                return self.render();
-            } else {
-                self.model = new StylistModel({_id: userId});
+            if (options.id) {
+                self.model = new StylistModel({_id: options.id});
                 self.model.fetch({
                     success: function (model, JSONmodel, options) {
                         App.Breadcrumbs.reset([{
@@ -46,7 +29,10 @@ define([
                             path: '#stylists'
                         }, {
                             name: JSONmodel.personalInfo.firstName + ' ' + JSONmodel.personalInfo.lastName,
-                            path: '#stylists/' + userId
+                            path: '#stylists/' + JSONmodel._id
+                        }, {
+                            name: 'edit',
+                            path: '#stylists/edit/' + JSONmodel._id
                         }]);
 
                         self.model.on('invalid', self.handleModelValidationError);
@@ -54,9 +40,7 @@ define([
                         return self.render(JSONmodel);
                     },
                     error: self.handleModelError
-
                 });
-
             }
 
         },
@@ -64,62 +48,43 @@ define([
         render: function (user) {
             var self = this;
             var $el = self.$el;
-            //user = user || {}; //new user
-            console.log(user);
 
-            user
-                ? $el.html(self.previewStylistTemplate({user: user}))
-                : $el.html(self.mainTemplate({user: {}}));
+            $el.html(self.mainTemplate({user: user}));
 
-            this.stylistsClientsView = new StylistsClientsView({id: user._id});
             self.afterRender(user);
             return this;
         },
 
         afterRender: function (user) {
-            var self = this;
             var navContainer = $('.sidebar-menu');
-            var serviceContainer = self.$el.find('.services');
 
             navContainer.find('.active').removeClass('active');
             navContainer.find('#nav_stylists').addClass('active');
-
-            if (!user) {
-                $.ajax({
-                    type: 'GET',
-                    dataType: 'json',
-                    contentType: 'application/json',
-                    url: '/admin/services',
-                    success: function (data) {
-                        serviceContainer.html(self.servicesTemplate({services: data}));
-                    },
-                    error: function (err) {
-                        alert(err);
-                    }
-                })
-            }
-
         },
 
         prepareSaveData: function (callback) {
             var form = this.$el.find('.stylistForm');
             var servicesBlock = form.find('.services');
+            var personalInfo = form.find('.accountInfo');
+            var salonInfo = form.find('.salonInfo');
             var serviceList = servicesBlock.find('input:checkbox:checked');
-            var email = form.find('.email').val();
-            var firstName = form.find('.firstName').val();
-            var lastName = form.find('.lastName').val();
-            var role = form.find('.role').val();
-            var phone = form.find('.phone').val();
-            var salonName = form.find('.salonName').val();
-            var businessRole = form.find('.businessRole').val();
-            var salonNumber = form.find('.salonNumber').val();
-            var salonEmail = form.find('.salonEmail').val();
-            var salonAddress = form.find('.salonAddress').val() + ' ' + form.find('.salonAddress2').val();
-            var license = form.find('.license').val();
-            var city = form.find('.city').val();
-            var region = form.find('.region').val();
-            var zip = form.find('.zip').val();
+            //PersonalInfo
+            var firstName = personalInfo.find('.firstName').val();
+            var lastName = personalInfo.find('.lastName').val();
+            var role = personalInfo.find('.role').val();
+            var phone = personalInfo.find('.phone').val();
+            // SalonInfo
+            var salonName = salonInfo.find('.salonName').val();
+            var businessRole = salonInfo.find('.businessRole').val();
+            var salonNumber = salonInfo.find('.phone').val();
+            var salonEmail = salonInfo.find('.email').val();
+            var salonAddress = salonInfo.find('.address').val() + ' ' + salonInfo.find('.address2').val();
+            var license = salonInfo.find('.license').val();
+            var city = salonInfo.find('.city').val();
+            var region = salonInfo.find('.state').val();
+            var zip = form.find('.zipCode').val();
             var country = form.find('.country').val();
+
             var services = [];
             var service;
             var data;
@@ -130,13 +95,11 @@ define([
                 service.id = $(element).data('id');
 
                 services.push(service);
-
-                console.log(5);
             });
             //validation ...
 
             data = {
-                email: email,
+                //email: email,
                 personalInfo: {
                     firstName: firstName,
                     lastName: lastName,
@@ -174,8 +137,8 @@ define([
                 model = self.model;
                 model.save(data, {
                     success: function () {
-                        console.log('success created');
-                        window.location.hash = 'newApplications';
+                        console.log('success saved');
+                        window.location.hash = 'stylists';
                     },
                     error: self.handleModelError
                     /*error: function (model, response, options) {
@@ -184,10 +147,6 @@ define([
                      }*/
                 });
             });
-        },
-
-        renderEdit: function () {
-            new EditView(this.model);
         }
 
     });

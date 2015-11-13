@@ -1,28 +1,25 @@
-
 'use strict';
 
 define([
     'views/customElements/ListView',
-    'collections/stylistPaymentCollection',
-    'text!/templates/stylistPayments/stylistPaymentsTemplate.html',
-    'text!/templates/stylistPayments/stylistPaymentsListTemplate.html'
-], function (ListView, Collection, MainTemplate, ListTemplate) {
-
+    'models/clientModel',
+    'collections/stylistClientsCollection',
+    'text!templates/stylists/stylistsClientsTemplate.html',
+    'text!templates/stylists/stylistsClientsListTemplate.html'
+], function (ListView, Model, Collection, MainTemplate, ListTemplate) {
     var View = ListView.extend({
+        el: '.stylistsClients',
+
         Collection: Collection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
-
-        navElement: '#nav_stylist_payments',
-        url: '#stylistPayments',
 
         events: _.extend({
             //put events here ...
         }, ListView.prototype.events),
 
         initialize: function (options) {
-            App.Breadcrumbs.reset([{name: 'Stylist Payments', path: '#stylistPayments'}]);
-
+            console.log(options);
             ListView.prototype.initialize.call(this, options);
         }
 

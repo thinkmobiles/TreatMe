@@ -1,4 +1,3 @@
-
 'use strict';
 
 define([
@@ -9,12 +8,16 @@ define([
 ], function (ListView, Collection, MainTemplate, ListTemplate) {
 
     var View = ListView.extend({
-        Collection: Collection,
+        Collection  : Collection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
 
-        navElement: '#nav_bookings',
-        url: '#bookings',
+        navElement  : '#nav_bookings',
+        url         : '#bookings',
+        removeParams: {
+            url           : 'admin/appointments',
+            confirmMessage: 'Are you sure want to remove appointment(s)?'
+        },
 
         events: _.extend({
             //put events here ...
@@ -31,46 +34,46 @@ define([
 });
 
 /*
-'use strict';
+ 'use strict';
 
-define([
-    'text!templates/bookings/bookingsTemplate.html'
+ define([
+ 'text!templates/bookings/bookingsTemplate.html'
 
-], function (MainTemplate) {
+ ], function (MainTemplate) {
 
-    var View;
+ var View;
 
-    View = Backbone.View.extend({
+ View = Backbone.View.extend({
 
-        el : '#wrapper',
+ el : '#wrapper',
 
-        mainTemplate : _.template(MainTemplate),
+ mainTemplate : _.template(MainTemplate),
 
-        events: {
-        },
+ events: {
+ },
 
-        initialize: function () {
-            this.render();
-        },
+ initialize: function () {
+ this.render();
+ },
 
-        render: function () {
-            var self = this;
-            var $el = self.$el;
+ render: function () {
+ var self = this;
+ var $el = self.$el;
 
-            $el.html(self.mainTemplate());
+ $el.html(self.mainTemplate());
 
-            return this;
-        },
+ return this;
+ },
 
-        afterRender: function (){
-            var navContainer = $('.sidebar-menu');
+ afterRender: function (){
+ var navContainer = $('.sidebar-menu');
 
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_bookings').addClass('active')
-        }
+ navContainer.find('.active').removeClass('active');
+ navContainer.find('#nav_bookings').addClass('active')
+ }
 
-    });
+ });
 
-    return View;
-});
-*/
+ return View;
+ });
+ */

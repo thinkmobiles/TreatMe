@@ -217,6 +217,8 @@ var StylistHandler = function (app, db) {
 
         Appointment
             .findOne({_id: appointmentId}, function (err, appointmentModel) {
+                var serviceType;
+
                 if (err) {
                     return next(err);
                 }
@@ -233,13 +235,36 @@ var StylistHandler = function (app, db) {
                     return next(error);
                 }
 
-                appointmentModel
-                    .update({$set: updateObj}, function (err) {
-                        if (err) {
+                serviceType = appointmentModel.get('serviceType');
+
+                Services
+                    .findOne({stylist: ObjectId(stylistId), serviceId: serviceType, approved: true}, {price: 1, oneTimeService: 1}, function(err, serviceModel){
+                        var price;
+
+                        if (err){
                             return next(err);
                         }
 
-                        res.status(200).send({success: 'Appointment accepted successfully'});
+                        price = serviceModel.get('price');
+
+                        if (!serviceModel || !price){
+                            return next(badRequests.NotFound({target: 'Service'}));
+                        }
+
+                        updateObj.price = price;
+
+                        //TODO: write off money from the clients STRIPE account and then update appointment
+                        // clientId = appointmentModel.get('client').toString();
+                        //if (appointmentModel.oneTimeService){ write off money from client}
+
+                        appointmentModel
+                            .update({$set: updateObj}, function (err) {
+                                if (err) {
+                                    return next(err);
+                                }
+
+                                res.status(200).send({success: 'Appointment accepted successfully'});
+                            });
                     });
             });
     };

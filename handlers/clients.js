@@ -1,3 +1,11 @@
+
+/**
+ * @description Client management module
+ * @module Client
+ *
+ */
+
+
 var badRequests = require('../helpers/badRequests');
 var async = require('async');
 var ImageHandler = require('./image');
@@ -115,6 +123,44 @@ var ClientsHandler = function (app, db) {
      */
 
     this.getActiveSubscriptionsOnServices = function (req, res, next) {
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/subscriptions/`__
+         *
+         * This __method__ allows get services with active subscriptions by _Client_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/subscriptions
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  [
+         *      {
+         *          "_id": "5638ccde3624f77b33b6587d",
+         *          "name": "Manicure",
+         *          "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638ccde3624f77b33b6587c.png",
+         *          "havePackage": false
+         *      },
+         *      {
+         *           "_id": "56408f8281c43c3a24a332fa",
+         *           "name": "Pedicure",
+         *           "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/56408f8281c43c3a24a332f9.png",
+         *           "havePackage": true
+         *      }
+         *  ]
+         *
+         * @method getActiveSubscriptionsOnServices
+         * @instance
+         */
+
         var clientId = req.session.uId;
 
         Subscription
@@ -161,6 +207,53 @@ var ClientsHandler = function (app, db) {
     };
 
     this.getCurrentSubscriptions = function (req, res, next) {
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/subscriptions/current/`__
+         *
+         * This __method__ allows get current subscriptions by _Client_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/subscriptions/current
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  [
+         *      {
+         *          "_id": "5638b946f8c11d9c0408133f",
+         *          "name": "Unlimited Pass",
+         *          "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638b946f8c11d9c0408133e.png",
+         *          "price": 135,
+         *          "purchased": false
+         *      },
+         *      {
+         *          "_id": "5638b965f8c11d9c04081341",
+         *          "name": "Unlimited Maniqure",
+         *          "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638b965f8c11d9c04081340.png",
+         *          "price": 49,
+         *          "purchased": false
+         *      },
+         *      {
+         *           "_id": "5638b976f8c11d9c04081343",
+         *           "name": "Unlimited Blowout",
+         *           "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638b976f8c11d9c04081342.png",
+         *           "price": 99,
+         *           "purchased": true
+         *      }
+         * ]
+         *
+         * @method getCurrentSubscriptions
+         * @instance
+         */
+
         var clientId = req.session.uId;
         var role = req.session.role;
 
@@ -188,7 +281,7 @@ var ClientsHandler = function (app, db) {
 
                 if (role === CONSTANTS.USER_ROLE.CLIENT){
                     SubscriptionType
-                        .find({}, {__v: 0}, function (err, subscriptionTypeModels) {
+                        .find({}, {__v: 0, allowServices: 0}, function (err, subscriptionTypeModels) {
                             var resultArray;
                             var subscriptionIds;
 
@@ -249,6 +342,38 @@ var ClientsHandler = function (app, db) {
     };
 
     this.buySubscriptions = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/subscriptions`__
+         *
+         * This __method__ allows buy subscriptions by _Client_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/subscriptions
+         *
+         * @example Body example:
+         * {
+         *  "ids": ["5638b946f8c11d9c0408133f"]
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Subscriptions purchased successfully"
+         *  }
+         *
+         * @method buySubscriptions
+         * @instance
+         */
+
         var clientId = req.session.uId;
         var body = req.body;
         var ids;
@@ -299,6 +424,64 @@ var ClientsHandler = function (app, db) {
 
                         cb();
                     });
+
+                //if need check for purchased subscriptions
+                /*SubscriptionType
+                    .findOne({_id: id}, function (err, subscriptionTypesModel) {
+                        var currentDate = new Date();
+                        var expirationDate = new Date();
+
+
+                        if (err) {
+                            return cb(err);
+                        }
+
+                        if (!subscriptionTypesModel) {
+                            return cb(badRequests.NotFound({target: 'Subscription with id: ' + id}));
+                        }
+                        Subscription
+                            .findOne({
+                                subscriptionType: id,
+                                client: ObjectId(clientId),
+                                expirationDate: {$gte: currentDate}
+                            }, function (err, someSubscriptionModel) {
+                                var error;
+                                var saveObj;
+                                var subscriptionModel;
+
+                                if (err) {
+                                    return cb(err);
+                                }
+
+                                if (someSubscriptionModel) {
+                                    error = new Error('Current user already have ' + subscriptionTypesModel.name);
+                                    error.status = 400;
+
+                                    return cb(error);
+                                }
+
+                                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+                                saveObj = {
+                                    client: clientId,
+                                    subscriptionType: id,
+                                    //TODO: price: 111,
+                                    purchaseDate: currentDate,
+                                    expirationDate: expirationDate
+                                };
+
+                                subscriptionModel = new Subscription(saveObj);
+
+                                subscriptionModel
+                                    .save(function (err) {
+                                        if (err) {
+                                            return cb(err);
+                                        }
+
+                                        cb();
+                                    });
+                            });
+                    });*/
             },
 
             function(err){
@@ -311,12 +494,50 @@ var ClientsHandler = function (app, db) {
     };
 
     this.createAppointment = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/appointment`__
+         *
+         * This __method__ allows create appointment by _Client_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/appointment
+         *
+         * @example Body example:
+         *  {
+         *      "serviceType":"5638ccde3624f77b33b6587d",
+         *      "bookingDate":"2015-11-08T10:17:49.060Z"
+         *  }
+         *
+         * @param {string} serviceType - Service id
+         * @param {string} bookingDate - Booking date for appointment
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Appointment created successfully",
+         *      "appointmentId": "5645c795edba02100fa1e6f8"
+         *  }
+         *
+         * @method createAppointment
+         * @instance
+         */
+
         var body = req.body;
         var appointmentModel;
         var saveObj;
         var clientId = req.session.uId;
         var clientLoc;
         var locationAddress;
+        var oneTimeService = true;
 
         if (!body.serviceType || !body.bookingDate) {
             return next(badRequests.NotEnParams({reqParams: 'clientId and serviceType and bookingDate'}));
@@ -409,13 +630,46 @@ var ClientsHandler = function (app, db) {
                     });
             },
 
+            //onetime service or not
+            function(cb){
+                Subscription
+                    .find({client: clientId, expirationDate: {$gte: body.bookingDate}})
+                    .populate({path: 'subscriptionType', select: 'allowServices'})
+                    .exec(function(err, subscriptionModelsArray){
+                        var allowedServices = [];
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        subscriptionModelsArray.map(function(model){
+                            var servicesIds;
+
+                            if (model.subscriptionType){
+
+                                servicesIds = model.get('subscriptionType.allowServices');
+                                servicesIds = servicesIds.toStringObjectIds();
+
+                                allowedServices = allowedServices.concat(servicesIds);
+                            }
+                        });
+
+                        if (allowedServices.indexOf(body.serviceType) !== -1){
+                            oneTimeService = false
+                        }
+
+                        cb();
+                    });
+            },
+
             function (cb) {
                 saveObj = {
                     client: ObjectId(clientId),
                     clientLoc: clientLoc,
                     serviceType: ObjectId(body.serviceType),
                     bookingDate: body.bookingDate,
-                    status: CONSTANTS.STATUSES.APPOINTMENT.CREATED
+                    status: CONSTANTS.STATUSES.APPOINTMENT.CREATED,
+                    oneTimeService: oneTimeService
                 };
 
                 appointmentModel = new Appointment(saveObj);
@@ -428,7 +682,7 @@ var ClientsHandler = function (app, db) {
                             return cb(err);
                         }
 
-                        appointmentId = appointmentModel.get('_id').toString();
+                        appointmentId = (appointmentModel.get('_id')).toString();
 
                         cb(null, appointmentId);
                     });
@@ -443,7 +697,7 @@ var ClientsHandler = function (app, db) {
             }
 
             userCoordinates = result[0];
-            appointmentId = result[2];
+            appointmentId = result[3];
 
             schedulerHelper.startLookStylistForAppointment(appointmentId, userCoordinates, body.serviceType);
 
@@ -452,12 +706,51 @@ var ClientsHandler = function (app, db) {
     };
 
     this.rateAppointmentById = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/appointment/rate`__
+         *
+         * This __method__ allows rate appointment by _Client_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/appointment/rate
+         *
+         * @example Body example:
+         *
+         *  {
+         *      "appointmentId":"5644a3453f00c1f81c25b548",
+         *      "rate": 8,
+         *      "rateComment":"Nice maniqure"
+         *  }
+         *
+         * @param {string} appointmentId - Appointment id
+         * @param {number} rate - Booking rate for appointment 0-9
+         * @param {string} [rateComment] - rate comment for appointment
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Your appointment rated successfully"
+         *  }
+         *
+         * @method rateAppointmentById
+         * @instance
+         */
+
         var clientId = req.session.uId;
         var body = req.body;
-        var rateComment;
+        var rateComment = '';
         var appointmentId;
 
-        if (!body.appointmentId || !isNaN(body.rate)) {
+        if (!body.appointmentId || isNaN(body.rate)) {
             return next(badRequests.NotEnParams({reqParams: 'appointmentId and rate'}));
         }
 
@@ -472,7 +765,7 @@ var ClientsHandler = function (app, db) {
         }
 
         Appointment
-            .findOneAndUpdate({_id: appointmentId, client: clientId}, {
+            .findOneAndUpdate({_id: appointmentId, client: ObjectId(clientId)}, {
                 $set: {
                     rate: body.rate,
                     rateComment: rateComment
@@ -483,7 +776,7 @@ var ClientsHandler = function (app, db) {
                 }
 
                 if (!appointmentModel) {
-                    return next(badRequests.DatabaseError());
+                    return next(badRequests.NotFound({target: 'Appointment'}));
                 }
 
                 res.status(200).send({success: 'Your appointment rated successfully'});
@@ -491,12 +784,48 @@ var ClientsHandler = function (app, db) {
     };
 
     this.addPhotoToGallery = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/gallery`__
+         *
+         * This __method__ allows to add photo to gallery by _Client_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/gallery
+         *
+         * @example Body example:
+         *
+         *  {
+         *      "appointmentId":"5644a3453f00c1f81c25b548",
+         *      "image": "data:image/png;base64, /9j/4AAQSkZJRgABAQA..."
+         *  }
+         *
+         * @param {string} appointmentId - Appointment id
+         * @param {string} image - base64
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Your photo was added to gallery"
+         *  }
+         *
+         * @method addPhotoToGallery
+         * @instance
+         */
+
         var clientId = req.session.uId;
         var appointmentId = req.body.appointmentId;
         var imageString = req.body.image;
-        var stylistId = req.body.stylistId;
 
-        if (!appointmentId || !imageString || !stylistId) {
+        if (!appointmentId || !imageString /*|| !stylistId*/) {
             return next(badRequests.NotEnParams({reqParams: 'appointmentId and image and stylistId'}));
         }
 
@@ -504,22 +833,21 @@ var ClientsHandler = function (app, db) {
             return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
         }
 
-        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)) {
-            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
-        }
-
         Appointment
-            .findOne({_id: appointmentId, client: clientId, stylist: stylistId}, function (err, appointmentModel) {
+            .findOne({_id: appointmentId, client: clientId}, function (err, appointmentModel) {
                 var galleryModel;
                 var saveObj;
+                var stylistId;
 
                 if (err) {
                     return next(err);
                 }
 
-                if (!appointmentModel) {
-                    return next(badRequests.DatabaseError());
+                if (!appointmentModel || !appointmentModel.stylist) {
+                    return next(badRequests.NotFound({target: 'Appointment'}));
                 }
+
+                stylistId = appointmentModel.get('stylist').toString();
 
                 saveObj = {
                     clientId: clientId,

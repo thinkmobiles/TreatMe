@@ -1,0 +1,48 @@
+<div class="stylistForm" xmlns="http://www.w3.org/1999/html">
+    <div class="userNameContainer">
+        <span> <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%> </span>
+    </div>
+
+    <div class="accountInfo">
+        <span class="title">ACCOUNT INFO</span>
+        <div class="avatar"></div>
+        <input type="text" class="firstName" value=" <%= user.personalInfo.firstName %> ">
+        <input type="text" class="lastName" value=" <%= user.personalInfo.lastName %> "></br>
+        <input type="text" class="phone" value=" <%= user.personalInfo.phone %> ">
+        <input type="text" class="proffession" value=" <%= user.personalInfo.proffession %> ">
+    </div>
+
+    <div class="salonInfo">
+        <span class="title">SALON INFO</span></br>
+        <input type="text" class="salonName" value=" <%= user.salonInfo.salonName %> ">
+        <input type="text" class="role" value=" <%= user.salonInfo.role %> ">
+        <input type="text" class="phone" value=" <%= user.salonInfo.phone %> ">
+        <input type="text" class="email" value=" <%= user.salonInfo.email %> ">
+        <input type="text" class="address" value=" <%= user.salonInfo.address %> ">
+        <input type="text" class="address2" value=" <%= user.salonInfo.address %> ">
+        <input type="text" class="licenseNumber" value=" <%= user.salonInfo.licenseNumber %> ">
+        <input type="text" class="city" value=" <%= user.salonInfo.city %> ">
+        <input type="text" class="zipCode" value=" <%= user.salonInfo.zipCode %> ">
+        <input type="text" class="state" value=" <%= user.salonInfo.state %> ">
+        <input type="text" class="country" value=" <%= user.salonInfo.country %> ">
+    </div>
+        <div class="services" >
+            <p>These services and price were agreed with stylist based on negotiations</br>
+                <span>Services available*</span>
+                <span>Service Price*</span>
+            </p>
+
+            <% _.forEach(user.services, function (service) {%>
+            <% var name = service.name %>
+            <input type="checkbox" id="<%= name %>" checked="checked" data-id="<%= service.id %>" >
+            <label for="<%= name %>"><%= name %></label>
+            <input type="text" value="<%= service.price %>"></br>
+            <%});%>
+
+            <p>*To be filled in by TreatMe team based on negotiations with stylist</p>
+        </div>
+    <button class="saveBtn">Save</button>
+
+
+</div>
+

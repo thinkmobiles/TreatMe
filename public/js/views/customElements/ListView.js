@@ -9,7 +9,7 @@ define([
 ], function (PaginationTemplate, MainTemplate) {
 
     var View = Backbone.View.extend({
-        
+
         el: '#wrapper',
 
         listLength        : null,
@@ -18,25 +18,33 @@ define([
         $pagination       : null,
 
         paginationTemplate: _.template(PaginationTemplate),
-        mainTemplate: _.template(MainTemplate),
-        listTemplate: null,
-        Collection  : null,
-        url         : null,
-        navElement  : '#nav_dashborad',
-        defaults    : {
+        mainTemplate      : _.template(MainTemplate),
+        listTemplate      : null,
+        Collection        : null,
+        url               : null,
+        navElement        : '#nav_dashborad',
+        defaults          : {
             page  : 1,
             count : 5,
             order : '1',
             filter: '',
             status: '' //TODO: ???
         },
+
+        removeParams: {
+            url           : null,
+            confirmMessage: 'Are You sure want to delete?'
+        },
+
         events: {
-            'click .showPage': 'gotoPage',
-            'click .showFirst': 'firstPage',
-            'click .showLast': 'lastPage',
-            'click .sortable': 'sort',
-            'click .searchBtn': 'filter',
-            'click .checkAll': 'checkAll'
+            'click .showPage'         : 'gotoPage',
+            'click .showFirst'        : 'firstPage',
+            'click .showLast'         : 'lastPage',
+            'click .sortable'         : 'sort',
+            'click .searchBtn'        : 'filter',
+            'click .checkAll'         : 'checkAll',
+            'click #removeSelectedBtn': 'removeSelectedItems',
+            'click .deleteCurrentBtn' : 'deleteCurrentItem'
         },
 
         initialize: function (options) {
@@ -137,8 +145,8 @@ define([
             Backbone.history.navigate(url);
         },
 
-        firstPage: function(options){
-            var page =  1;
+        firstPage: function (options) {
+            var page = 1;
             var params = this.pageParams;
             var collectionParams;
 
@@ -149,8 +157,8 @@ define([
             this.changeLocationHash();
         },
 
-        lastPage: function(options){
-            var page =  this.totalPages;
+        lastPage: function (options) {
+            var page = this.totalPages;
             var params = this.pageParams;
             var collectionParams;
 
@@ -161,7 +169,7 @@ define([
             this.changeLocationHash();
         },
 
-        getPage: function(options){
+        getPage: function (options) {
             var itemsNumber;
             var page;
             var adr = /^\d+$/;
@@ -251,18 +259,18 @@ define([
             var currentPage = this.pageParams.page;
             var html = '';
 
-            for (var i=from; i<to; i++) {
+            for (var i = from; i < to; i++) {
                 if (i === currentPage) {
-                    html+='<li class="showPage active">' + i + '</li>';
+                    html += '<li class="showPage active">' + i + '</li>';
                 } else {
-                    html+='<li class="showPage">' + i + '</li>';
+                    html += '<li class="showPage">' + i + '</li>';
                 }
             }
 
             return html;
         },
 
-        pageElementRender: function(){
+        pageElementRender: function () {
             var totalCount = this.collection.totalRecords;
             var params = this.pageParams;
             var count = params.count;
@@ -278,34 +286,34 @@ define([
                 this.totalPages = totalPages;
 
                 if (totalPages >= 1) {
-                    paginationContent = this.getPaginationContent(1, totalPages+1);
+                    paginationContent = this.getPaginationContent(1, totalPages + 1);
                 }
 
                 /*if (totalPages <= itemsOnPage) {
-                    paginationContent = this.getPaginationContent(0, totalPages);
-                } else if (totalPages >= itemsOnPage && currentPage <= itemsOnPage) {
-                    paginationContent = this.getPaginationContent(0, itemsOnPage);
-                } else if (totalPages >= itemsOnPage && currentPage > 3 && currentPage <= totalPages - 3) {
-                    paginationContent = this.getPaginationContent(currentPage - 3, currentPage + 3);
-                } else if (currentPage >= totalPages - 3) {
-                    paginationContent = this.getPaginationContent(totalPages - 6, totalPages);
-                }*/
+                 paginationContent = this.getPaginationContent(0, totalPages);
+                 } else if (totalPages >= itemsOnPage && currentPage <= itemsOnPage) {
+                 paginationContent = this.getPaginationContent(0, itemsOnPage);
+                 } else if (totalPages >= itemsOnPage && currentPage > 3 && currentPage <= totalPages - 3) {
+                 paginationContent = this.getPaginationContent(currentPage - 3, currentPage + 3);
+                 } else if (currentPage >= totalPages - 3) {
+                 paginationContent = this.getPaginationContent(totalPages - 6, totalPages);
+                 }*/
 
                 this.$el.find('#pageList .showFirst').after(paginationContent);
 
                 /*if (totalPages <= 1) {
-                    $("#nextPage").prop("disabled", true);
-                    $("#lastShowPage").prop("disabled", true);
+                 $("#nextPage").prop("disabled", true);
+                 $("#lastShowPage").prop("disabled", true);
 
-                    this.$el.find('#pageList .showFirst').after(paginationContent);
-                }*/
+                 this.$el.find('#pageList .showFirst').after(paginationContent);
+                 }*/
             } else {
 
             }
         },
 
         gotoPage: function (e) {
-            var page =  parseInt(e.target.textContent);
+            var page = parseInt(e.target.textContent);
             var params = this.pageParams;
             var collectionParams;
 
@@ -358,11 +366,99 @@ define([
 
         checkAll: function (e) {
             var state = $(e.target).prop('checked');
-            var checkboxes = this.$el.find('.items .checkItem');
+            var checkboxes = this.$el.find('tbody .checkItem');
 
             e.stopPropagation();
 
             checkboxes.prop('checked', state);
+        },
+
+        getSelectedIds: function () {
+            var checkboxes = this.$el.find('.checkItem:checked');
+            var ids = _.map(checkboxes, function (checkbox) {
+                return $(checkbox).closest('tr').data('id');
+            });
+
+            return ids;
+        },
+
+        removeConfirm: function (options) {
+            var opts = options || {};
+            var onConfirm = opts.onConfirm;
+            var onCancel = opts.onCancel || function () {
+                    $("#dialog").dialog('close');
+                };
+            var buttons = {
+                "Delete": onConfirm,
+                "Cancel": onCancel
+            };
+            var dialogOptions = {
+                resizable: false,
+                modal    : true,
+                buttons  : buttons
+            };
+            var dialogContainer = $('#dialog');
+            var message = this.removeParams.confirmMessage;
+
+            dialogContainer.find('.message').html(message);
+            dialogContainer.dialog(dialogOptions);
+        },
+
+        removeSelectedItems: function (e) {
+            var self = this;
+
+            this.removeConfirm({
+                onConfirm: function () {
+                    var ids = self.getSelectedIds();
+
+                    $("#dialog").dialog('close');
+                    self.remove(ids);
+                }
+            });
+        },
+
+        deleteCurrentItem: function (e) {
+            var self = this;
+
+            this.removeConfirm({
+                onConfirm: function () {
+                    var target = $(e.target);
+                    var itemId = target.closest('tr').data('id');
+                    var ids = [itemId];
+
+                    $("#dialog").dialog('close');
+                    self.remove(ids);
+                }
+            });
+        },
+
+        remove: function (ids) {
+            var data = {
+                packagesArray: ids
+            };
+            var dataStr = JSON.stringify(data);
+            var url = this.removeParams.url;
+            var self = this;
+
+            if (!url) {
+                return console.error('this.removeParams.url is undefined');
+            }
+
+            $.ajax({
+                type       : 'DELETE',
+                dataType   : 'json',
+                contentType: 'application/json',
+                url        : url,
+                data       : dataStr,
+                success    : function () {
+                    var params = self.pageParams;
+                    var page = params.page;
+                    var fetchParams = _.extend({reset: true}, params);
+
+                    self.collection.getPage(page, fetchParams); //fetch and re-render
+                },
+                error      : self.handleErrorResponse //TODO
+            });
         }
 
     });

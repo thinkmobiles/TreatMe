@@ -17,20 +17,13 @@ define([
             "login(/:type/*value)"      :  "login",
             "signup"                    :  "signup",
             "dashboard"                 :  "dashboard",
-            "newApplications"           :  "newApplications",
             "newApplications/add"       :  "newApplicationDetails",
             "newApplications/:id"       :  "newApplicationDetails",
-            "stylists(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "stylists",
             "stylists/add"              :  "addStylists",
             "stylists/:id"              :  "stylistDetails",
-            "clients(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "clients",
-            //"pendingRequests"           :  "pendingRequests",
-            "pendingRequests(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "pendingRequests",
-            //"bookings"                  :  "bookings",
-            "bookings(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "bookings",
-            "stylistPayments"           :  "stylistPayments",
-            "clientPackages"            :  "clientPackages",
+            "stylists/edit/:id"         :  "editStylistDetails",
             "gallery"                   :  "gallery",
+            ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/filter=:filter)":  "list",
             "*any"                      :  "any"
         },
 
@@ -110,52 +103,12 @@ define([
             this.loadWrapperView('dashboard', null, REDIRECT.whenNOTAuthorized);
         },
 
-        newApplications: function () {
-            this.loadWrapperView('newApplications', null, REDIRECT.whenNOTAuthorized);
-        },
-
         newApplicationDetails: function (id) {
             this.loadWrapperView('newApplications', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
-        stylists: function (page, countPerPage, orderBy, order, filter) {
-            var options = {
-                page: parseInt(page),
-                countPerPage: parseInt(countPerPage),
-                orderBy: orderBy,
-                order: order,
-                filter: filter
-            };
-
-            this.loadWrapperView('stylists', options, REDIRECT.whenNOTAuthorized);
-        },
-
-        clients: function (page, countPerPage, orderBy, order, filter) {
-            var options = {
-                page: parseInt(page),
-                countPerPage: parseInt(countPerPage),
-                orderBy: orderBy,
-                order: order,
-                filter: filter
-            };
-
-            this.loadWrapperView('clients', options, REDIRECT.whenNOTAuthorized);
-        },
-
-        pendingRequests: function (page, countPerPage, orderBy, order, filter) {
-            var options = {
-                page: parseInt(page),
-                countPerPage: parseInt(countPerPage),
-                orderBy: orderBy,
-                order: order,
-                filter: filter,
-                status: 'Pending'
-            };
-
-            this.loadWrapperView('pendingRequests', options, REDIRECT.whenNOTAuthorized);
-        },
-
-        bookings: function (page, countPerPage, orderBy, order, filter) {
+        list: function (type, page, countPerPage, orderBy, order, filter) {
+            console.log('>>> list', type);
             var options = {
                 page: parseInt(page),
                 countPerPage: parseInt(countPerPage),
@@ -165,17 +118,17 @@ define([
                 status: 'Booked'
             };
 
-            this.loadWrapperView('bookings', options, REDIRECT.whenNOTAuthorized);
-        },
+            if (type === 'pendingRequests') {
+                options.status = 'Pending';
+            }
 
-        stylistPayments: function () {
-            this.loadWrapperView('stylistPayments', null, REDIRECT.whenNOTAuthorized);
-        },
+            if (type === 'bookings') {
+                options.status = 'Booked';
+            }
 
-        clientPackages: function () {
-            this.loadWrapperView('clientPackages', null, REDIRECT.whenNOTAuthorized);
+            this.loadWrapperView(type, options, REDIRECT.whenNOTAuthorized);
         },
-
+        
         gallery: function () {
             this.loadWrapperView('gallery', null, REDIRECT.whenNOTAuthorized);
         },
@@ -186,6 +139,10 @@ define([
 
         stylistDetails: function (id) {
             this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
+        },
+
+        editStylistDetails: function (id) {
+            this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Edit');
         }
 
     });
