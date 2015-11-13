@@ -5,8 +5,9 @@ define([
     'text!templates/stylists/itemTemplate.html',
     'text!templates/customElements/servicesTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html',
-    'views/stylists/stylistsEditView'
-], function (StylistModel, MainTemplate, ServicesTemplate, PreviewStylistTemplate, EditView) {
+    'views/stylists/stylistsEditView',
+    'views/stylists/stylistsClientsView'
+], function (StylistModel, MainTemplate, ServicesTemplate, PreviewStylistTemplate, EditView, StylistsClientsView) {
 
     var View = Backbone.View.extend({
 
@@ -57,6 +58,7 @@ define([
                 });
 
             }
+
         },
 
         render: function (user) {
@@ -68,7 +70,8 @@ define([
                 ? $el.html(self.previewStylistTemplate({user: user}))
                 : $el.html(self.mainTemplate({user: {}}));
 
-                self.afterRender(user);
+            this.stylistsClientsView = new StylistsClientsView({id: user._id});
+            self.afterRender(user);
             return this;
         },
 
