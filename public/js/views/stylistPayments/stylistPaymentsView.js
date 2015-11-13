@@ -1,39 +1,29 @@
+
 'use strict';
 
 define([
-    'text!templates/stylistPayments/stylistPaymentsTemplate.html'
+    'views/customElements/ListView',
+    'collections/stylistPaymentCollection',
+    'text!/templates/stylistPayments/stylistPaymentsTemplate.html',
+    'text!/templates/stylistPayments/stylistPaymentsListTemplate.html'
+], function (ListView, Collection, MainTemplate, ListTemplate) {
 
-], function (MainTemplate) {
+    var View = ListView.extend({
+        Collection: Collection,
+        mainTemplate: _.template(MainTemplate),
+        listTemplate: _.template(ListTemplate),
 
-    var View;
+        navElement: '#nav_stylist_payments',
+        url: '#stylistPayments',
 
-    View = Backbone.View.extend({
+        events: _.extend({
+            //put events here ...
+        }, ListView.prototype.events),
 
-        el : '#wrapper',
+        initialize: function (options) {
+            App.Breadcrumbs.reset([{name: 'Stylist Payments', path: '#stylistPayments'}]);
 
-        mainTemplate : _.template(MainTemplate),
-
-        events: {
-        },
-
-        initialize: function () {
-            this.render();
-        },
-
-        render: function () {
-            var self = this;
-            var $el = self.$el;
-
-            $el.html(self.mainTemplate());
-
-            return this;
-        },
-
-        afterRender: function (){
-            var navContainer = $('.sidebar-menu');
-
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_stylist_payments').addClass('active')
+            ListView.prototype.initialize.call(this, options);
         }
 
     });

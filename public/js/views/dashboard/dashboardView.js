@@ -17,6 +17,13 @@ define([
         },
 
         initialize: function () {
+            var navContainer = $('.sidebar-menu');
+
+            navContainer.find('.active').removeClass('active');
+            navContainer.find('#nav_dashborad').addClass('active');
+            
+            App.Breadcrumbs.reset([{name: 'Dashboard', path: '#dashboard'}]);
+
             this.render();
         },
 
