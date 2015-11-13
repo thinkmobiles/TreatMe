@@ -1065,6 +1065,36 @@ var AdminHandler = function (db) {
     };
 
     this.removeAppointments = function (req, res, next) {
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/appointments/`__
+         *
+         * This __method__ allows remove requested appointment by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/appointment/
+         *
+         * @example Body example:
+         *  {
+         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *  }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Appointments was removed successfully"}
+         *
+         * @method removeAppointments
+         * @instance
+         */
+
         var arrayOfId = req.body.appointments;
 
         if (!arrayOfId || !arrayOfId.length) {
@@ -1084,6 +1114,36 @@ var AdminHandler = function (db) {
     };
 
     this.suspendAppointments = function (req, res, next) {
+
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/appointments/`__
+         *
+         * This __method__ allows remove suspend appointment by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/appointment/
+         *
+         * @example Body example:
+         *  {
+         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *  }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Appointments was suspended successfully"}
+         *
+         * @method suspendAppointments
+         * @instance
+         */
+
         var arrayOfId = req.body.appointments;
 
         if (!arrayOfId || !arrayOfId.length) {
@@ -1103,6 +1163,36 @@ var AdminHandler = function (db) {
     };
 
     this.bookAppointment = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/appointments/`__
+         *
+         * This __method__ allows to create appointment by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/appointment/
+         *
+         * @example Body example:
+         *  {
+         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *  }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Appointments was suspended successfully"}
+         *
+         * @method suspendAppointments
+         * @instance
+         */
+
         var clientId = req.body.clientId;
         var stylistId = req.body.stylistId;
         var serviceTypeId = req.body.serviceTypeId;
@@ -1172,17 +1262,17 @@ var AdminHandler = function (db) {
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/admin/subscription/`__
+         * __URL: `/admin/subscriptionType/`__
          *
          * This __method__ allows create subscription by _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/subscription/
+         *         http://projects.thinkmobiles.com:8871/admin/subscriptionType/
          *
          * @example Body example:
          * {
          *  "name": "Manicure",
-         *  "price": "%99/MO",
+         *  "price": 99,
          *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
          * }
          *
@@ -1236,6 +1326,30 @@ var AdminHandler = function (db) {
     };
 
     this.getClientPackages = function (req, res, next) {
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/subscriptions/`__
+         *
+         * This __method__ allows get list subscription by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/subscriptions/
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         * {"success":}
+         *
+         * @method addSubscriptionType
+         * @instance
+         */
+
         var sortParam = req.query.sort;
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
