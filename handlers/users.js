@@ -1443,15 +1443,17 @@ var UserHandler = function (app, db) {
 
     this.getGalleryPhotos = function(req, res, next){
         var userId = req.params.id;
+        var query = req.query;
+        var page = (query.page >=1) ? query.page : 1;
+        var limit = (query.limit >=1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_PHOTOS;
         var findObj = {};
         var populateArray = [
-            {path: 'appointment', select: 'bookingDate'},
-            {path: 'appointment.serviceType', select: 'name'}
+            {path: 'serviceType', select: 'name'}
         ];
 
         if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
-            findObj.clientId = req.session.uId;
-            populateArray.push({path: 'appointment.stylist', select: 'salonInfo.salonName personalInfo.firstName personalInfo.lastName personalInfo.avatar'});
+            findObj.client = req.session.uId;
+            populateArray.push({path: 'stylist', select: 'salonInfo.salonName personalInfo.firstName personalInfo.lastName personalInfo.avatar'});
         }
 
         if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
@@ -1463,34 +1465,94 @@ var UserHandler = function (app, db) {
                 return next(badRequests.InvalidValue({value: userId, param: 'id'}));
             }
 
-            findObj.clientId = userId;
-            findObj.stylistId = req.session.uId;
-            populateArray.push({path: 'appointment.client', select: 'personalInfo.firstName personalInfo.lastName'});
+            findObj.client = userId;
+            findObj.stylist = req.session.uId;
+            populateArray.push({path: 'client', select: 'personalInfo.firstName personalInfo.lastName'});
         }
 
         if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
             populateArray.push(
-                {path: 'appointment.stylist', select: 'personalInfo.firstName personalInfo.lastName'},
-                {path: 'appointment.client', select: 'personalInfo.firstName personalInfo.lastName'}
+                {path: 'client', select: 'personalInfo.firstName personalInfo.lastName'},
+                {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}
             );
         }
 
-        Gallery
-            .find(findObj)
-            .populate(populateArray)
-            .exec(function(err, galleryModelsArray){
-                if (err){
-                    return next(err);
-                }
+        async.parallel({
 
-                galleryModelsArray.map(function(model){
-                    model.url = image.computeUrl(model._id, CONSTANTS.BUCKET.IMAGES);
+            galleryCount: function(cb){
+                Gallery.count(findObj, function(err, count){
+                    if (err){
+                        return cb(err);
+                    }
 
-                    return model;
+                    cb(null, count);
                 });
+            },
 
-                res.status(200).send(galleryModelsArray);
-            });
+            gallery: function(cb){
+                Gallery
+                    .find(findObj, {__v: 0})
+                    .populate(populateArray)
+                    .skip(limit * (page - 1))
+                    .limit(limit)
+                    .exec(function(err, galleryModelsArray){
+                        var resultPhotos;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        resultPhotos = galleryModelsArray.map(function(model){
+                            var modelJSON = model.toJSON();
+
+                            modelJSON.photoUrl = image.computeUrl(model._id, CONSTANTS.BUCKET.IMAGES);
+
+                            if (modelJSON.serviceType){
+                                modelJSON.serviceType = modelJSON.serviceType.name;
+                            } else {
+                                modelJSON.serviceType = 'Service was removed';
+                            }
+
+                            if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
+                                delete modelJSON.client;
+
+                                if (modelJSON.stylist.personalInfo.avatar){
+                                    modelJSON.avatar = image.computeUrl(modelJSON.stylist.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
+                                } else {
+                                    modelJSON.avatar = '';
+                                }
+                            }
+
+                            if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+                                delete modelJSON.stylist;
+                            }
+
+                            if (modelJSON.stylist){
+                                if (modelJSON.stylist.salonInfo){
+                                    modelJSON.salon = modelJSON.stylist.salonInfo.salonName;
+                                }
+
+                                modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
+                            }
+
+                            if (modelJSON.client){
+                                modelJSON.client = modelJSON.client.personalInfo.firstName + ' ' + modelJSON.client.personalInfo.lastName;
+                            }
+
+                            return modelJSON;
+                        });
+
+                        cb(null, resultPhotos);
+                    });
+            }
+
+        }, function(err, result){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({total: result.galleryCount, data: result.gallery});
+        });
     };
 
     this.removePhotoFromGallery = function(req, res, next){
