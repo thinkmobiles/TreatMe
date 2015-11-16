@@ -9,6 +9,7 @@ require.config({
         Validator        : './libs/validator-js/validator',
         Underscore      : './libs/underscore/underscore',
         Backbone        : './libs/backbone/backbone',
+        maps            : './libs/googleMapsAPI',
         //less            : './libs/less/dist/less',
         socketio        : '/socket.io/socket.io',
         views           : './views',
