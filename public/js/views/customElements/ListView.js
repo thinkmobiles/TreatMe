@@ -22,7 +22,7 @@ define([
         listTemplate      : null,
         Collection        : null,
         url               : null,
-        navElement        : '#nav_dashborad',
+        navElement        : null, //'#nav_dashborad',
         defaults          : {
             page  : 1,
             count : 5,
@@ -89,13 +89,9 @@ define([
         },
 
         render: function () {
-            var navContainer = $('.sidebar-menu');
-            var navElement = this.navElement;
-
             this.$el.html(this.mainTemplate(this.pageParams));
 
-            navContainer.find('.active').removeClass('active');
-            navContainer.find(navElement).addClass('active');
+            this.changeSelectedMenu();
 
             return this;
         },
@@ -125,6 +121,18 @@ define([
             }
 
             return this;
+        },
+
+        changeSelectedMenu: function () {
+            var navElement = this.navElement;
+            var navContainer;
+
+            if (navElement) {
+                navContainer = $('.sidebar-menu');
+
+                navContainer.find('.active').removeClass('active');
+                navContainer.find(navElement).addClass('active');
+            }
         },
 
         changeLocationHash: function () {

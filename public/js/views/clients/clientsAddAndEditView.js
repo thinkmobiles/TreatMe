@@ -45,8 +45,6 @@ define([
                     },
                     error: self.handleModelError
                 });
-
-                this.render();
             }
         },
 
