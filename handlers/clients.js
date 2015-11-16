@@ -838,21 +838,26 @@ var ClientsHandler = function (app, db) {
                 var galleryModel;
                 var saveObj;
                 var stylistId;
+                var serviceType;
+                var bookingDate;
 
                 if (err) {
                     return next(err);
                 }
 
-                if (!appointmentModel || !appointmentModel.stylist) {
+                if (!appointmentModel || !appointmentModel.stylist || !appointmentModel.serviceType) {
                     return next(badRequests.NotFound({target: 'Appointment'}));
                 }
 
-                stylistId = appointmentModel.get('stylist').toString();
+                stylistId = appointmentModel.get('stylist');
+                serviceType = appointmentModel.get('serviceType');
+                bookingDate = appointmentModel.get('bookingDate');
 
                 saveObj = {
-                    clientId: clientId,
-                    stylistId: stylistId,
-                    appointment: ObjectId(appointmentId)
+                    client: ObjectId(clientId),
+                    stylist: stylistId,
+                    serviceType: serviceType,
+                    bookingDate: bookingDate
                 };
 
                 galleryModel = new Gallery(saveObj);

@@ -7,13 +7,10 @@ module.exports = function (db) {
     var ObjectId = mongoose.Schema.Types.ObjectId;
 
     var Gallery = new Schema({
-        clientId: String,
-        stylistId: String,
-        appointment: {
-            type: ObjectId,
-            ref: 'Appointment'
-        }
-
+        client: {type: ObjectId, ref: 'User'},
+        stylist: {type: ObjectId, ref: 'User'},
+        serviceType: {type: ObjectId, ref: 'ServiceType'},
+        bookingDate: {type: Date, default: Date.now}
     }, {
         collection: 'Gallery'
     });
