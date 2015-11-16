@@ -16,7 +16,7 @@ module.exports = function(app, db){
     var stylistHandler = new StylistHandler(app, db);
     var sessionHandler = new SessionHandler(db);
     var user = new UserHandler(app, db);
-    var adminHandler = new AdminHandler(db);
+    var adminHandler = new AdminHandler(app, db);
 
     /**
      * __Type__ __`GET`__
