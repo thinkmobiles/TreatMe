@@ -19,6 +19,8 @@ define([
             "dashboard"                 :  "dashboard",
             "newApplications/add"       :  'stylistDetails', //"newApplicationDetails",
             "newApplications/:id"       :  "newApplicationDetails",
+            "pendingRequests/add": "addPendingRequest",
+            "pendingRequests/:id": "pendingRequestDetails",
             "stylists/add"              :  'stylistDetails',//"addStylists",
             "stylists/:id"              :  "stylistDetails",
             "stylists/edit/:id"         :  "editStylistDetails",
@@ -105,6 +107,14 @@ define([
 
         newApplicationDetails: function (id) {
             this.loadWrapperView('newApplications', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
+        },
+
+        pendingRequestDetails: function (id) {
+            this.loadWrapperView('pendingRequests', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
+        },
+
+        addPendingRequest: function (id) {
+            this.loadWrapperView('pendingRequests', {id: id}, REDIRECT.whenNOTAuthorized, 'Add');
         },
 
         list: function (type, page, countPerPage, orderBy, order, search) {
