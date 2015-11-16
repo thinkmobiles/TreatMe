@@ -40,12 +40,97 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
-    function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, order, callback){
+    function getAppDetailsForSearch (search, status, callback){
+        var APPOINTMENT = CONSTANTS.STATUSES.APPOINTMENT;
+        var searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+        var userCriteria = {};
+        var serviceCriteria = {};
+
+        if (status === APPOINTMENT.PENDING){
+            userCriteria['$and'] = [
+                {role: CONSTANTS.USER_ROLE.CLIENT},
+                {
+                    $or: [
+                        {'personalInfo.firstName': {$regex: searchRegExp}},
+                        {'personalInfo.lastName': {$regex: searchRegExp}}
+                    ]
+                }
+            ];
+
+            serviceCriteria.name = {$regex: searchRegExp};
+        } else if (status === APPOINTMENT.BOOKED) {
+            userCriteria['$and'] = [
+                {
+                    $or: [
+                        {role: CONSTANTS.USER_ROLE.CLIENT},
+                        {role: CONSTANTS.USER_ROLE.STYLIST}
+                    ]
+                },
+                {
+                    $or: [
+                        {'personalInfo.firstName': {$regex: searchRegExp}},
+                        {'personalInfo.lastName': {$regex: searchRegExp}}
+                    ]
+                }
+            ];
+        }
+
+        async
+            .parallel([
+                function(cb){
+                    var usersId;
+                    User
+                        .find(userCriteria, {_id: 1})
+                        .exec(function(err, usersCollection){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            usersId = _.pluck(usersCollection, '_id');
+
+                            cb(null, usersId);
+                        })
+                },
+
+                function(cb){
+                    var servicesId;
+
+                    ServiceType
+                        .find(serviceCriteria, {_id: 1})
+                        .exec(function(err, serviceCollection){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            servicesId = _.pluck(serviceCollection, '_id');
+
+                            cb(null, servicesId);
+                        });
+                }
+            ], function(err, results){
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, {
+                    usersId: results[0],
+                    serviceId: results[1]
+                });
+            });
+
+    }
+
+    function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, order, search, callback){
         var findObj = {};
         var projectionObj;
         var populateArray = [];
         var sortObj = {};
         var APPOINTMENT = CONSTANTS.STATUSES.APPOINTMENT;
+
+        if (!callback && typeof search === 'function'){
+            callback = search;
+            search = null;
+        }
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
             findObj.client = userId;
@@ -86,7 +171,7 @@ var UserHandler = function (app, db) {
                 clientLoc: 0
             };
 
-            if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.PENDING){
+            if (appointmentStatus ===  APPOINTMENT.PENDING){
 
 
                 if (sortParam === 'Date') {
@@ -99,12 +184,15 @@ var UserHandler = function (app, db) {
 
                 projectionObj.bookingDate = 0;
 
-                findObj.status = {$in : [CONSTANTS.STATUSES.APPOINTMENT.CREATED, CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED]};
+                findObj['$and'] = [
+                    {status: {$in : [APPOINTMENT.CREATED, APPOINTMENT.SUSPENDED]}}
+                ];
+
 
                 populateArray.push({path: 'serviceType', select: 'name'});
             }
 
-            if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.BOOKED){
+            if (appointmentStatus ===  APPOINTMENT.BOOKED){
                 if (sortParam === 'Date') {
                     sortObj.bookingDate = order;
                 }
@@ -117,13 +205,16 @@ var UserHandler = function (app, db) {
                 projectionObj.requestDate = 0;
                 projectionObj.serviceType = 0;
 
-                findObj.status = {$in : [
-                   APPOINTMENT.CONFIRMED,
-                   APPOINTMENT.BEGINS,
-                   APPOINTMENT.SUCCEEDED,
-                   APPOINTMENT.CANCEL_BY_CLIENT,
-                   APPOINTMENT.CANCEL_BY_STYLIST
-                ]}
+                findObj['$and'] = [
+                    {status: {$in : [
+                        APPOINTMENT.CONFIRMED,
+                        APPOINTMENT.BEGINS,
+                        APPOINTMENT.SUCCEEDED,
+                        APPOINTMENT.CANCEL_BY_CLIENT,
+                        APPOINTMENT.CANCEL_BY_STYLIST
+                    ]}}
+                ];
+
             }
 
             populateArray.push(
@@ -133,8 +224,40 @@ var UserHandler = function (app, db) {
         }
 
 
-        async.parallel({
-            appointmentCount: function(cb){
+        async.waterfall([
+
+            function(cb){
+                if (!search){
+                    return cb(null, null)
+                }
+
+                getAppDetailsForSearch(search, appointmentStatus, cb)
+            },
+
+            function(searchIds, cb){
+                var criteria;
+
+                if (searchIds){
+
+                    if (appointmentStatus ===  APPOINTMENT.PENDING){
+                        criteria = {
+                            $or: [
+                                {client: {$in: searchIds.usersId}},
+                                {serviceType: {$in: searchIds.serviceId}}
+                            ]
+                        };
+                    } else if (appointmentStatus ===  APPOINTMENT.BOOKED){
+                        criteria = {
+                            $or: [
+                                {client: {$in: searchIds.usersId}},
+                                {stylist: {$in: searchIds.usersId}}
+                            ]
+                        };
+                    }
+
+                    findObj['$and'].push(criteria);
+                }
+
                 Appointment
                     .count(findObj, function(err, count){
                        if (err){
@@ -145,7 +268,7 @@ var UserHandler = function (app, db) {
                     });
             },
 
-            appointments: function(cb){
+            function(count, cb){
                 Appointment
                     .find(findObj, projectionObj)
                     .populate(populateArray)
@@ -176,16 +299,16 @@ var UserHandler = function (app, db) {
                             }
                         });
 
-                        cb(null, appointmentModelsArray);
+                        cb(null, count, appointmentModelsArray);
                     });
-            }},
+            }],
 
-            function(err, result){
+            function(err, count, appointmentsArray){
                 if (err){
                     return callback(err);
                 }
 
-                callback(null, {total: result.appointmentCount, data: result.appointments})
+                callback(null, {total: count, data: appointmentsArray})
             });
     }
 
@@ -1644,6 +1767,7 @@ var UserHandler = function (app, db) {
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_APPOINTMENTS;
         var appointmentStatus;
         var userId = req.session.uId;
+        var search = req.query.search;
 
         if (appointmentId){
             getUserAppointmentById(userId, appointmentId, req.session.role, function(err, result){
@@ -1662,7 +1786,7 @@ var UserHandler = function (app, db) {
                 }
             }
 
-            getAllUserAppointments(userId, req.session.role, appointmentStatus, page, limit, sortParam, order, function(err, result){
+            getAllUserAppointments(userId, req.session.role, appointmentStatus, page, limit, sortParam, order, search, function(err, result){
                 if (err){
                     return next(err);
                 }
