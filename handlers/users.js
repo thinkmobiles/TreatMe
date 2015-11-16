@@ -130,7 +130,7 @@ var UserHandler = function (app, db) {
         var populateArray = [];
         var sortObj = {};
         var APPOINTMENT = CONSTANTS.STATUSES.APPOINTMENT;
-        var searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+        var searchRegExp;
         var searchCriteria = {};
 
         if (!callback && typeof search === 'function'){
@@ -178,14 +178,17 @@ var UserHandler = function (app, db) {
             };
 
             if (appointmentStatus === APPOINTMENT.PENDING){
+                if (search){
+                    searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+                    searchCriteria = {
+                        $or: [
+                            {'client.firstName': {$regex: searchRegExp}},
+                            {'client.lastName': {$regex: searchRegExp}},
+                            {'serviceType.name': {$regex: searchRegExp}}
+                        ]
+                    };
+                }
 
-                searchCriteria = {
-                    $or: [
-                        {'client.firstName': {$regex: searchRegExp}},
-                        {'client.lastName': {$regex: searchRegExp}},
-                        {'serviceType.name': {$regex: searchRegExp}}
-                    ]
-                };
 
                 if (sortParam === 'Date') {
                     sortObj.requestDate = order;
@@ -206,14 +209,18 @@ var UserHandler = function (app, db) {
 
             if (appointmentStatus ===  APPOINTMENT.BOOKED){
 
-                searchCriteria = {
-                    $or: [
-                        {'client.firstName': {$regex: searchRegExp}},
-                        {'client.lastName': {$regex: searchRegExp}},
-                        {'stylist.firstName': {$regex: searchRegExp}},
-                        {'stylist.lastName': {$regex: searchRegExp}}
-                    ]
-                };
+                if (search) {
+                    searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+                    searchCriteria = {
+                        $or: [
+                            {'client.firstName': {$regex: searchRegExp}},
+                            {'client.lastName': {$regex: searchRegExp}},
+                            {'stylist.firstName': {$regex: searchRegExp}},
+                            {'stylist.lastName': {$regex: searchRegExp}}
+                        ]
+                    };
+                }
 
                 if (sortParam === 'Date') {
                     sortObj.bookingDate = order;
@@ -256,7 +263,7 @@ var UserHandler = function (app, db) {
                     });
             },
 
-            function(count, cb){
+            function(cb){
                 Appointment
                     .find(findObj, projectionObj)
                     .populate(populateArray)
