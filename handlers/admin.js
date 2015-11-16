@@ -2076,7 +2076,8 @@ var AdminHandler = function (app, db) {
                                 return cb(badRequests.DatabaseError());
                             }
 
-                            resultObj.name = clientModel.personalInfo.firstName + ' ' + clientModel.personalInfo.lastName;
+                            resultObj.firstName = clientModel.personalInfo.firstName;
+                            resultObj.lastName = clientModel.personalInfo.lastName;
                             resultObj.phone = clientModel.personalInfo.phone;
                             resultObj.email = clientModel.email;
                             resultObj.suspend = clientModel.suspend;
