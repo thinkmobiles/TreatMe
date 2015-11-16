@@ -95,6 +95,10 @@ var UserHandler = function (app, db) {
                 function(cb){
                     var servicesId;
 
+                    if (status === APPOINTMENT.BOOKED){
+                        return cb(null, []);
+                    }
+
                     ServiceType
                         .find(serviceCriteria, {_id: 1})
                         .exec(function(err, serviceCollection){
