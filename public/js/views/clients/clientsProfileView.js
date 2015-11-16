@@ -6,7 +6,7 @@ define([
     'views/clients/clientsPurchasedView',
     'collections/clientsCollection',
     'text!/templates/clients/clientsProfileTemplate.html'
-], function (Model, ClientsAppointment, ClientsPurchased, Collection, ClientProfile) {
+], function (Model, ClientsAppointmentView, ClientsPurchasedView, Collection, ClientProfile) {
     var View = Backbone.View.extend({
         el: '#wrapper',
 
@@ -17,8 +17,12 @@ define([
         },
 
         initialize: function (options) {
+            var navContainer = $('.sidebar-menu');
             var self = this;
             var model;
+
+            navContainer.find('.active').removeClass('active');
+            navContainer.find('#nav_clients').addClass('active');
 
             if (options && options.id) {
 
@@ -40,11 +44,12 @@ define([
                 this.model = model;
                 this.render();
             }
+
             this.render();
 
-            this.clientsAppointment = new ClientsAppointment({id: options.id});
+            this.clientsAppointment = new ClientsAppointmentView({id: options.id});
 
-            this.clientsPurchased = new ClientsPurchased({id: options.id});
+            this.clientsPurchased = new ClientsPurchasedView({id: options.id});
 
         },
 

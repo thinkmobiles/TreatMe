@@ -1353,12 +1353,13 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var clientId = req.body.clientId;
-        var stylistId = req.body.stylistId;
-        var serviceType = req.body.serviceType;
-        var bookingDate = req.body.bookingDate;
-        var appointmentModel;
-        var saveObj;
+        var body = req.body;
+        var clientId = body.clientId;
+        var stylistId = body.stylistId;
+        var serviceType = body.serviceType;
+        var bookingDate = body.bookingDate;
+        var oneTimeService = true;
+        var price;
 
         if (!clientId || !stylistId || !serviceType || !bookingDate) {
             return next(badRequests.NotEnParams({reqParams: 'clientId and stylistId and serviceTypeId and bookingDate'}));
@@ -1376,41 +1377,111 @@ var AdminHandler = function (app, db) {
             return next(badRequests.InvalidValue({value: serviceType, param: 'serviceTypeId'}));
         }
 
-        saveObj = {
-            client: ObjectId(clientId),
-            clientLoc: {type: 'Point', coordinates: [0, 0]},
-            serviceType: ObjectId(serviceType),
-            status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
-            stylist: ObjectId(stylistId),
-            bookingDate: bookingDate
-        };
+        async.parallel([
 
-        appointmentModel = new Appointment(saveObj);
+            function (cb) {
+                Appointment
+                    .find({bookingDate: bookingDate, $or: [{stylist: stylistId}, {client: clientId}]}, function (err, someModelsArray) {
+                        var error;
 
-        Appointment
-            .find({bookingDate: bookingDate, $or: [{stylist: stylistId}, {client: clientId}]}, function (err, someModelsArray) {
-                var error;
-
-                if (err) {
-                    return next(err);
-                }
-
-                if (someModelsArray.length) {
-                    error = new Error('Stylist or client already have an appointment for this time');
-                    error.status = 400;
-
-                    return next(error);
-                }
-
-                appointmentModel
-                    .save(function (err) {
                         if (err) {
-                            return next(err);
+                            return cb(err);
                         }
 
-                        res.status(200).send({success: 'Appointment booked successfully'});
+                        if (someModelsArray.length) {
+                            error = new Error('Stylist or client already have an appointment for this time');
+                            error.status = 400;
+
+                            return cb(error);
+                        }
+
+                        cb();
                     });
-            });
+            },
+
+            //onetime service or not
+            function(cb){
+                Subscription
+                    .find({client: clientId, expirationDate: {$gte: bookingDate}})
+                    .populate({path: 'subscriptionType', select: 'allowServices'})
+                    .exec(function(err, subscriptionModelsArray){
+                        var allowedServices = [];
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        subscriptionModelsArray.map(function(model){
+                            var servicesIds;
+
+                            if (model.subscriptionType){
+
+                                servicesIds = model.get('subscriptionType.allowServices');
+                                servicesIds = servicesIds.toStringObjectIds();
+
+                                allowedServices = allowedServices.concat(servicesIds);
+                            }
+                        });
+
+                        if (allowedServices.indexOf(serviceType) !== -1){
+                            oneTimeService = false
+                        }
+
+                        cb();
+                    });
+            },
+
+            function (cb) {
+                Services
+                    .findOne({stylist: ObjectId(stylistId), serviceId: serviceType, approved: true}, {price: 1})
+                    .exec(function(err, serviceModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!serviceModel){
+                            return cb(badRequests.NotFound({target: 'Service'}));
+                        }
+
+                        price = serviceModel.get('price') || 0;
+
+                        cb();
+                    });
+            }
+
+        ], function (err) {
+            var saveObj;
+            var appointmentModel;
+
+            if (err) {
+                return next(err);
+            }
+
+            saveObj = {
+                client: ObjectId(clientId),
+                clientLoc: {type: 'Point', coordinates: [0, 0]},
+                serviceType: ObjectId(serviceType),
+                bookingDate: bookingDate,
+                status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
+                oneTimeService: oneTimeService,
+                price: price
+            };
+
+            appointmentModel = new Appointment(saveObj);
+
+            appointmentModel
+                .save(function (err) {
+                    var appointmentId;
+
+                    if (err) {
+                        return next(err);
+                    }
+
+                    appointmentId = (appointmentModel.get('_id')).toString();
+
+                    res.status(200).send({success: 'Appointment created successfully', appointmentId: appointmentId});
+                });
+        });
     };
 
     this.addSubscriptionType = function (req, res, next) {

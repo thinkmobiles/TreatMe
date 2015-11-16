@@ -77,7 +77,7 @@ body{
 /*---top section-----*/
 .top{
   height: 70px;
-  padding: 30px 0 0 50px;
+  padding: 30px 0 0 60px;
   text-transform: uppercase;
   font-weight: 700;
 }
@@ -108,11 +108,12 @@ body{
   }
   .searchBtn{
     background-color: #2175CC;
+    border-radius: 2px;
     color: #fff;
-    padding: 0 15px;
     position: absolute;
     height: 44px;
-    margin-left: -84px;
+    margin-left: -100px;
+    width: 100px;
   }
 }
 /*   breadcrunbs */
@@ -200,7 +201,9 @@ body{
   padding-right: 4.8148%;
   float: left;
 }
-
+.wrapper{
+  padding-bottom: 50px;
+}
 /*----------*/
 /* Buttons*/
 .buttons{
@@ -227,20 +230,25 @@ body{
 #acceptCurrentBtn{
   .i("check.png", transparent);
 }
-#removeCurrentBtn, #deleteCurrentBtn{
+#removeCurrentBtn,
+#deleteCurrentBtn,
+.deleteCurrentBtn{
   .i("trash.png", transparent);
 }
 #suspendSelectedBtn{
   .i("ban.png", #E0E0E0);
   background-position: center;
 }
-#suspendCurrentBtn{
+#suspendCurrentBtn,
+.suspendCurrentBtn{
   .i("ban.png", transparent);
 }
 #removeCurrentBtn,
 #acceptCurrentBtn,
 #deleteCurrentBtn,
-#suspendCurrentBtn{
+#suspendCurrentBtn,
+.suspendCurrentBtn,
+.deleteCurrentBtn{
   width: 50px;
   height: 25px;
   text-indent: -99999px;
@@ -256,6 +264,19 @@ a.addApp, button#addBtn {
   color: #fff;
   text-align: right;
   padding-right: 20px;
+  float: right;
+  text-transform: uppercase;
+}
+a#addClient{
+  width: 180px;
+}
+#export{
+  border-radius: 2px;
+  background-color: @mainColor;
+  height: 44px;
+  width: 100px;
+  line-height: 44px;
+  color: #fff;
   float: right;
   text-transform: uppercase;
 }
@@ -330,7 +351,7 @@ a.addApp, button#addBtn {
     }
   }
 }
-.edit{
+.edit, .editBtn{
   .i("note.png", transparent);
   background-position: center;
   text-indent: -99999px;
@@ -353,12 +374,20 @@ a.addApp, button#addBtn {
     display: inline-block;
     min-width: 170px;
     padding: 10px 0;
+    line-height: 1.8;
   }
   input{
     background-color: #fff;
     border: none;
     color: #555;
     padding: 10px 0;
+    margin-left: 20px;
+  }
+  input[disabled]{
+    color: #555;
+  }
+  #acceptBtn{
+    margin-right: 20px;
   }
 
 }
@@ -381,4 +410,47 @@ a.addApp, button#addBtn {
   color: #fff;
   padding-left: 35px;
   box-sizing: border-box;
+}
+/*--add app---*/
+.userNameContainer{
+  font-weight: bold;
+  border-bottom: 1px solid #E8E8E8;
+  padding-bottom: 20px;
+  button#editBtn{
+    font-size: 18px;
+    color: #fff;
+    line-height: 1.111;
+    border-radius: 5px;
+    .i('note-white.png', @mainColor);
+    width: 120px;
+    height: 40px;
+    padding-left: 60px;
+    background-position: 26px 7px;
+    text-align: left;
+    margin-right: 40px;
+  }
+}
+.services{
+  border-radius: 5px;
+  background-color: #F4F4F4;
+  padding: 33px;
+  label{
+    margin-left: 24px;
+    color: #555;
+  }
+  input[type=text] {
+    border: 1px solid #E8E8E8;
+    border-radius: 5px;
+    width: 298px;
+    height: 58px;
+    text-align: right;
+    padding: 0 30px;
+    margin-bottom: 10px;
+    .i('price.png', #fff);
+    background-position: 30px 20px;
+    }
+  input[type=checkbox]{
+    position: relative;
+    top: -2px;
+  }
 }

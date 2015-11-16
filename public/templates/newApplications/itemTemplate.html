@@ -9,7 +9,7 @@
         </span>
         <%if (user._id) { %>
         <button id="editBtn">Edit</button>
-        <span> <%= new Date(user.createdAt).getDate() + '/' + new Date(user.createdAt).getMonth() + '/' + String.prototype.slice.call(new Date(user.createdAt).getFullYear(),2,4) %> </span>
+        <span> <%= new Date(user.createdAt).toLocaleDateString() %> </span>
         <% } %>
     </div>
     <%var inputStatus%>
