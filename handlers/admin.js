@@ -1337,27 +1337,30 @@ var AdminHandler = function (app, db) {
          *
          * @example Body example:
          *  {
-         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *      "serviceType":"5638ccde3624f77b33b6587d",
+         *      "bookingDate":"2015-12-08T10:23:51.060Z",
+         *      "clientId":"5633451985201c7409caa2e2",
+         *      "stylistId":"56409b49ae6850e4046e6f3e"
          *  }
          *
          * @example Response example:
          *
          *  Response status: 200
          *
-         * {"success": "Appointments was suspended successfully"}
+         * {"success": "Appointment booked successfully"}
          *
-         * @method suspendAppointments
+         * @method bookAppointment
          * @instance
          */
 
         var clientId = req.body.clientId;
         var stylistId = req.body.stylistId;
-        var serviceTypeId = req.body.serviceTypeId;
+        var serviceType = req.body.serviceType;
         var bookingDate = req.body.bookingDate;
         var appointmentModel;
         var saveObj;
 
-        if (!clientId || !stylistId || !serviceTypeId || !bookingDate) {
+        if (!clientId || !stylistId || !serviceType || !bookingDate) {
             return next(badRequests.NotEnParams({reqParams: 'clientId and stylistId and serviceTypeId and bookingDate'}));
         }
 
@@ -1369,14 +1372,14 @@ var AdminHandler = function (app, db) {
             return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
         }
 
-        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(serviceTypeId)) {
-            return next(badRequests.InvalidValue({value: serviceTypeId, param: 'serviceTypeId'}));
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(serviceType)) {
+            return next(badRequests.InvalidValue({value: serviceType, param: 'serviceTypeId'}));
         }
 
         saveObj = {
             client: ObjectId(clientId),
             clientLoc: {type: 'Point', coordinates: [0, 0]},
-            serviceType: ObjectId(serviceTypeId),
+            serviceType: ObjectId(serviceType),
             status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
             stylist: ObjectId(stylistId),
             bookingDate: bookingDate
