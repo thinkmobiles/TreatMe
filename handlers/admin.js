@@ -1462,7 +1462,7 @@ var AdminHandler = function (app, db) {
                 clientLoc: {type: 'Point', coordinates: [0, 0]},
                 serviceType: ObjectId(serviceType),
                 bookingDate: bookingDate,
-                status: CONSTANTS.STATUSES.APPOINTMENT.CREATED,
+                status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
                 oneTimeService: oneTimeService,
                 price: price
             };
