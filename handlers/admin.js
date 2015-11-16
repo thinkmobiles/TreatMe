@@ -2613,6 +2613,84 @@ var AdminHandler = function (db) {
         res.status(400).send('Not implemented yet');
     };
 
+    this.getStylistsLocation = function(req, res, next){
+        var criteria = {
+            role: CONSTANTS.USER_ROLE.STYLIST,
+            online: true,
+            'suspend.isSuspend': false,
+            approved: true
+        };
+        var projection = {
+            'personalInfo.firstName': 1,
+            'personalInfo.lastName': 1,
+            'personalInfo.avatar': 1,
+            'salonInfo.salonName': 1,
+            'salonInfo.address': 1,
+            'salonInfo.city': 1,
+            'salonInfo.state': 1,
+            'salonInfo.country': 1,
+            'salonInfo.zipCode': 1,
+            loc: 1
+        };
+
+        User
+            .find(criteria, projection, function(err, stylistModelsArray){
+                var stylists;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!stylistModelsArray.length){
+                    return res.status(200).send([]);
+                }
+
+                stylists = stylistModelsArray.map(function(model){
+                    var modelJSON = model.toJSON();
+                    var address;
+                    var city;
+                    var state;
+                    var country;
+                    var zipCode;
+
+                    if (modelJSON.salonInfo){
+                        if (modelJSON.salonInfo.salonName){
+                            modelJSON.salon = modelJSON.salonInfo.salonName
+                        } else {
+                            modelJSON.salon = '';
+                        }
+
+                        address = modelJSON.salonInfo.address || '';
+                        city = modelJSON.salonInfo.city || '';
+                        state = modelJSON.salonInfo.state || '';
+                        country = modelJSON.salonInfo.country || '';
+                        zipCode = modelJSON.salonInfo.zipCode || '';
+
+                        modelJSON.address = address + ', ' + city + ', ' + state + ', ' + country + ', ' + zipCode;
+
+                        delete modelJSON.salonInfo
+                    }
+
+                    if (modelJSON.personalInfo){
+                        modelJSON.name = modelJSON.personalInfo.firstName + ' ' + modelJSON.personalInfo.lastName;
+
+                        if (modelJSON.personalInfo.avatar){
+                            modelJSON.avatar = image.computeUrl(modelJSON.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
+                        } else {
+                            modelJSON.avatar = '';
+                        }
+
+                        delete modelJSON.personalInfo;
+                    }
+
+                    return modelJSON;
+                });
+
+                res.status(200).send(stylists);
+
+            });
+    };
+
 
 };
 

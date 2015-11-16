@@ -23,9 +23,11 @@ module.exports = function(db){
 
     // CRUD Stylists
     router.get('/stylist/', sessionHandler.isAdmin, admin.getStylistList);
+    router.get('/stylist/location', sessionHandler.isAdmin, admin.getStylistsLocation);
     router.get('/stylist/:id', sessionHandler.isAdmin, admin.getStylistById);
     router.post('/stylist/', sessionHandler.isAdmin, admin.createStylist);
     router.put('/stylist/:userId', sessionHandler.isAdmin, user.updateUserProfile);
+
     router.delete('/stylist/', sessionHandler.isAdmin, admin.removeStylist);
 
     router.post('/stylist/approve/', sessionHandler.isAdmin, admin.approveStylist);
