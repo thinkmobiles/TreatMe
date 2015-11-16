@@ -13,10 +13,12 @@ var mongoose = require('mongoose');
 var CONSTANTS = require('../constants');
 var geocoder = require('geocoder');
 var SchedulerHelper = require('../helpers/scheduler');
+var StripeModule = require('../helpers/stripe');
 var _ = require('lodash');
 
 var ClientsHandler = function (app, db) {
 
+    var stripe = new StripeModule();
     var User = db.model('User');
     var Appointment = db.model('Appointment');
     var Gallery = db.model('Gallery');
@@ -882,6 +884,120 @@ var ClientsHandler = function (app, db) {
                     });
             });
     };
+
+    //payments
+
+    function getCustomerId(userId, callback){
+
+        User
+            .findOne({_id: userId}, {'payments.customerId': 1}, function(err, user){
+                if (err){
+                    return callback(err);
+                }
+
+                if (!user){
+                    err = new Error('User not found');
+                    err.status = 400;
+                    return callback(err);
+                }
+
+                callback(null, user.payments.customerId);
+            });
+
+    }
+
+    this.addCardInfo = function (req, res, next) {
+
+        var userId = req.session.uId;
+        var body = req.body;
+
+        getCustomerId(userId, function (err, customerId) {
+            stripe
+                .addCard(customerId, {source: body.stripeToken}, function (err) {
+
+                    if (err) {
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'Card added successfully'});
+
+                });
+        });
+    };
+
+    this.getListCards = function (req, res, next) {
+
+        var userId = req.session.uId;
+
+        getCustomerId(userId, function (err, customerId) {
+
+            if (err){
+                return next(err);
+            }
+
+            stripe.getCustomerCards(customerId, function (err, cards) {
+
+                if (err) {
+                    return next(err);
+                }
+
+                res.status(200).send(cards);
+
+            });
+        });
+    };
+
+    this.updateCard = function(req, res, next){
+        var body = req.body;
+        var cardId = req.params.cardId;
+        var userId = req.session.uId;
+
+        getCustomerId(userId, function(err, customerId){
+
+            if (err){
+                return next(err);
+            }
+
+            stripe
+                .updateCustomerCard(customerId, cardId, body, function(err, card){
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'Card updated successfully'});
+
+                });
+        });
+
+    };
+
+    this.removeCard = function(req, res, next){
+        var cardId = req.params.cardId;
+        var userId = req.session.uId;
+
+        getCustomerId(userId, function(err, customerId){
+
+            if (err){
+                return next(err);
+            }
+
+            stripe
+                .removeCustomerCard(customerId, cardId, function(err, confirmation){
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    res.status(200).send(confirmation);
+
+                });
+
+        });
+
+    };
+
+
 
 };
 

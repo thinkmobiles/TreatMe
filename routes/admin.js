@@ -12,55 +12,54 @@ module.exports = function(db){
     var sessionHandler = new SessionHandler(db);
     var user = new UserHandler(null, db);
 
-    router.get('/services/requested/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getRequestedService);
-    router.post('/services/approve/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveService);
+    router.get('/services/requested/', sessionHandler.isAdmin, admin.getRequestedService);
+    router.post('/services/approve/', sessionHandler.isAdmin, admin.approveService);
 
     // CRUD Services
-    router.post('/services/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.addService);
-    router.get('/services/:id?', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getServices);
-    router.put('/services/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateService);
-    router.delete('/services/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeService);
+    router.post('/services/', sessionHandler.isAdmin, admin.addService);
+    router.get('/services/:id?', sessionHandler.isAdmin, admin.getServices);
+    router.put('/services/:id', sessionHandler.isAdmin, admin.updateService);
+    router.delete('/services/:id', sessionHandler.isAdmin, admin.removeService);
 
     // CRUD Stylists
-    router.get('/stylist/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistList);
-    router.get('/stylist/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistById);
-    router.post('/stylist/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.createStylist);
-    router.put('/stylist/:userId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, user.updateUserProfile);
+    router.get('/stylist/', sessionHandler.isAdmin, admin.getStylistList);
+    router.get('/stylist/:id', sessionHandler.isAdmin, admin.getStylistById);
+    router.post('/stylist/', sessionHandler.isAdmin, admin.createStylist);
+    router.put('/stylist/:userId', sessionHandler.isAdmin, user.updateUserProfile);
+    router.delete('/stylist/', sessionHandler.isAdmin, admin.removeStylist);
 
-    router.delete('/stylist/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeStylist);
-
-    router.post('/stylist/approve/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.approveStylist);
+    router.post('/stylist/approve/', sessionHandler.isAdmin, admin.approveStylist);
 
     //suspend and activate clients or stylists
-    router.post('/suspend/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendUsers);
-    router.post('/activate/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.activateUsers);
+    router.post('/suspend/', sessionHandler.isAdmin, admin.suspendUsers);
+    router.post('/activate/', sessionHandler.isAdmin, admin.activateUsers);
 
     // CRUD Clients
-    router.get('/client/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientList);
-    router.get('/client/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientById);
-    router.put('/client/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateClient);
-    router.post('/client/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.createClient);
+    router.get('/client/', sessionHandler.isAdmin, admin.getClientList);
+    router.get('/client/:id', sessionHandler.isAdmin, admin.getClientById);
+    router.put('/client/', sessionHandler.isAdmin, admin.updateClient);
+    router.post('/client/', sessionHandler.isAdmin, admin.createClient);
 
-    router.delete('/user/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeUserById);
+    router.delete('/user/:id', sessionHandler.isAdmin, admin.removeUserById);
 
-    router.get('/subscriptions/:clientId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientSubscriptions);
+    router.get('/subscriptions/:clientId', sessionHandler.isAdmin, admin.getClientSubscriptions);
 
-    router.get('/stylistPayments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistPayments);
+    router.get('/stylistPayments/', sessionHandler.isAdmin, admin.getStylistPayments);
 
-    router.get('/clients/:stylistId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getStylistClients);
-    router.get('/appointments/:clientId', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getBookedAppointment);
-    router.post('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.bookAppointment);
-    router.put('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.suspendAppointments);
+    router.get('/clients/:stylistId', sessionHandler.isAdmin, admin.getStylistClients);
+    router.get('/appointments/:clientId', sessionHandler.isAdmin, admin.getBookedAppointment);
+    router.post('/appointments/', sessionHandler.isAdmin, admin.bookAppointment);
+    router.put('/appointments/', sessionHandler.isAdmin, admin.suspendAppointments);
     router.delete('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeAppointments);
 
     // CRUD SubscriptionType
-    router.get('/subscriptionType/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getSubscriptionType);
-    router.post('/subscriptionType/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.addSubscriptionType);
-    router.put('/subscriptionType/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.updateSubscriptionType);
-    router.delete('/subscriptionType/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeSubscriptionType);
+    router.get('/subscriptionType/', sessionHandler.isAdmin, admin.getSubscriptionType);
+    router.post('/subscriptionType/', sessionHandler.isAdmin, admin.addSubscriptionType);
+    router.put('/subscriptionType/:id', sessionHandler.isAdmin, admin.updateSubscriptionType);
+    router.delete('/subscriptionType/:id', sessionHandler.isAdmin, admin.removeSubscriptionType);
 
-    router.get('/packages/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.getClientPackages);
-    router.delete('/packages/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removePackages);
+    router.get('/packages/', sessionHandler.isAdmin, admin.getClientPackages);
+    router.delete('/packages/', sessionHandler.isAdmin, admin.removePackages);
 
     return router;
 };

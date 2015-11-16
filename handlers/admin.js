@@ -15,10 +15,12 @@ var crypto = require('crypto');
 var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
 var _ = require('lodash');
+var StripeModule = require('../helpers/stripe');
 
 var AdminHandler = function (db) {
 
     var self = this;
+    var stripe = new StripeModule();
     var image = new ImageHandler(db);
     var user = new UserHandler(null, db);
     var Services = db.model('Service');
@@ -40,7 +42,7 @@ var AdminHandler = function (db) {
         var userObj;
 
         User
-            .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0}, function(err, resultModel){
+            .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0, 'salonInfo.availability': 0}, function(err, resultModel){
 
                 if (err){
                     return callback(err);
@@ -110,7 +112,8 @@ var AdminHandler = function (db) {
             projection = {
                 'personalInfo.firstName': 1,
                 'personalInfo.lastName': 1,
-                'email': 1
+                'email': 1,
+                'createdAt': 1
             };
         }
 
@@ -132,7 +135,7 @@ var AdminHandler = function (db) {
                         obj = {
                             _id: resultModel[i]._id,
                             personalInfo: resultModel[i].personalInfo,
-                            salonInfo: resultModel[i].salonInfo.salonName || {},
+                            salonInfo: resultModel[i].salonInfo || {},
                             createdAt: resultModel[i].createdAt,
                             approved:  resultModel[i].approved
                         };
@@ -221,7 +224,7 @@ var AdminHandler = function (db) {
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var statusRegExp = /^requested$|^all$/;
-        var sort = req.query.sort || 'date';
+        var sort = req.query.sort ? (req.query.sort).toLowerCase() : 'date';
         var order = (req.query.order === '1') ? 1 : -1;
         var status = req.query.status;
         var search = req.query.search || '';
@@ -237,7 +240,6 @@ var AdminHandler = function (db) {
             searchObj['$or'] = [
                     {'personalInfo.firstName': {$regex: searchRegExp}},
                     {'personalInfo.lastName': {$regex: searchRegExp}},
-                    {'email': {$regex: searchRegExp}},
                     {'salonInfo.salonName': {$regex: searchRegExp}}
                 ];
         }
@@ -478,7 +480,7 @@ var AdminHandler = function (db) {
                     password: password
                 };
 
-                mailer.adminCreateStylist(mailOptions);
+                mailer.adminCreateUser(mailOptions);
 
                 res.status(200).send({success: 'Stylist created successfully'});
 
@@ -488,6 +490,114 @@ var AdminHandler = function (db) {
 
     };
 
+    this.createClient = function(req, res, next){
+        var body = req.body;
+        var firstName = body.firstName;
+        var lastName = body.lastName;
+        var phone = body.phone;
+        var email = body.email;
+        var stripeToken = body.stripeToken;
+        var password = passGen(12, false);
+
+        if (!firstName || !lastName || !phone || !email){
+            return next(badRequests.NotEnParams({reqParams: 'firstName or lastName or phone or email'}))
+        }
+
+        async
+            .waterfall([
+                function (cb) {
+
+                    User
+                        .findOne({email: email, role: CONSTANTS.USER_ROLE.CLIENT}, function (err, model) {
+                            if (err) {
+                                return cb(err);
+                            }
+
+                            if (model){
+                                return cb(badRequests.EmailInUse());
+                            }
+
+                            cb(null);
+
+                        });
+                },
+
+                function(cb){
+                    var data = {};
+
+                    if (stripeToken){
+                        data.source = stripeToken;
+                    }
+
+                    data.email = email;
+
+                    stripe
+                        .createCustomer(data, function(err, customer){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, customer.id);
+
+                        });
+                },
+
+                function(customerId, cb){
+                    var user;
+                    var client = {
+                        email: email,
+                        password: getEncryptedPass(password),
+                        role: CONSTANTS.USER_ROLE.CLIENT,
+                        personalInfo: {
+                            phone: phone,
+                            firstName: firstName,
+                            lastName: lastName
+                        }
+                    };
+
+                    if (customerId){
+                        client['payments'] = {
+                            customerId: customerId
+                        };
+                    }
+
+                    user = new User(client);
+
+                    user
+                        .save(function(err){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null);
+                        });
+                },
+
+                function(cb){
+                    var mailOptions = {
+                        name: firstName,
+                        email: email,
+                        password: password
+                    };
+
+                    mailer.adminCreateUser(mailOptions);
+
+                    cb(null);
+                }
+            ], function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Client created successfully'});
+
+            });
+
+
+
+    };
 
     this.approveStylist = function (req, res, next) {
 
@@ -521,15 +631,6 @@ var AdminHandler = function (db) {
 
         var body = req.body;
         var ids;
-        var availability = {
-            0: [{from: '00:00', to: '00:00'}], //Sunday
-            1: [{from: '00:00', to: '00:00'}], //Monday
-            2: [{from: '00:00', to: '00:00'}],
-            3: [{from: '00:00', to: '00:00'}],
-            4: [{from: '00:00', to: '00:00'}],
-            5: [{from: '00:00', to: '00:00'}],
-            6: [{from: '00:00', to: '00:00'}]
-        };
 
         if (!body.ids) {
             return next(badRequests.NotEnParams({reqParams: 'ids'}));
@@ -542,7 +643,7 @@ var AdminHandler = function (db) {
                 _id: {$in: ids},
                 approved: false,
                 role: CONSTANTS.USER_ROLE.STYLIST
-            }, {$set: {approved: true, 'salonInfo.availability': availability}}, {multi: true}, function (err) {
+            }, {$set: {approved: true}}, {multi: true}, function (err) {
                 if (err) {
                     return next(err);
                 }
@@ -1807,7 +1908,7 @@ var AdminHandler = function (db) {
          * @instance
          */
 
-        var sortParam = req.query.sort;
+        var sortParam = req.query.sort ? (req.query.sort).toLowerCase() : 'date';
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
@@ -1828,17 +1929,21 @@ var AdminHandler = function (db) {
             ];
         }
 
-        if (sortParam && sortParam !== 'Name' && sortParam !== 'Email') {
+        if (sortParam && sortParam !== 'name' && sortParam !== 'email' && sortParam !== 'date') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'Name' || !sortParam) {
+        if (sortParam === 'name' || !sortParam) {
             sortObj['personalInfo.firstName'] = order;
             sortObj['personalInfo.lastName'] = order;
         }
 
-        if (sortParam === 'Email') {
+        if (sortParam === 'email') {
             sortObj.email = order;
+        }
+
+        if (sortParam === 'date'){
+            sortObj.createdAt = order;
         }
 
         roleObj['role'] = CONSTANTS.USER_ROLE.CLIENT;
@@ -2409,12 +2514,14 @@ var AdminHandler = function (db) {
          */
 
         var userId = req.params.id;
+        var globalUserModel;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(userId)){
             return next(badRequests.InvalidValue({value: userId, param: 'id'}));
         }
 
-        async.parallel([
+
+        async.series([
 
             function(cb){
                 User
@@ -2428,6 +2535,8 @@ var AdminHandler = function (db) {
                         if (!userModel){
                             return cb(badRequests.DatabaseError());
                         }
+
+                        globalUserModel = userModel.toJSON();
 
                         avatarName = userModel.get('personalInfo.avatar');
 
@@ -2478,6 +2587,17 @@ var AdminHandler = function (db) {
                                 cb();
                             });
                 });
+            },
+
+            function(cb){
+                var customerId = globalUserModel.payments.customerId;
+
+                if (!customerId){
+                    return cb(null);
+                }
+
+                stripe
+                    .deleteCustomer(customerId, cb)
             }
 
         ], function(err){
@@ -2493,9 +2613,6 @@ var AdminHandler = function (db) {
         res.status(400).send('Not implemented yet');
     };
 
-    this.createClient = function(req, res, next){
-        res.status(400).send('Not implemented yet');
-    };
 
 };
 
