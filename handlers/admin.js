@@ -9,6 +9,7 @@ var mongoose = require('mongoose');
 var badRequests = require('../helpers/badRequests');
 var ImageHandler = require('./image');
 var UserHandler = require('./users');
+var ClientHandler = require('./clients');
 var passGen = require('password-generator');
 var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
@@ -17,12 +18,13 @@ var ObjectId = mongoose.Types.ObjectId;
 var _ = require('lodash');
 var StripeModule = require('../helpers/stripe');
 
-var AdminHandler = function (db) {
+var AdminHandler = function (app, db) {
 
     var self = this;
     var stripe = new StripeModule();
     var image = new ImageHandler(db);
-    var user = new UserHandler(null, db);
+    var user = new UserHandler(app, db);
+    var client = new ClientHandler(app, db);
     var Services = db.model('Service');
     var ServiceType = db.model('ServiceType');
     var SubscriptionType = db.model('SubscriptionType');
@@ -491,6 +493,40 @@ var AdminHandler = function (db) {
     };
 
     this.createClient = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/client/`__
+         *
+         * This __method__ allows add client by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/client/
+         *
+         * @example Body example:
+         * {
+         *      "email": "vashm@mail.ua",
+         *      "firstName": "Misha",
+         *      "lastName": "Vashkeba",
+         *      "phone": "21",
+         *      "stripeToken": "tok_21349tfdjkfsdf324" (optional)
+         *      "subscriptions": ["5638b976f8c11d9c04081343", "5638b965f8c11d9c04081341"] (optional)
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         * {"success": "Client created successfully"}
+         *
+         * @method createClient
+         * @instance
+         */
+
         var body = req.body;
         var firstName = body.firstName;
         var lastName = body.lastName;
@@ -498,6 +534,7 @@ var AdminHandler = function (db) {
         var email = body.email;
         var stripeToken = body.stripeToken;
         var password = passGen(12, false);
+        var subscriptionIds = body.subscriptions;
 
         if (!firstName || !lastName || !phone || !email){
             return next(badRequests.NotEnParams({reqParams: 'firstName or lastName or phone or email'}))
@@ -565,13 +602,16 @@ var AdminHandler = function (db) {
                     user = new User(client);
 
                     user
-                        .save(function(err){
+                        .save(function(err, userModel){
                             if (err){
                                 return cb(err);
                             }
 
-                            cb(null);
+                            cb(null, userModel._id);
                         });
+                },
+                function(clientId, cb){
+                    client.buySubscriptions(clientId, subscriptionIds, cb);
                 },
 
                 function(cb){
@@ -585,6 +625,7 @@ var AdminHandler = function (db) {
 
                     cb(null);
                 }
+
             ], function(err){
 
                 if (err){
@@ -978,7 +1019,6 @@ var AdminHandler = function (db) {
                         if (err) {
                             return next(err);
                         }
-
 
                         res.status(200).send({success: 'Service created successfully'});
 
