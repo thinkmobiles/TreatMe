@@ -262,7 +262,7 @@ define([], function(){
 
             page = parseInt(event.target.textContent);
 
-            if (!page) {
+            if (page) {
                 page = $(event.target).val();
             }
 

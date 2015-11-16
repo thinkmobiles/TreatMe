@@ -76,7 +76,7 @@ define([
                 this.$el.find('#currentPackage .price').html(item.currentSubscriptions[0].price);
             }
 
-            container.find('.name').html(item.name);
+            container.find('.name').html(item.firstName +  ' ' + item.lastName);
             container.find('.phone').html(item.phone);
             container.find('.email').html(item.email);
         }
