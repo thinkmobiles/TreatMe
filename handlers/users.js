@@ -397,7 +397,7 @@ var UserHandler = function (app, db) {
                     avatarName = appointmentModel.get('client.personalInfo.avatar');
 
                     if (avatarName){
-                        appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                        appointmentModel.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                     }
                 }
 
@@ -1764,7 +1764,7 @@ var UserHandler = function (app, db) {
     };
 
     this.getAppointments = function(req, res, next){
-        var appointmentId = req.query.id;
+        var appointmentId = req.params.id;
         var sortParam = req.query.sort;
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
