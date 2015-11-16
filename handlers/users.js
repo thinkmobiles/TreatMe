@@ -477,6 +477,7 @@ var UserHandler = function (app, db) {
             role: CONSTANTS.USER_ROLE.ADMIN,
             approved: true
         }, function (err, result) {
+            var user;
 
             if (err) {
                 return next(err);

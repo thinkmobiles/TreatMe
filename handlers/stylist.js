@@ -25,7 +25,7 @@ var StylistHandler = function (app, db) {
 
         Appointment
             .findOne({_id: appointmentId}, {client: 1, clientLoc: 1, serviceType: 1, status: 1, bookingDate: 1})
-            .populate([{path: 'serviceType'}, {path: 'client', select: 'personalInfo.firstName personalInfo.lastName personalInfo.avatarName'}])
+            .populate([{path: 'serviceType.id'}, {path: 'client.id', select: 'personalInfo.firstName personalInfo.lastName personalInfo.avatarName'}])
             .exec(function (err, appointmentModel) {
                 var status;
                 var error;
@@ -64,18 +64,18 @@ var StylistHandler = function (app, db) {
                             resultModelJSON = appointmentModel.toJSON();
                             resultModelJSON.clientLoc = resultModelJSON.clientLoc.coordinates;
                             resultModelJSON.clientInfo = {
-                                name: resultModelJSON.client.personalInfo.firstName + ' ' +resultModelJSON.client.personalInfo.lastName,
-                                _id: resultModelJSON.client._id.toString()
+                                name: resultModelJSON.client.firstName + ' ' +resultModelJSON.client.lastName,
+                                _id: resultModelJSON.client.id._id.toString()
                             };
-                            if (resultModelJSON.client.personalInfo.avatar){
-                                resultModelJSON.clientInfo.avatar = imageHandler.computeUrl(resultModelJSON.client.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
+                            if (resultModelJSON.client.id.personalInfo.avatar){
+                                resultModelJSON.clientInfo.avatar = imageHandler.computeUrl(resultModelJSON.client.id.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
                             }
                             resultModelJSON.service = {
-                                _id: resultModelJSON.serviceType._id.toString(),
+                                _id: resultModelJSON.serviceType.id._id.toString(),
                                 name: resultModelJSON.serviceType.name
                             };
-                            if (resultModelJSON.serviceType.logo){
-                                resultModelJSON.service.logo = imageHandler.computeUrl(resultModelJSON.serviceType.logo, CONSTANTS.BUCKET.IMAGES);
+                            if (resultModelJSON.serviceType.id.logo){
+                                resultModelJSON.service.logo = imageHandler.computeUrl(resultModelJSON.serviceType.id.logo, CONSTANTS.BUCKET.IMAGES);
                             }
                             resultModelJSON._id = resultModelJSON._id.toString();
 
@@ -186,7 +186,7 @@ var StylistHandler = function (app, db) {
         Appointment
             .findOneAndUpdate({
                 _id: appointmentId,
-                stylist: stylistId
+                'stylist.id': stylistId
             }, {$set: updateObj}, function (err, appointmentModel) {
                 if (err) {
                     return next(err);
@@ -209,13 +209,116 @@ var StylistHandler = function (app, db) {
             return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
         }
 
-        updateObj = {
-            stylist: ObjectId(stylistId),
-            status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED
+        async.waterfall([
 
-        };
+            function(cb){
+                User
+                    .findOne({_id: stylistId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1}, function(err, stylistModel){
+                        var stylistFirstName;
+                        var stylistLastName;
 
-        Appointment
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!stylistModel){
+                            return cb(badRequests.NotFound({target: 'Stylist'}));
+                        }
+
+                        stylistFirstName = stylistModel.get('personalInfo.firstName');
+                        stylistLastName = stylistModel.get('personalInfo.lastName');
+
+                        updateObj = {
+                            stylist: {
+                                id: ObjectId(stylistId),
+                                firstName: stylistFirstName,
+                                lastName: stylistLastName
+                            },
+                            status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED
+
+                        };
+
+                        cb();
+                    });
+            },
+
+            function(cb){
+                Appointment
+                    .findOne({_id: appointmentId}, function (err, appointmentModel) {
+                        var serviceType;
+
+                        if (err) {
+                            return cb(err);
+                        }
+
+                        if (!appointmentModel) {
+                            return cb(badRequests.NotFound({target: 'Appointment'}));
+                        }
+
+                        if ((appointmentModel.stylist && appointmentModel.stylist.id) || appointmentModel.status !== CONSTANTS.STATUSES.APPOINTMENT.CREATED) {
+                            var error = new Error('Somebody accepted appointment earlier then you');
+
+                            error.status = 400;
+
+                            return cb(error);
+                        }
+
+                        serviceType = appointmentModel.get('serviceType.id');
+
+                        cb(null, serviceType, appointmentModel);
+                    });
+            },
+
+            function(serviceType, appointmentModel, cb){
+                Services
+                    .findOne({stylist: ObjectId(stylistId), serviceId: serviceType, approved: true}, {price: 1, oneTimeService: 1}, function(err, serviceModel){
+                        var price;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        price = serviceModel.get('price');
+
+                        if (!serviceModel || !price){
+                            return cb(badRequests.NotFound({target: 'Service'}));
+                        }
+
+                        updateObj.price = price;
+
+                        cb(null, appointmentModel);
+                    });
+
+            },
+
+            //TODO: write off money from the clients STRIPE account and then update appointment
+            // clientId = appointmentModel.get('client').toString();
+            //if (appointmentModel.oneTimeService){ write off money from client}
+
+            function(appointmentModel, cb){
+                appointmentModel
+                    .update({$set: updateObj}, function (err) {
+                        if (err) {
+                            return cb(err);
+                        }
+
+                        cb();
+                    });
+            }
+
+        ], function(err){
+            if (err) {
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Appointment accepted successfully'});
+        });
+
+
+
+
+
+        /*Appointment
             .findOne({_id: appointmentId}, function (err, appointmentModel) {
                 var serviceType;
 
@@ -227,7 +330,7 @@ var StylistHandler = function (app, db) {
                     return next(badRequests.NotFound({target: 'Appointment'}));
                 }
 
-                if (appointmentModel.stylist || appointmentModel.status !== CONSTANTS.STATUSES.APPOINTMENT.CREATED) {
+                if ((appointmentModel.stylist && appointmentModel.stylist.id) || appointmentModel.status !== CONSTANTS.STATUSES.APPOINTMENT.CREATED) {
                     var error = new Error('Somebody accepted appointment earlier then you');
 
                     error.status = 400;
@@ -235,7 +338,7 @@ var StylistHandler = function (app, db) {
                     return next(error);
                 }
 
-                serviceType = appointmentModel.get('serviceType');
+                serviceType = appointmentModel.get('serviceType.id');
 
                 Services
                     .findOne({stylist: ObjectId(stylistId), serviceId: serviceType, approved: true}, {price: 1, oneTimeService: 1}, function(err, serviceModel){
@@ -266,7 +369,7 @@ var StylistHandler = function (app, db) {
                                 res.status(200).send({success: 'Appointment accepted successfully'});
                             });
                     });
-            });
+            });*/
     };
 
     this.finishAppointmentById = function (req, res, next) {
@@ -287,7 +390,7 @@ var StylistHandler = function (app, db) {
         Appointment
             .findOneAndUpdate({
                 _id: appointmentId,
-                stylist: stylistId
+                'stylist.id': stylistId
             }, {$set: updateObj}, function (err, appointmentModel) {
                 if (err) {
                     return next(err);

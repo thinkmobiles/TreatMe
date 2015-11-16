@@ -1347,7 +1347,10 @@ var AdminHandler = function (app, db) {
          *
          *  Response status: 200
          *
-         * {"success": "Appointment booked successfully"}
+         *  {
+         *      "success": "Appointment created successfully",
+         *      "appointmentId": "5649f34f4306e82009a8967c"
+         *  }
          *
          * @method bookAppointment
          * @instance
@@ -1360,6 +1363,11 @@ var AdminHandler = function (app, db) {
         var bookingDate = body.bookingDate;
         var oneTimeService = true;
         var price;
+        var clientFirstName;
+        var clientLastName;
+        var stylistFirstName;
+        var stylistLastName;
+        var serviceTypeName;
 
         if (!clientId || !stylistId || !serviceType || !bookingDate) {
             return next(badRequests.NotEnParams({reqParams: 'clientId and stylistId and serviceTypeId and bookingDate'}));
@@ -1379,9 +1387,62 @@ var AdminHandler = function (app, db) {
 
         async.parallel([
 
+            function(cb){
+                User
+                    .findOne({_id: clientId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1}, function(err, clientModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!clientModel){
+                            return cb(badRequests.NotFound({target: 'Client'}));
+                        }
+
+                        clientFirstName = clientModel.get('personalInfo.firstName');
+                        clientLastName = clientModel.get('personalInfo.lastName');
+
+                        cb();
+                    });
+            },
+
+            function(cb){
+                User
+                    .findOne({_id: stylistId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1}, function(err, stylistModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!stylistModel){
+                            return cb(badRequests.NotFound({target: 'Client'}));
+                        }
+
+                        stylistFirstName = stylistModel.get('personalInfo.firstName');
+                        stylistLastName = stylistModel.get('personalInfo.lastName');
+
+                        cb();
+                    });
+            },
+
+            function(cb){
+                ServiceType
+                    .findOne({_id: serviceType}, {name: 1}, function(err, serviceTypeModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!serviceTypeModel){
+                            return cb(badRequests.NotFound({target: 'ServiceType'}));
+                        }
+
+                        serviceTypeName = serviceTypeModel.get('name');
+
+                        cb();
+                    });
+            },
+
             function (cb) {
                 Appointment
-                    .find({bookingDate: bookingDate, $or: [{stylist: stylistId}, {client: clientId}]}, function (err, someModelsArray) {
+                    .find({bookingDate: bookingDate, $or: [{'stylist.id': stylistId}, {'client.id': clientId}]}, function (err, someModelsArray) {
                         var error;
 
                         if (err) {
@@ -1458,13 +1519,25 @@ var AdminHandler = function (app, db) {
             }
 
             saveObj = {
-                client: ObjectId(clientId),
+                client: {
+                    id: ObjectId(clientId),
+                    firstName: clientFirstName,
+                    lastName: clientLastName
+                },
                 clientLoc: {type: 'Point', coordinates: [0, 0]},
-                serviceType: ObjectId(serviceType),
+                serviceType: {
+                    id: ObjectId(serviceType),
+                    name: serviceTypeName
+                },
                 bookingDate: bookingDate,
                 status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
                 oneTimeService: oneTimeService,
-                price: price
+                price: price,
+                stylist: {
+                    id: ObjectId(stylistId),
+                    firstName: stylistFirstName,
+                    lastName: stylistLastName
+                }
             };
 
             appointmentModel = new Appointment(saveObj);
