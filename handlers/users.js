@@ -89,7 +89,7 @@ var UserHandler = function (app, db) {
                             usersId = _.pluck(usersCollection, '_id');
 
                             cb(null, usersId);
-                        })
+                        });
                 },
 
                 function(cb){
