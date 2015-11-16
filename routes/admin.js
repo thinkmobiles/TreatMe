@@ -4,11 +4,11 @@ var AdminHandler = require('../handlers/admin');
 var UserHandler = require('../handlers/users');
 var SessionHandler = require('../handlers/sessions');
 
-module.exports = function(db){
+module.exports = function(app, db){
 
     'use strict';
 
-    var admin = new AdminHandler(db);
+    var admin = new AdminHandler(app, db);
     var sessionHandler = new SessionHandler(db);
     var user = new UserHandler(null, db);
 
@@ -23,9 +23,11 @@ module.exports = function(db){
 
     // CRUD Stylists
     router.get('/stylist/', sessionHandler.isAdmin, admin.getStylistList);
+    router.get('/stylist/location', sessionHandler.isAdmin, admin.getStylistsLocation);
     router.get('/stylist/:id', sessionHandler.isAdmin, admin.getStylistById);
     router.post('/stylist/', sessionHandler.isAdmin, admin.createStylist);
     router.put('/stylist/:userId', sessionHandler.isAdmin, user.updateUserProfile);
+
     router.delete('/stylist/', sessionHandler.isAdmin, admin.removeStylist);
 
     router.post('/stylist/approve/', sessionHandler.isAdmin, admin.approveStylist);
@@ -50,7 +52,7 @@ module.exports = function(db){
     router.get('/appointments/:clientId', sessionHandler.isAdmin, admin.getBookedAppointment);
     router.post('/appointments/', sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments/', sessionHandler.isAdmin, admin.suspendAppointments);
-    router.delete('/appointments/', sessionHandler.authenticatedUser, sessionHandler.isAdmin, admin.removeAppointments);
+    router.delete('/appointments/', sessionHandler.isAdmin, admin.removeAppointments);
 
     // CRUD SubscriptionType
     router.get('/subscriptionType/', sessionHandler.isAdmin, admin.getSubscriptionType);

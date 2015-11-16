@@ -9,6 +9,7 @@ var mongoose = require('mongoose');
 var badRequests = require('../helpers/badRequests');
 var ImageHandler = require('./image');
 var UserHandler = require('./users');
+var ClientHandler = require('./clients');
 var passGen = require('password-generator');
 var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
@@ -17,12 +18,13 @@ var ObjectId = mongoose.Types.ObjectId;
 var _ = require('lodash');
 var StripeModule = require('../helpers/stripe');
 
-var AdminHandler = function (db) {
+var AdminHandler = function (app, db) {
 
     var self = this;
     var stripe = new StripeModule();
     var image = new ImageHandler(db);
-    var user = new UserHandler(null, db);
+    var user = new UserHandler(app, db);
+    var client = new ClientHandler(app, db);
     var Services = db.model('Service');
     var ServiceType = db.model('ServiceType');
     var SubscriptionType = db.model('SubscriptionType');
@@ -491,6 +493,40 @@ var AdminHandler = function (db) {
     };
 
     this.createClient = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/client/`__
+         *
+         * This __method__ allows add client by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/client/
+         *
+         * @example Body example:
+         * {
+         *      "email": "vashm@mail.ua",
+         *      "firstName": "Misha",
+         *      "lastName": "Vashkeba",
+         *      "phone": "21",
+         *      "stripeToken": "tok_21349tfdjkfsdf324" (optional)
+         *      "subscriptions": ["5638b976f8c11d9c04081343", "5638b965f8c11d9c04081341"] (optional)
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         * {"success": "Client created successfully"}
+         *
+         * @method createClient
+         * @instance
+         */
+
         var body = req.body;
         var firstName = body.firstName;
         var lastName = body.lastName;
@@ -498,6 +534,7 @@ var AdminHandler = function (db) {
         var email = body.email;
         var stripeToken = body.stripeToken;
         var password = passGen(12, false);
+        var subscriptionIds = body.subscriptions;
 
         if (!firstName || !lastName || !phone || !email){
             return next(badRequests.NotEnParams({reqParams: 'firstName or lastName or phone or email'}))
@@ -565,13 +602,16 @@ var AdminHandler = function (db) {
                     user = new User(client);
 
                     user
-                        .save(function(err){
+                        .save(function(err, userModel){
                             if (err){
                                 return cb(err);
                             }
 
-                            cb(null);
+                            cb(null, userModel._id);
                         });
+                },
+                function(clientId, cb){
+                    client.buySubscriptions(clientId, subscriptionIds, cb);
                 },
 
                 function(cb){
@@ -585,6 +625,7 @@ var AdminHandler = function (db) {
 
                     cb(null);
                 }
+
             ], function(err){
 
                 if (err){
@@ -979,7 +1020,6 @@ var AdminHandler = function (db) {
                             return next(err);
                         }
 
-
                         res.status(200).send({success: 'Service created successfully'});
 
                     });
@@ -1297,27 +1337,31 @@ var AdminHandler = function (db) {
          *
          * @example Body example:
          *  {
-         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *      "serviceType":"5638ccde3624f77b33b6587d",
+         *      "bookingDate":"2015-12-08T10:23:51.060Z",
+         *      "clientId":"5633451985201c7409caa2e2",
+         *      "stylistId":"56409b49ae6850e4046e6f3e"
          *  }
          *
          * @example Response example:
          *
          *  Response status: 200
          *
-         * {"success": "Appointments was suspended successfully"}
+         * {"success": "Appointment booked successfully"}
          *
-         * @method suspendAppointments
+         * @method bookAppointment
          * @instance
          */
 
-        var clientId = req.body.clientId;
-        var stylistId = req.body.stylistId;
-        var serviceTypeId = req.body.serviceTypeId;
-        var bookingDate = req.body.bookingDate;
-        var appointmentModel;
-        var saveObj;
+        var body = req.body;
+        var clientId = body.clientId;
+        var stylistId = body.stylistId;
+        var serviceType = body.serviceType;
+        var bookingDate = body.bookingDate;
+        var oneTimeService = true;
+        var price;
 
-        if (!clientId || !stylistId || !serviceTypeId || !bookingDate) {
+        if (!clientId || !stylistId || !serviceType || !bookingDate) {
             return next(badRequests.NotEnParams({reqParams: 'clientId and stylistId and serviceTypeId and bookingDate'}));
         }
 
@@ -1329,45 +1373,115 @@ var AdminHandler = function (db) {
             return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
         }
 
-        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(serviceTypeId)) {
-            return next(badRequests.InvalidValue({value: serviceTypeId, param: 'serviceTypeId'}));
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(serviceType)) {
+            return next(badRequests.InvalidValue({value: serviceType, param: 'serviceTypeId'}));
         }
 
-        saveObj = {
-            client: ObjectId(clientId),
-            clientLoc: {type: 'Point', coordinates: [0, 0]},
-            serviceType: ObjectId(serviceTypeId),
-            status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
-            stylist: ObjectId(stylistId),
-            bookingDate: bookingDate
-        };
+        async.parallel([
 
-        appointmentModel = new Appointment(saveObj);
+            function (cb) {
+                Appointment
+                    .find({bookingDate: bookingDate, $or: [{stylist: stylistId}, {client: clientId}]}, function (err, someModelsArray) {
+                        var error;
 
-        Appointment
-            .find({bookingDate: bookingDate, $or: [{stylist: stylistId}, {client: clientId}]}, function (err, someModelsArray) {
-                var error;
-
-                if (err) {
-                    return next(err);
-                }
-
-                if (someModelsArray.length) {
-                    error = new Error('Stylist or client already have an appointment for this time');
-                    error.status = 400;
-
-                    return next(error);
-                }
-
-                appointmentModel
-                    .save(function (err) {
                         if (err) {
-                            return next(err);
+                            return cb(err);
                         }
 
-                        res.status(200).send({success: 'Appointment booked successfully'});
+                        if (someModelsArray.length) {
+                            error = new Error('Stylist or client already have an appointment for this time');
+                            error.status = 400;
+
+                            return cb(error);
+                        }
+
+                        cb();
                     });
-            });
+            },
+
+            //onetime service or not
+            function(cb){
+                Subscription
+                    .find({client: clientId, expirationDate: {$gte: bookingDate}})
+                    .populate({path: 'subscriptionType', select: 'allowServices'})
+                    .exec(function(err, subscriptionModelsArray){
+                        var allowedServices = [];
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        subscriptionModelsArray.map(function(model){
+                            var servicesIds;
+
+                            if (model.subscriptionType){
+
+                                servicesIds = model.get('subscriptionType.allowServices');
+                                servicesIds = servicesIds.toStringObjectIds();
+
+                                allowedServices = allowedServices.concat(servicesIds);
+                            }
+                        });
+
+                        if (allowedServices.indexOf(serviceType) !== -1){
+                            oneTimeService = false
+                        }
+
+                        cb();
+                    });
+            },
+
+            function (cb) {
+                Services
+                    .findOne({stylist: ObjectId(stylistId), serviceId: serviceType, approved: true}, {price: 1})
+                    .exec(function(err, serviceModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!serviceModel){
+                            return cb(badRequests.NotFound({target: 'Service'}));
+                        }
+
+                        price = serviceModel.get('price') || 0;
+
+                        cb();
+                    });
+            }
+
+        ], function (err) {
+            var saveObj;
+            var appointmentModel;
+
+            if (err) {
+                return next(err);
+            }
+
+            saveObj = {
+                client: ObjectId(clientId),
+                clientLoc: {type: 'Point', coordinates: [0, 0]},
+                serviceType: ObjectId(serviceType),
+                bookingDate: bookingDate,
+                status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
+                oneTimeService: oneTimeService,
+                price: price
+            };
+
+            appointmentModel = new Appointment(saveObj);
+
+            appointmentModel
+                .save(function (err) {
+                    var appointmentId;
+
+                    if (err) {
+                        return next(err);
+                    }
+
+                    appointmentId = (appointmentModel.get('_id')).toString();
+
+                    res.status(200).send({success: 'Appointment created successfully', appointmentId: appointmentId});
+                });
+        });
     };
 
     this.addSubscriptionType = function (req, res, next) {
@@ -1442,6 +1556,68 @@ var AdminHandler = function (db) {
         });
     };
 
+    function getIdsForSearch(search, callback){
+        var searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+        var userCriteria = {};
+        var packageCriteria = {};
+
+        userCriteria['$and']= [
+            {role: CONSTANTS.USER_ROLE.CLIENT},
+            {
+                $or: [
+                    {'personalInfo.firstName': {$regex: searchRegExp}},
+                    {'personalInfo.lastName': {$regex: searchRegExp}}
+                ]
+            }
+        ];
+
+        packageCriteria.name = {$regex: searchRegExp};
+
+        async
+            .parallel([
+                function(cb){
+                    var usersId;
+                    User
+                        .find(userCriteria, {_id: 1})
+                        .exec(function(err, usersCollection){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            usersId = _.pluck(usersCollection, '_id');
+
+                            cb(null, usersId);
+                        });
+                },
+
+                function(cb){
+                    var packagesId;
+                    SubscriptionType
+                        .find(packageCriteria, {_id: 1})
+                        .exec(function(err, subscriptionCollection){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            packagesId = _.pluck(subscriptionCollection, '_id');
+
+                            cb(null, packagesId);
+                        });
+                }
+            ],function(err, result){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, {
+                    usersId: result[0],
+                    packagesId: result[1]
+                });
+            });
+    }
+
     this.getClientPackages = function (req, res, next) {
 
         /**
@@ -1494,8 +1670,10 @@ var AdminHandler = function (db) {
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
+        var search = req.query.search;
+
         var criteria = {
-            expirationDate: {$gte: new Date()}
+            $and:[{expirationDate: {$gte: new Date()}}]
         };
 
         if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Package') {
@@ -1515,8 +1693,28 @@ var AdminHandler = function (db) {
             sortObj['subscriptionType.name'] = order;
         }
 
-        async.parallel({
-            subscriptionCount: function(cb){
+        async.waterfall([
+            function(cb){
+                if (!search){
+                    return cb(null, null);
+                }
+
+                getIdsForSearch(search, cb);
+
+            },
+            function(searchIds, cb){
+                var searchCriteria;
+                if(searchIds){
+                    searchCriteria = {
+                        $or: [
+                            {client: {$in: searchIds.usersId}},
+                            {subscriptionType: {$in: searchIds.packagesId}}
+                        ]
+                    };
+
+                    criteria['$and'].push(searchCriteria);
+                }
+
                 Subscription
                     .count(criteria, function(err, count){
                         if (err){
@@ -1527,7 +1725,7 @@ var AdminHandler = function (db) {
                     });
             },
 
-            subscriptions: function(cb){
+            function(count, cb) {
                 Subscription
                     .find(criteria, {__v: 0, expirationDate: 0})
                     .populate([{path: 'subscriptionType', select: 'name'}, {
@@ -1544,15 +1742,15 @@ var AdminHandler = function (db) {
                             return next(err);
                         }
 
-                        resultArray = subscriptionModelsArray.map(function(model){
+                        resultArray = subscriptionModelsArray.map(function (model) {
                             var modelJson = model.toJSON();
 
-                            if (model.client){
+                            if (model.client) {
                                 modelJson.client = modelJson.client.personalInfo.firstName + ' ' + modelJson.client.personalInfo.lastName;
                             } else {
                                 modelJson.client = 'Client was removed'
                             }
-                            if (model.subscriptionType){
+                            if (model.subscriptionType) {
                                 modelJson.subscriptionType = modelJson.subscriptionType.name;
                             } else {
                                 modelJson.subscriptionType = 'Subscription was removed';
@@ -1561,16 +1759,15 @@ var AdminHandler = function (db) {
                             return modelJson
                         });
 
-                        cb(null, resultArray);
+                        cb(null, count, resultArray);
                     });
-            }
-
-        }, function(err, result){
+                }
+            ], function(err, count, result){
             if (err){
                 return next(err);
             }
 
-            res.status(200).send({total: result.subscriptionCount, data: result.subscriptions});
+            res.status(200).send({total: count, data: result});
         });
     };
 
@@ -2036,7 +2233,8 @@ var AdminHandler = function (db) {
                                 return cb(badRequests.DatabaseError());
                             }
 
-                            resultObj.name = clientModel.personalInfo.firstName + ' ' + clientModel.personalInfo.lastName;
+                            resultObj.firstName = clientModel.personalInfo.firstName;
+                            resultObj.lastName = clientModel.personalInfo.lastName;
                             resultObj.phone = clientModel.personalInfo.phone;
                             resultObj.email = clientModel.email;
                             resultObj.suspend = clientModel.suspend;
@@ -2611,6 +2809,84 @@ var AdminHandler = function (db) {
 
     this.updateClient = function(req, res, next){
         res.status(400).send('Not implemented yet');
+    };
+
+    this.getStylistsLocation = function(req, res, next){
+        var criteria = {
+            role: CONSTANTS.USER_ROLE.STYLIST,
+            online: true,
+            'suspend.isSuspend': false,
+            approved: true
+        };
+        var projection = {
+            'personalInfo.firstName': 1,
+            'personalInfo.lastName': 1,
+            'personalInfo.avatar': 1,
+            'salonInfo.salonName': 1,
+            'salonInfo.address': 1,
+            'salonInfo.city': 1,
+            'salonInfo.state': 1,
+            'salonInfo.country': 1,
+            'salonInfo.zipCode': 1,
+            loc: 1
+        };
+
+        User
+            .find(criteria, projection, function(err, stylistModelsArray){
+                var stylists;
+
+                if (err){
+                    return next(err);
+                }
+
+                if (!stylistModelsArray.length){
+                    return res.status(200).send([]);
+                }
+
+                stylists = stylistModelsArray.map(function(model){
+                    var modelJSON = model.toJSON();
+                    var address;
+                    var city;
+                    var state;
+                    var country;
+                    var zipCode;
+
+                    if (modelJSON.salonInfo){
+                        if (modelJSON.salonInfo.salonName){
+                            modelJSON.salon = modelJSON.salonInfo.salonName
+                        } else {
+                            modelJSON.salon = '';
+                        }
+
+                        address = modelJSON.salonInfo.address || '';
+                        city = modelJSON.salonInfo.city || '';
+                        state = modelJSON.salonInfo.state || '';
+                        country = modelJSON.salonInfo.country || '';
+                        zipCode = modelJSON.salonInfo.zipCode || '';
+
+                        modelJSON.address = address + ', ' + city + ', ' + state + ', ' + country + ', ' + zipCode;
+
+                        delete modelJSON.salonInfo
+                    }
+
+                    if (modelJSON.personalInfo){
+                        modelJSON.name = modelJSON.personalInfo.firstName + ' ' + modelJSON.personalInfo.lastName;
+
+                        if (modelJSON.personalInfo.avatar){
+                            modelJSON.avatar = image.computeUrl(modelJSON.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
+                        } else {
+                            modelJSON.avatar = '';
+                        }
+
+                        delete modelJSON.personalInfo;
+                    }
+
+                    return modelJSON;
+                });
+
+                res.status(200).send(stylists);
+
+            });
     };
 
 

@@ -18,6 +18,8 @@ var _ = require('lodash');
 
 var ClientsHandler = function (app, db) {
 
+    var self = this;
+
     var stripe = new StripeModule();
     var User = db.model('User');
     var Appointment = db.model('Appointment');
@@ -343,7 +345,107 @@ var ClientsHandler = function (app, db) {
             });
     };
 
-    this.buySubscriptions = function(req, res, next){
+    this.buySubscriptions = function(clientId, subscriptionIds, callback){
+
+        async.each(subscriptionIds,
+
+            function(id, cb){
+                var currentDate = new Date();
+                var expirationDate = new Date();
+                var saveObj;
+                var subscriptionModel;
+
+                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+                saveObj = {
+                    client: clientId,
+                    subscriptionType : id,
+                    //TODO: price: 111,
+                    purchaseDate: currentDate,
+                    expirationDate: expirationDate
+                };
+
+                subscriptionModel = new Subscription(saveObj);
+
+                subscriptionModel
+                    .save(function(err){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb();
+                    });
+
+                //if need check for purchased subscriptions
+                /*SubscriptionType
+                 .findOne({_id: id}, function (err, subscriptionTypesModel) {
+                 var currentDate = new Date();
+                 var expirationDate = new Date();
+
+
+                 if (err) {
+                 return cb(err);
+                 }
+
+                 if (!subscriptionTypesModel) {
+                 return cb(badRequests.NotFound({target: 'Subscription with id: ' + id}));
+                 }
+                 Subscription
+                 .findOne({
+                 subscriptionType: id,
+                 client: ObjectId(clientId),
+                 expirationDate: {$gte: currentDate}
+                 }, function (err, someSubscriptionModel) {
+                 var error;
+                 var saveObj;
+                 var subscriptionModel;
+
+                 if (err) {
+                 return cb(err);
+                 }
+
+                 if (someSubscriptionModel) {
+                 error = new Error('Current user already have ' + subscriptionTypesModel.name);
+                 error.status = 400;
+
+                 return cb(error);
+                 }
+
+                 expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+                 saveObj = {
+                 client: clientId,
+                 subscriptionType: id,
+                 //TODO: price: 111,
+                 purchaseDate: currentDate,
+                 expirationDate: expirationDate
+                 };
+
+                 subscriptionModel = new Subscription(saveObj);
+
+                 subscriptionModel
+                 .save(function (err) {
+                 if (err) {
+                 return cb(err);
+                 }
+
+                 cb();
+                 });
+                 });
+                 });*/
+            },
+
+            function(err){
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null);
+            });
+
+    };
+
+    this.buySubscriptionsByClient = function(req, res, next){
 
         /**
          * __Type__ __`POST`__
@@ -398,101 +500,17 @@ var ClientsHandler = function (app, db) {
 
         ids = body.ids.toObjectId();
 
-        async.each(ids,
+        self.buySubscriptions(clientId, ids, function(err){
 
-            function(id, cb){
-                var currentDate = new Date();
-                var expirationDate = new Date();
-                var saveObj;
-                var subscriptionModel;
+            if (err){
+                return next(err);
+            }
 
-                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+            res.status(200).send({success: 'Subscriptions bought successfully'});
 
-                saveObj = {
-                    client: clientId,
-                    subscriptionType : id,
-                    //TODO: price: 111,
-                    purchaseDate: currentDate,
-                    expirationDate: expirationDate
-                };
-
-                subscriptionModel = new Subscription(saveObj);
-
-                subscriptionModel
-                    .save(function(err){
-                        if (err){
-                            return cb(err);
-                        }
-
-                        cb();
-                    });
-
-                //if need check for purchased subscriptions
-                /*SubscriptionType
-                    .findOne({_id: id}, function (err, subscriptionTypesModel) {
-                        var currentDate = new Date();
-                        var expirationDate = new Date();
+        });
 
 
-                        if (err) {
-                            return cb(err);
-                        }
-
-                        if (!subscriptionTypesModel) {
-                            return cb(badRequests.NotFound({target: 'Subscription with id: ' + id}));
-                        }
-                        Subscription
-                            .findOne({
-                                subscriptionType: id,
-                                client: ObjectId(clientId),
-                                expirationDate: {$gte: currentDate}
-                            }, function (err, someSubscriptionModel) {
-                                var error;
-                                var saveObj;
-                                var subscriptionModel;
-
-                                if (err) {
-                                    return cb(err);
-                                }
-
-                                if (someSubscriptionModel) {
-                                    error = new Error('Current user already have ' + subscriptionTypesModel.name);
-                                    error.status = 400;
-
-                                    return cb(error);
-                                }
-
-                                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
-
-                                saveObj = {
-                                    client: clientId,
-                                    subscriptionType: id,
-                                    //TODO: price: 111,
-                                    purchaseDate: currentDate,
-                                    expirationDate: expirationDate
-                                };
-
-                                subscriptionModel = new Subscription(saveObj);
-
-                                subscriptionModel
-                                    .save(function (err) {
-                                        if (err) {
-                                            return cb(err);
-                                        }
-
-                                        cb();
-                                    });
-                            });
-                    });*/
-            },
-
-            function(err){
-                if (err){
-                    return next(err);
-                }
-
-                res.status(200).send({success: 'Subscriptions purchased successfully'});
-            });
     };
 
     this.createAppointment = function (req, res, next) {

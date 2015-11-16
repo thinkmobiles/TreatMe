@@ -5,7 +5,7 @@ module.exports = function (app, db) {
     var logWriter = require('../modules/logWriter')();
 
     var clientsRouter = require('./clients')(app, db);
-    var adminRouter = require('./admin')(db);
+    var adminRouter = require('./admin')(app, db);
     var stylistRouter = require('./stylist')(app, db);
 
     var SubscriptionHandler = require('../handlers/subscription');

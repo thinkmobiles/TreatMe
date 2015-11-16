@@ -9,7 +9,7 @@ module.exports = function(app, db){
 
     router.get('/subscriptions/current/:clientId?', sessionHandler.clientOrAdmin, clientsHandler.getCurrentSubscriptions);
     router.get('/subscriptions/', sessionHandler.isClient, clientsHandler.getActiveSubscriptionsOnServices);
-    router.post('/subscriptions/:clientId?', sessionHandler.clientOrAdmin, clientsHandler.buySubscriptions);
+    router.post('/subscriptions/:clientId?', sessionHandler.clientOrAdmin, clientsHandler.buySubscriptionsByClient);
 
     router.post('/appointment', sessionHandler.clientOrAdmin, clientsHandler.createAppointment);
     router.post('/appointment/rate', sessionHandler.isClient, clientsHandler.rateAppointmentById);
