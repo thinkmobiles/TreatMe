@@ -5,7 +5,7 @@
     <td><%= item.client.personalInfo.firstName + ' ' + item.client.personalInfo.lastName %></td>
     <td><%= item.stylist.personalInfo.firstName + ' ' + item.stylist.personalInfo.lastName %></td>
     <td><span class="<%= item.status %>"><%= item.status %></span></td>
-    <td><button class="suspendCurrentBtn">Suspend</button></td>
-    <td><button class="deleteCurrentBtn">Delete</button></td>
+    <td><button class="suspendCurrentBtn suspend">Suspend</button></td>
+    <td><button class="deleteCurrentBtn delete">Delete</button></td>
 </tr>
 <%});%>
