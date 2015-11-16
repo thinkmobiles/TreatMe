@@ -27,13 +27,13 @@ define([
                     name: 'Add client',
                     path: '#client/add'
                 }]);
+                App.menu.select('#nav_clients');
                 return self.render();
             } else {
                 model = new ClientModel({_id: userId});
                 model.fetch({
                     success: function (userModel){
                         self.model = userModel;
-                        console.log(self.model);
                         App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {
                             name: self.model.toJSON().name,
                             path: '#clients/:id'
@@ -41,6 +41,7 @@ define([
                             name: 'Edit',
                             path: '#clients/:id/edit'
                         }]);
+                        App.menu.select('#nav_clients');
                         return self.render();
                     },
                     error: self.handleModelError
@@ -50,6 +51,7 @@ define([
 
         render: function(){
             var item = this.model.toJSON();
+            console.log(item);
 
             this.$el.html(this.mainTemplate({item: item}));
 

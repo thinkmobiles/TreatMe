@@ -9,18 +9,44 @@
         </span>
     </div>
     <div class="infoAccount">
-        <br class="accountInfo">
-        <div class="avatar"></div>
-        <input type="text" class="firstName" name="firstName" placeholder="First Name"/><span class="prompt"></span><br/>
-        <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><span class="prompt"></span><br/>
-        <input type="text" class="phone" name="phone" placeholder="Phone Number"/><span class="prompt"></span><br/>
-        <input type="text" class="email" name="email" placeholder="Email"/><span class="prompt"></span><br/>
-        <input type="text" class="password" name="password" placeholder="Password"/><span class="prompt"></span><br/>
+        <% if (item._id) { %>
+            <br class="accountInfo">
+            <div class="avatar"></div>
+            <input type="text" class="firstName" name="firstName" placeholder="First Name" value="<%= item.firstName%>"/><span class="prompt"></span><br/>
+            <input type="text" class="lastName" name="lastName" placeholder="Last Name" value="<%= item.lastName%>"/><span class="prompt"></span><br/>
+            <input type="text" class="phone" name="phone" placeholder="Phone Number" value="<%= item.phone%>"/><span class="prompt"></span><br/>
+            <input type="text" class="email" name="email" placeholder="Email" value="<%= item.email%>"/><span class="prompt"></span><br/>
+        <% } else {%>
+            <br class="accountInfo">
+            <div class="avatar"></div>
+            <input type="text" class="firstName" name="firstName" placeholder="First Name"/><span class="prompt"></span><br/>
+            <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><span class="prompt"></span><br/>
+            <input type="text" class="phone" name="phone" placeholder="Phone Number"/><span class="prompt"></span><br/>
+            <input type="text" class="email" name="email" placeholder="Email"/><span class="prompt"></span><br/>
+            <input type="text" class="password" name="password" placeholder="Password"/><span class="prompt"></span><br/>
+        <% } %>
     </div>
-    <div class="userNameContainer">
+    <div class="infoCard">
         <span>
-            Add credit card
+            <% if (item._id) { %>
+                Credit card
+            <% } else { %>
+                Add credit card
+            <% } %>
         </span>
+        <div>
+            <input type="text" class="nameOnCard" name="nameOnCard" placeholder="Name on card"/><span class="prompt"></span><br/>
+            <input type="text" class="cardNumber" name="cardNumber" placeholder="Card number"/><span class="prompt"></span><br/>
+            <input type="text" class="month" name="month" placeholder="Month"/><span class="prompt"></span><br/>
+            <input type="text" class="year" name="year" placeholder="Year"/><span class="prompt"></span><br/>
+            <input type="text" class="cvc" name="cvc" placeholder="CVC"/><span class="prompt"></span><br/>
+            <input type="text" class="firstName" name="firstName" placeholder="First Name"/><span class="prompt"></span><br/>
+            <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><span class="prompt"></span><br/>
+            <input type="text" class="address" name="address" placeholder="Address"/><span class="prompt"></span><br/>
+            <input type="text" class="city" name="city" placeholder="City"/><span class="prompt"></span><br/>
+            <input type="text" class="state" name="state" placeholder="State"/><span class="prompt"></span><br/>
+            <input type="text" class="zipcode" name="zipcode" placeholder="Zipcode"/><span class="prompt"></span><br/>
+        </div>
     </div>
 
     <div class="addPackage">
@@ -32,6 +58,8 @@
         <input type="checkbox" id="<% %>" data-id="" >
         <input type="checkbox" id="<% %>" data-id="" >
         <input type="checkbox" id="<% %>" data-id="" >
+
+        <p>*To be filled in by TreatMe team based on negotiations with client</p>
 
     </div>
 
