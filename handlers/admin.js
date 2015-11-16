@@ -1482,6 +1482,68 @@ var AdminHandler = function (app, db) {
         });
     };
 
+    function getIdsForSearch(search, callback){
+        var searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+        var userCriteria = {};
+        var packageCriteria = {};
+
+        userCriteria['$and']= [
+            {role: CONSTANTS.USER_ROLE.CLIENT},
+            {
+                $or: [
+                    {'personalInfo.firstName': {$regex: searchRegExp}},
+                    {'personalInfo.lastName': {$regex: searchRegExp}}
+                ]
+            }
+        ];
+
+        packageCriteria.name = {$regex: searchRegExp};
+
+        async
+            .parallel([
+                function(cb){
+                    var usersId;
+                    User
+                        .find(userCriteria, {_id: 1})
+                        .exec(function(err, usersCollection){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            usersId = _.pluck(usersCollection, '_id');
+
+                            cb(null, usersId);
+                        });
+                },
+
+                function(cb){
+                    var packagesId;
+                    SubscriptionType
+                        .find(packageCriteria, {_id: 1})
+                        .exec(function(err, subscriptionCollection){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            packagesId = _.pluck(subscriptionCollection, '_id');
+
+                            cb(null, packagesId);
+                        });
+                }
+            ],function(err, result){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, {
+                    usersId: result[0],
+                    packagesId: result[1]
+                });
+            });
+    }
+
     this.getClientPackages = function (req, res, next) {
 
         /**
@@ -1534,8 +1596,10 @@ var AdminHandler = function (app, db) {
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
+        var search = req.query.search;
+
         var criteria = {
-            expirationDate: {$gte: new Date()}
+            $and:[{expirationDate: {$gte: new Date()}}]
         };
 
         if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Package') {
@@ -1555,8 +1619,28 @@ var AdminHandler = function (app, db) {
             sortObj['subscriptionType.name'] = order;
         }
 
-        async.parallel({
-            subscriptionCount: function(cb){
+        async.waterfall([
+            function(cb){
+                if (!search){
+                    return cb(null, null);
+                }
+
+                getIdsForSearch(search, cb);
+
+            },
+            function(searchIds, cb){
+                var searchCriteria;
+                if(searchIds){
+                    searchCriteria = {
+                        $or: [
+                            {client: {$in: searchIds.usersId}},
+                            {subscriptionType: {$in: searchIds.packagesId}}
+                        ]
+                    };
+
+                    criteria['$and'].push(searchCriteria);
+                }
+
                 Subscription
                     .count(criteria, function(err, count){
                         if (err){
@@ -1567,7 +1651,7 @@ var AdminHandler = function (app, db) {
                     });
             },
 
-            subscriptions: function(cb){
+            function(count, cb) {
                 Subscription
                     .find(criteria, {__v: 0, expirationDate: 0})
                     .populate([{path: 'subscriptionType', select: 'name'}, {
@@ -1584,15 +1668,15 @@ var AdminHandler = function (app, db) {
                             return next(err);
                         }
 
-                        resultArray = subscriptionModelsArray.map(function(model){
+                        resultArray = subscriptionModelsArray.map(function (model) {
                             var modelJson = model.toJSON();
 
-                            if (model.client){
+                            if (model.client) {
                                 modelJson.client = modelJson.client.personalInfo.firstName + ' ' + modelJson.client.personalInfo.lastName;
                             } else {
                                 modelJson.client = 'Client was removed'
                             }
-                            if (model.subscriptionType){
+                            if (model.subscriptionType) {
                                 modelJson.subscriptionType = modelJson.subscriptionType.name;
                             } else {
                                 modelJson.subscriptionType = 'Subscription was removed';
@@ -1601,16 +1685,15 @@ var AdminHandler = function (app, db) {
                             return modelJson
                         });
 
-                        cb(null, resultArray);
+                        cb(null, count, resultArray);
                     });
-            }
-
-        }, function(err, result){
+                }
+            ], function(err, count, result){
             if (err){
                 return next(err);
             }
 
-            res.status(200).send({total: result.subscriptionCount, data: result.subscriptions});
+            res.status(200).send({total: count, data: result});
         });
     };
 
