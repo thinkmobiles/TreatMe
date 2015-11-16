@@ -17,6 +17,9 @@ define([
         },
 
         initialize: function () {
+            App.Breadcrumbs.reset([{name: 'Gallery', path: '#gallery'}]);
+            App.menu.select('#nav_gallery');
+
             this.render();
         },
 
@@ -27,13 +30,6 @@ define([
             $el.html(self.mainTemplate());
 
             return this;
-        },
-
-        afterRender: function (){
-            var navContainer = $('.sidebar-menu');
-
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_gallery').addClass('active')
         }
 
     });

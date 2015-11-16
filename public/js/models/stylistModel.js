@@ -1,19 +1,36 @@
 'use strict';
 
-define(['Validator'], function (validator) {
+define([
+    '/js/validator.js'
+], function (validator) {
     var Model = Backbone.Model.extend({
-        validator: validator,
+        //validator: validator,
         urlRoot : '/admin/stylist',
         idAttribute: "_id",
+        validate: function (attrs, options) {
+            var errors = [];
+            var personalInfo = attrs.personalInfo;
+            var email = attrs.email;
+            var firstName = attrs.firstName;
+            var lastName = attrs.lastName;
 
-       /* validate: function (attrs) {
-            var errors = this.checkRequiredFields(attrs);
-            //var errors = this.checkFieldsTypes(attrs);
+            /*  --- email --- */
+            if (!email) {
+                errors.push({name: 'email', message: 'Please fill Email field.'});
+            } else {
+                if (!validator.isEmail(email)) {
+                    errors.push({name: 'email', message: 'Incorrect Email.'});
+                }
+            }
 
-            return errors.length > 0 ? errors : false;
-        },*/
+            /* --- first name --- */
+            // ...
+
+            return (errors.length) ? errors : false;
+        },
 
         checkRequiredFields: function (attrs) {
+        //validate: function (attrs, options) {
             var errors = [];
             var personalRequiredFields = [
                 'firstName',
@@ -56,6 +73,11 @@ define(['Validator'], function (validator) {
                 errors.push({name: 'email', message: 'Please fill Email field.'});
             }
 
+            if (!validator.isLocation(attrs.salonInfo.city)) {
+                errors.push({name: 'city', message: 'Incorrect format for location'});
+                return errors;
+            }
+
             if (!attrs.services.length) {
                 errors.push({name: 'services', message: 'Please choose some service which you gonna giving.'})
             }
@@ -71,6 +93,7 @@ define(['Validator'], function (validator) {
                     errors.push(salonRequiredErrors[j]);
                 }
             }
+
             return errors;
         },
 
@@ -82,7 +105,11 @@ define(['Validator'], function (validator) {
                 errors.push({name: 'email', message: 'Incorrect Email.'});
             }
 
-            console.log(5);
+            if (!validator.isLocation(attrs.salonInfo.city)) {
+                errors.push({name: 'city', message: 'Incorrect format for location'});
+            }
+
+            return errors;
         },
 
         updateCurrent: function (options, callbackObj) {

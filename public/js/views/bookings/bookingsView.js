@@ -12,7 +12,6 @@ define([
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
 
-        navElement  : '#nav_bookings',
         url         : '#bookings',
         removeParams: {
             url           : 'admin/appointments',
@@ -25,7 +24,7 @@ define([
 
         initialize: function (options) {
             App.Breadcrumbs.reset([{name: 'Bookings', path: '#bookings'}]);
-
+            App.menu.select('#nav_bookings');
             ListView.prototype.initialize.call(this, options);
         }
     });

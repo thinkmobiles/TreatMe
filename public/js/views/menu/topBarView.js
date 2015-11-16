@@ -1,14 +1,13 @@
-/**
- * Created by andrey on 17.07.15.
- */
+'use strict';
 
 define([
+    'views/menu/leftSideMenuView',
     'text!templates/menu/topBarTemplate.html',
-    'text!templates/menu/leftBarTemplate.html',
+    //'text!templates/menu/leftBarTemplate.html',
     //'views/menu/iWantToView',
     //'views/menu/contactUsView',
     'constants/roles'
-], function (TopTemplate, LeftTemplate, /*WantView, ContactView,*/ ROLES) {
+], function (LeftMenu, TopTemplate, /*LeftTemplate,*/ /*WantView, ContactView,*/ ROLES) {
 
     var View;
     View = Backbone.View.extend({
@@ -57,10 +56,7 @@ define([
             var data = App.sessionData.toJSON();
 
             this.$el.html(_.template(TopTemplate)(data));
-
-            if (data.authorized) {
-                $('#leftMenu').html(_.template(LeftTemplate));
-            }
+            this.leftMenu = new LeftMenu();
 
             return this;
         },
