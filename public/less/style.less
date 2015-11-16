@@ -15,8 +15,6 @@ body{
   height: 100%;
   font-family: "Lato";
   color: #555;
-  text-rendering: geometricPrecision;
-
 }
 /*------login--*/
 .welcome-pages{
@@ -72,7 +70,6 @@ body{
     text-transform: uppercase;
     margin-top: 22px;
   }
-
 }
 /*---top section-----*/
 .top{
@@ -116,7 +113,7 @@ body{
     width: 100px;
   }
 }
-/*   breadcrunbs */
+/*   breadcrumbs */
 #breadcrumbContainer{
   display: inline-block;
   .breadcrumb{
@@ -127,17 +124,14 @@ body{
       border-bottom: 3px solid @mainColor;
     }
   }
-
 }
 
 /*-----Nav-------*/
 .leftMenu{
   float: left;
-  height: 100%;
   width: 25%;
   ul {
-    padding: 0;
-    padding-top: 50px;
+    padding: 50px 0 0;
     li {
       list-style: none;
       a {
@@ -195,6 +189,7 @@ body{
     background-color: #E8F1FA;
   }
 }
+/*------wrapper------*/
 .wrapper,
 .topMenu{
   width: 75%;
@@ -204,7 +199,7 @@ body{
 .wrapper{
   padding-bottom: 50px;
 }
-/*----------*/
+
 /* Buttons*/
 .buttons{
   padding-left: 30px;
@@ -212,7 +207,7 @@ body{
 }
 #acceptSelectedBtn,
 #removeSelectedBtn,
-#suspendSelectedBtn{
+.buttons #suspendSelectedBtn{
   border-radius: 2px;
   width: 90px;
   height: 44px;
@@ -235,7 +230,7 @@ body{
 .deleteCurrentBtn{
   .i("trash.png", transparent);
 }
-#suspendSelectedBtn{
+.buttons #suspendSelectedBtn{
   .i("ban.png", #E0E0E0);
   background-position: center;
 }
@@ -267,6 +262,24 @@ a.addApp, button#addBtn {
   float: right;
   text-transform: uppercase;
 }
+button#editBtn,
+button.edit,
+#editSelectedBtn
+{
+  font-size: 18px;
+  color: #fff;
+  line-height: 1.111;
+  border-radius: 5px;
+  .i('note-white.png', @mainColor);
+  width: 120px;
+  height: 40px;
+  padding-left: 60px;
+  background-position: 26px 7px;
+  text-align: left;
+}
+button#editBtn{
+  margin-right: 40px;
+}
 a#addClient{
   width: 180px;
 }
@@ -279,6 +292,50 @@ a#addClient{
   color: #fff;
   float: right;
   text-transform: uppercase;
+}
+.saveBtn{
+  border-radius: 2px;
+  background-color: @mainColor;
+  height: 44px;
+  width: 90px;
+  line-height: 44px;
+  color: #fff;
+  margin-top: 44px;
+}
+a.edit, .editBtn{
+  .i("note.png", transparent);
+  background-position: center;
+  text-indent: -99999px;
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+}
+#removeBtn,
+button.delete,
+button.suspend,
+#acceptBtn,
+#suspendSelectedBtn{
+  border-radius: 5px;
+  width: 120px;
+  height: 40px;
+  color: #fff;
+  padding-left: 35px;
+  box-sizing: border-box;
+  font-weight: normal;
+}
+#acceptBtn{
+  .i('check-white.png', #00A651);
+  background-position: 14px center;
+}
+#removeBtn,
+button.delete{
+  .i('trash-white.png', #ED1C24);
+  background-position: 14px center;
+}
+button.suspend,
+#suspendSelectedBtn{
+  .i('ban-white.png', #ED1C24);
+  background-position: 14px center;
 }
 /*---------*/
 /*--checkbox--*/
@@ -303,9 +360,9 @@ a#addClient{
       border: none;
     }
   }
-
-
-.date:after, .name:after, .salon:after {
+.date:after,
+.name:after,
+.salon:after {
   content: '';
   width: 9px;
   height: 5px;
@@ -332,7 +389,6 @@ a#addClient{
 .pagination{
   margin: 50px auto;
   text-align: center;
-
   li{
     display: inline-block;
     text-transform: uppercase;
@@ -351,14 +407,7 @@ a#addClient{
     }
   }
 }
-.edit, .editBtn{
-  .i("note.png", transparent);
-  background-position: center;
-  text-indent: -99999px;
-  width: 24px;
-  height: 24px;
-  display: inline-block;
-}
+
 .pending{
   width: 16px;
   height: 13px;
@@ -389,45 +438,23 @@ a#addClient{
   #acceptBtn{
     margin-right: 20px;
   }
+}
 
-}
-#acceptBtn{
-  .i('check-white.png', #00A651);
-  background-position: 14px center;
-  border-radius: 5px;
-  width: 120px;
-  height: 40px;
-  color: #fff;
-  padding-left: 35px;
-  box-sizing: border-box;
-}
-#removeBtn{
-  .i('trash-white.png', #ED1C24);
-  background-position: 14px center;
-  border-radius: 5px;
-  width: 120px;
-  height: 40px;
-  color: #fff;
-  padding-left: 35px;
-  box-sizing: border-box;
-}
 /*--add app---*/
 .userNameContainer{
   font-weight: bold;
   border-bottom: 1px solid #E8E8E8;
   padding-bottom: 20px;
-  button#editBtn{
-    font-size: 18px;
-    color: #fff;
-    line-height: 1.111;
-    border-radius: 5px;
-    .i('note-white.png', @mainColor);
-    width: 120px;
-    height: 40px;
-    padding-left: 60px;
-    background-position: 26px 7px;
-    text-align: left;
-    margin-right: 40px;
+  height: 60px;
+  >span{
+    padding-top: 15px;
+    display: inline-block;
+  }
+  div{
+    float: right;
+    button{
+      vertical-align: top;
+    }
   }
 }
 .services{
@@ -452,5 +479,37 @@ a#addClient{
   input[type=checkbox]{
     position: relative;
     top: -2px;
+  }
+}
+/*--user name---*/
+.userNameContainer{
+  span{
+    text-transform: uppercase;
+  }
+}
+.accountInfo{
+  span.title, .infoField{
+    min-width: 155px;
+    display: inline-block;
+    font-size: 18px;
+    line-height: 2.444;
+  }
+  .title{
+    color: #A7A7A7;
+  }
+}
+table.services{
+  float: right;
+  margin-top: 30px;
+  th{
+    font-size: 18px;
+    color: #A7A7A7;
+    font-weight: normal;
+  }
+  td,th{
+      padding: 14px 30px;
+  }
+  tbody td{
+    font-weight: bold;
   }
 }

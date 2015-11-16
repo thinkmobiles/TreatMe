@@ -387,7 +387,6 @@ body {
   height: 100%;
   font-family: "Lato";
   color: #555;
-  text-rendering: geometricPrecision;
 }
 /*------login--*/
 .welcome-pages {
@@ -487,7 +486,7 @@ body {
   margin-left: -100px;
   width: 100px;
 }
-/*   breadcrunbs */
+/*   breadcrumbs */
 #breadcrumbContainer {
   display: inline-block;
 }
@@ -502,12 +501,10 @@ body {
 /*-----Nav-------*/
 .leftMenu {
   float: left;
-  height: 100%;
   width: 25%;
 }
 .leftMenu ul {
-  padding: 0;
-  padding-top: 50px;
+  padding: 50px 0 0;
 }
 .leftMenu ul li {
   list-style: none;
@@ -563,6 +560,7 @@ body {
 .list tbody tr:nth-child(even) {
   background-color: #E8F1FA;
 }
+/*------wrapper------*/
 .wrapper,
 .topMenu {
   width: 75%;
@@ -572,7 +570,6 @@ body {
 .wrapper {
   padding-bottom: 50px;
 }
-/*----------*/
 /* Buttons*/
 .buttons {
   padding-left: 30px;
@@ -580,7 +577,7 @@ body {
 }
 #acceptSelectedBtn,
 #removeSelectedBtn,
-#suspendSelectedBtn {
+.buttons #suspendSelectedBtn {
   border-radius: 2px;
   width: 90px;
   height: 44px;
@@ -603,7 +600,7 @@ body {
 .deleteCurrentBtn {
   background: transparent url("../images/trash.png") no-repeat;
 }
-#suspendSelectedBtn {
+.buttons #suspendSelectedBtn {
   background: #e0e0e0 url("../images/ban.png") no-repeat;
   background-position: center;
 }
@@ -636,6 +633,23 @@ button#addBtn {
   float: right;
   text-transform: uppercase;
 }
+button#editBtn,
+button.edit,
+#editSelectedBtn {
+  font-size: 18px;
+  color: #fff;
+  line-height: 1.111;
+  border-radius: 5px;
+  background: #2175cc url("../images/note-white.png") no-repeat;
+  width: 120px;
+  height: 40px;
+  padding-left: 60px;
+  background-position: 26px 7px;
+  text-align: left;
+}
+button#editBtn {
+  margin-right: 40px;
+}
 a#addClient {
   width: 180px;
 }
@@ -648,6 +662,51 @@ a#addClient {
   color: #fff;
   float: right;
   text-transform: uppercase;
+}
+.saveBtn {
+  border-radius: 2px;
+  background-color: #2175cc;
+  height: 44px;
+  width: 90px;
+  line-height: 44px;
+  color: #fff;
+  margin-top: 44px;
+}
+a.edit,
+.editBtn {
+  background: transparent url("../images/note.png") no-repeat;
+  background-position: center;
+  text-indent: -99999px;
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+}
+#removeBtn,
+button.delete,
+button.suspend,
+#acceptBtn,
+#suspendSelectedBtn {
+  border-radius: 5px;
+  width: 120px;
+  height: 40px;
+  color: #fff;
+  padding-left: 35px;
+  box-sizing: border-box;
+  font-weight: normal;
+}
+#acceptBtn {
+  background: #00a651 url("../images/check-white.png") no-repeat;
+  background-position: 14px center;
+}
+#removeBtn,
+button.delete {
+  background: #ed1c24 url("../images/trash-white.png") no-repeat;
+  background-position: 14px center;
+}
+button.suspend,
+#suspendSelectedBtn {
+  background: #ed1c24 url("../images/ban-white.png") no-repeat;
+  background-position: 14px center;
 }
 /*---------*/
 /*--checkbox--*/
@@ -719,15 +778,6 @@ input[type=checkbox]:checked:after {
 .pagination li.arrow {
   margin: 0 10px;
 }
-.edit,
-.editBtn {
-  background: transparent url("../images/note.png") no-repeat;
-  background-position: center;
-  text-indent: -99999px;
-  width: 24px;
-  height: 24px;
-  display: inline-block;
-}
 .pending {
   width: 16px;
   height: 13px;
@@ -759,44 +809,22 @@ input[type=checkbox]:checked:after {
 .stylistForm #acceptBtn {
   margin-right: 20px;
 }
-#acceptBtn {
-  background: #00a651 url("../images/check-white.png") no-repeat;
-  background-position: 14px center;
-  border-radius: 5px;
-  width: 120px;
-  height: 40px;
-  color: #fff;
-  padding-left: 35px;
-  box-sizing: border-box;
-}
-#removeBtn {
-  background: #ed1c24 url("../images/trash-white.png") no-repeat;
-  background-position: 14px center;
-  border-radius: 5px;
-  width: 120px;
-  height: 40px;
-  color: #fff;
-  padding-left: 35px;
-  box-sizing: border-box;
-}
 /*--add app---*/
 .userNameContainer {
   font-weight: bold;
   border-bottom: 1px solid #E8E8E8;
   padding-bottom: 20px;
+  height: 60px;
 }
-.userNameContainer button#editBtn {
-  font-size: 18px;
-  color: #fff;
-  line-height: 1.111;
-  border-radius: 5px;
-  background: #2175cc url("../images/note-white.png") no-repeat;
-  width: 120px;
-  height: 40px;
-  padding-left: 60px;
-  background-position: 26px 7px;
-  text-align: left;
-  margin-right: 40px;
+.userNameContainer > span {
+  padding-top: 15px;
+  display: inline-block;
+}
+.userNameContainer div {
+  float: right;
+}
+.userNameContainer div button {
+  vertical-align: top;
 }
 .services {
   border-radius: 5px;
@@ -821,4 +849,34 @@ input[type=checkbox]:checked:after {
 .services input[type=checkbox] {
   position: relative;
   top: -2px;
+}
+/*--user name---*/
+.userNameContainer span {
+  text-transform: uppercase;
+}
+.accountInfo span.title,
+.accountInfo .infoField {
+  min-width: 155px;
+  display: inline-block;
+  font-size: 18px;
+  line-height: 2.444;
+}
+.accountInfo .title {
+  color: #A7A7A7;
+}
+table.services {
+  float: right;
+  margin-top: 30px;
+}
+table.services th {
+  font-size: 18px;
+  color: #A7A7A7;
+  font-weight: normal;
+}
+table.services td,
+table.services th {
+  padding: 14px 30px;
+}
+table.services tbody td {
+  font-weight: bold;
 }

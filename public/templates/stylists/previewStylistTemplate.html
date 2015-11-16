@@ -1,28 +1,14 @@
 <div class="stylistForm" xmlns="http://www.w3.org/1999/html">
     <div class="userNameContainer">
         <span> <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%> </span>
-        <button class="edit">Edit</button>
-        <button class="suspend">Suspend</button>
-        <button class="delete">Delete</button>
+       <div>
+           <button class="edit">Edit</button>
+           <button class="suspend">Suspend</button>
+           <button class="delete">Delete</button>
+       </div>
     </div>
 
     <div class="accountInfo">
-        <div class="avatar"></div>
-        <span class="title">Your Name</span><span class="infoField"> <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%> </span></br>
-        <span class="title">Profession</span><span class="infoField"> <%= user.personalInfo.profession%> </span></br>
-        <span class="title">Personal Number</span><span class="infoField"> <%= user.personalInfo.phone%> </span></br>
-        <span class="title">Salon Name</span><span class="infoField"> <%= user.salonInfo.salonName%> </span></br>
-        <span class="title">Business Role</span><span class="infoField"> <%= user.role%> </span></br>
-        <span class="title">Phone Number</span><span class="infoField"> <%= user.salonInfo.phone%> </span></br>
-        <span class="title">License Number</span><span class="infoField"> <%= user.salonInfo.licenseNumber%> </span></br>
-        <span class="title">Email</span><span class="infoField"> <%= user.salonInfo.email%> </span></br>
-        <span class="title">Address</span><span class="infoField"> <%= user.salonInfo.address%> </span></br>
-        <span class="title">Address line 2</span><span class="infoField"> <%= user.salonInfo.address%> </span></br>
-        <span class="title">Zip code</span><span class="infoField"> <%= user.salonInfo.zipCode%> </span></br>
-        <span class="title">City</span><span class="infoField"> <%= user.salonInfo.city%> </span></br>
-        <span class="title">State</span><span class="infoField"> <%= user.salonInfo.state%> </span></br>
-        <span class="title">Country</span><span class="infoField"> <%= user.salonInfo.country%> </span></br>
-
         <table class="services" >
             <thead>
             <tr><th>Agreed Services</th></tr>
@@ -43,6 +29,21 @@
 
             </tbody>
         </table>
+        <div class="avatar"></div>
+        <span class="title">Your Name</span><span class="infoField"> <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%> </span></br>
+        <span class="title">Profession</span><span class="infoField"> <%= user.personalInfo.profession%> </span></br>
+        <span class="title">Personal Number</span><span class="infoField"> <%= user.personalInfo.phone%> </span></br>
+        <span class="title">Salon Name</span><span class="infoField"> <%= user.salonInfo.salonName%> </span></br>
+        <span class="title">Business Role</span><span class="infoField"> <%= user.role%> </span></br>
+        <span class="title">Phone Number</span><span class="infoField"> <%= user.salonInfo.phone%> </span></br>
+        <span class="title">License Number</span><span class="infoField"> <%= user.salonInfo.licenseNumber%> </span></br>
+        <span class="title">Email</span><span class="infoField"> <%= user.salonInfo.email%> </span></br>
+        <span class="title">Address</span><span class="infoField"> <%= user.salonInfo.address%> </span></br>
+        <span class="title">Address line 2</span><span class="infoField"> <%= user.salonInfo.address%> </span></br>
+        <span class="title">Zip code</span><span class="infoField"> <%= user.salonInfo.zipCode%> </span></br>
+        <span class="title">City</span><span class="infoField"> <%= user.salonInfo.city%> </span></br>
+        <span class="title">State</span><span class="infoField"> <%= user.salonInfo.state%> </span></br>
+        <span class="title">Country</span><span class="infoField"> <%= user.salonInfo.country%> </span></br>
         <div class="suspendStatus">
             <p>
                 <%if (user.suspend.isSuspend) { %>
