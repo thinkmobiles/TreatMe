@@ -356,23 +356,6 @@ table {
   border-collapse: collapse;
   border-spacing: 0;
 }
-dl {
-  margin-bottom:50px;
-}
-  dl dt {
-    color: #253c54;
-    float:left;
-    font-size: 13px;
-    font-weight:bolder;
-    margin-right:10px;
-    padding:5px;
-    width:100px;
-  }
-  dl dd {
-    font-size: 13px;
-    margin:2px 0;
-    padding:5px 0;
-  }
 td,
 th {
   padding: 0;
@@ -464,7 +447,7 @@ body {
 /*---top section-----*/
 .top {
   height: 70px;
-  padding: 30px 0 0 50px;
+  padding: 30px 0 0 60px;
   text-transform: uppercase;
   font-weight: 700;
 }
@@ -497,11 +480,12 @@ body {
 }
 .searchBlock .searchBtn {
   background-color: #2175CC;
+  border-radius: 2px;
   color: #fff;
-  padding: 0 15px;
   position: absolute;
   height: 44px;
-  margin-left: -84px;
+  margin-left: -100px;
+  width: 100px;
 }
 /*   breadcrunbs */
 #breadcrumbContainer {
@@ -585,6 +569,9 @@ body {
   padding-right: 4.8148%;
   float: left;
 }
+.wrapper {
+  padding-bottom: 50px;
+}
 /*----------*/
 /* Buttons*/
 .buttons {
@@ -600,33 +587,6 @@ body {
   border: none;
   text-indent: -99999px;
 }
-#removeProfileBtn {
-  border-radius: 4px;
-  width: 120px;
-  height: 44px;
-  border: none;
-  text-indent: 11px;
-  position: absolute;
-  right: 55px;
-}
-#editSelectedBtn {
-  border-radius: 4px;
-  width: 120px;
-  height: 44px;
-  border: none;
-  text-indent: 11px;
-  position: absolute;
-  right: 332px;
-}
-#suspendSelectedBtn {
-  border-radius: 4px;
-  width: 120px;
-  height: 44px;
-  border: none;
-  text-indent: 11px;
-  position: absolute;
-  right: 193px;
-}
 #acceptSelectedBtn {
   background: #e0e0e0 url("../images/check.png") no-repeat;
   background-position: center;
@@ -635,39 +595,28 @@ body {
   background: #e0e0e0 url("../images/trash.png") no-repeat;
   background-position: center;
 }
-#removeProfileBtn {
-  background: #ff0000 url("../images/trash-white.png") no-repeat;
-  background-position: 15px;
-  color: #fff;
-}
-#editSelectedBtn {
-  background: #2175cc url("../images/note.png") no-repeat;
-  background-position: 15px;
-  color: #fff;
-}
-#suspendSelectedBtn {
-  background: #ff0000 url("../images/ban.png") no-repeat;
-  background-position: 12px;
-  color: #fff;
-}
 #acceptCurrentBtn {
   background: transparent url("../images/check.png") no-repeat;
 }
 #removeCurrentBtn,
-#deleteCurrentBtn {
+#deleteCurrentBtn,
+.deleteCurrentBtn {
   background: transparent url("../images/trash.png") no-repeat;
 }
 #suspendSelectedBtn {
   background: #e0e0e0 url("../images/ban.png") no-repeat;
   background-position: center;
 }
-#suspendCurrentBtn {
+#suspendCurrentBtn,
+.suspendCurrentBtn {
   background: transparent url("../images/ban.png") no-repeat;
 }
 #removeCurrentBtn,
 #acceptCurrentBtn,
 #deleteCurrentBtn,
-#suspendCurrentBtn {
+#suspendCurrentBtn,
+.suspendCurrentBtn,
+.deleteCurrentBtn {
   width: 50px;
   height: 25px;
   text-indent: -99999px;
@@ -684,6 +633,19 @@ button#addBtn {
   color: #fff;
   text-align: right;
   padding-right: 20px;
+  float: right;
+  text-transform: uppercase;
+}
+a#addClient {
+  width: 180px;
+}
+#export {
+  border-radius: 2px;
+  background-color: #2175cc;
+  height: 44px;
+  width: 100px;
+  line-height: 44px;
+  color: #fff;
   float: right;
   text-transform: uppercase;
 }
@@ -757,7 +719,8 @@ input[type=checkbox]:checked:after {
 .pagination li.arrow {
   margin: 0 10px;
 }
-.edit {
+.edit,
+.editBtn {
   background: transparent url("../images/note.png") no-repeat;
   background-position: center;
   text-indent: -99999px;
@@ -781,12 +744,20 @@ input[type=checkbox]:checked:after {
   display: inline-block;
   min-width: 170px;
   padding: 10px 0;
+  line-height: 1.8;
 }
 .stylistForm input {
   background-color: #fff;
   border: none;
   color: #555;
   padding: 10px 0;
+  margin-left: 20px;
+}
+.stylistForm input[disabled] {
+  color: #555;
+}
+.stylistForm #acceptBtn {
+  margin-right: 20px;
 }
 #acceptBtn {
   background: #00a651 url("../images/check-white.png") no-repeat;
@@ -807,4 +778,47 @@ input[type=checkbox]:checked:after {
   color: #fff;
   padding-left: 35px;
   box-sizing: border-box;
+}
+/*--add app---*/
+.userNameContainer {
+  font-weight: bold;
+  border-bottom: 1px solid #E8E8E8;
+  padding-bottom: 20px;
+}
+.userNameContainer button#editBtn {
+  font-size: 18px;
+  color: #fff;
+  line-height: 1.111;
+  border-radius: 5px;
+  background: #2175cc url("../images/note-white.png") no-repeat;
+  width: 120px;
+  height: 40px;
+  padding-left: 60px;
+  background-position: 26px 7px;
+  text-align: left;
+  margin-right: 40px;
+}
+.services {
+  border-radius: 5px;
+  background-color: #F4F4F4;
+  padding: 33px;
+}
+.services label {
+  margin-left: 24px;
+  color: #555;
+}
+.services input[type=text] {
+  border: 1px solid #E8E8E8;
+  border-radius: 5px;
+  width: 298px;
+  height: 58px;
+  text-align: right;
+  padding: 0 30px;
+  margin-bottom: 10px;
+  background: #ffffff url("../images/price.png") no-repeat;
+  background-position: 30px 20px;
+}
+.services input[type=checkbox] {
+  position: relative;
+  top: -2px;
 }

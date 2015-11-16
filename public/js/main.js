@@ -1,6 +1,4 @@
-/**
- * Created by andrey on 16.07.15.
- */
+'use strict';
 
 var App = {};
 
@@ -11,6 +9,7 @@ require.config({
         Validator        : './libs/validator-js/validator',
         Underscore      : './libs/underscore/underscore',
         Backbone        : './libs/backbone/backbone',
+        maps            : './libs/googleMapsAPI',
         //less            : './libs/less/dist/less',
         socketio        : '/socket.io/socket.io',
         views           : './views',
@@ -73,6 +72,26 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
                 }
             }
         }
+    };
+
+    Date.prototype.toLocaleDateString = function () {
+        function padding(x) {
+            if (x.length < 2) {
+                return '0' + x;
+            } else {
+                return x;
+            }
+        }
+
+        var year = this.getFullYear().toString();
+        var month = (this.getMonth() + 1).toString();
+        var date  = this.getDate().toString();
+
+        var yy = year.slice(2, 4);
+        var mm = padding(month);
+        var dd = padding(date);
+
+        return dd + '/' + mm + '/' + yy;
     };
 
     app.initialize(io);

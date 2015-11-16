@@ -3,37 +3,38 @@
 define([
     'views/customElements/ListView',
     'collections/stylistCollection',
+    'text!templates/newApplications/newApplicantListTemplate.html',
     'text!templates/newApplications/newApplicationsTemplate.html',
-    'text!templates/newApplications/newApplicantItemTemplate.html',
     'text!templates/newApplications/itemTemplate.html'
 
-], function (ListView, StylistCollection, MainTemplate, ContentTemplate, ItemTemplate) {
+], function (ListView, StylistCollection, ListTemplate, MainTemplate, ItemTemplate) {
 
-    var View;
-
-    View = ListView.extend({
+    var View = ListView.extend({
 
         Collection: StylistCollection,
         mainTemplate: _.template(MainTemplate),
-        listTemplate: _.template(ContentTemplate),
+        listTemplate: _.template(ListTemplate),
         itemTemplate: _.template(ItemTemplate),
-
-        navElement: '#newApplications',
-        query: {status: 'requested'},
+        url: '#newApplications',
+        query: {
+            status: 'requested'
+        },
 
         events: _.extend({
             "click #acceptCurrentBtn, #acceptSelectedBtn": "acceptStylist",
             "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest",
-            "click .table td": "showDetails"
+            //"click .table td": "showDetails"
         }, ListView.prototype.events),
 
         initialize: function (options) {
-            options = options || {};
-            options.status = 'requested';
+            var opts = options || {};
 
-            App.Breadcrumbs.reset([{name: 'New Applicants', path: '#newApplications'}]);
-            ListView.prototype.initialize.call(this, options);
+            opts.status = 'requested';
 
+            App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}]);
+            App.menu.select('#nav_new_applications');
+
+            ListView.prototype.initialize.call(this, opts);
         },
 
         acceptStylist: function (e) {
@@ -99,18 +100,6 @@ define([
             self.collection.deleteRequest(data, function () {
                 self.collection.remove(models);
             })
-        },
-
-        showDetails: function (e) {
-            var element = $(e.target);
-            var id;
-
-            if (!element.closest('td').children().length) {
-                id = element.closest('tr').attr('data-id');
-                window.location.hash = 'newApplications/' + id;
-            }
-
-            return this;
         }
 
     });
