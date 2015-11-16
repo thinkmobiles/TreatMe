@@ -12,8 +12,6 @@ define([
         Collection: Collection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
-
-        navElement: '#nav_pending_requests',
         url: '#pendingRequests',
 
         events: _.extend({
@@ -24,7 +22,7 @@ define([
 
         initialize: function (options) {
             App.Breadcrumbs.reset([{name: 'Pending Requests', path: '#pendingRequests'}]);
-
+            App.menu.select('#nav_pending_requests');
             ListView.prototype.initialize.call(this, options);
         },
 

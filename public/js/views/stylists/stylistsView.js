@@ -12,7 +12,7 @@ define([
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
 
-        navElement: '#nav_stylists',
+        //navElement: '#nav_stylists',
         url: '#stylists',
 
         events: _.extend({
@@ -21,6 +21,7 @@ define([
 
         initialize: function (options) {
             App.Breadcrumbs.reset([{name: 'Stylist List', path: '#stylists'}]);
+            App.menu.select('#nav_stylists');
 
             ListView.prototype.initialize.call(this, options);
         }

@@ -15,6 +15,7 @@ require.config({
         async: './libs/requirejs-plugins/src/async',
         googlemaps: './libs/googlemaps-amd/src/googlemaps',
         gmaps: './libs/gmaps/gmaps',
+        maps            : './libs/googleMapsAPI',
         //less            : './libs/less/dist/less',
         socketio        : '/socket.io/socket.io',
         views           : './views',

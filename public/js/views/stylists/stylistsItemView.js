@@ -2,12 +2,13 @@
 
 define([
     'models/stylistModel',
+    'views/services/servicesView',
     'text!templates/stylists/itemTemplate.html',
     'text!templates/customElements/servicesTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html',
     'views/stylists/stylistsEditView',
     'views/stylists/stylistsClientsView'
-], function (StylistModel, MainTemplate, ServicesTemplate, PreviewStylistTemplate, EditView, StylistsClientsView) {
+], function (StylistModel, ServicesView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, EditView, StylistsClientsView) {
 
     var View = Backbone.View.extend({
 
@@ -21,7 +22,7 @@ define([
 
         events: {
             "click .saveBtn": "saveStylist",
-            "click .edit": "renderEdit"
+            "click .edit"   : "renderEdit"
         },
 
         initialize: function (options) {
@@ -29,14 +30,15 @@ define([
             var userId = (options && options.id) ? options.id : null;
 
             if (!userId) {
-                self.model = new StylistModel();
-                App.Breadcrumbs.reset([{name: 'New Applications', path: '#stylists'}, {
-                    name: 'Add Application',
-                    path: '#stylists/add'
-                }]);
-                self.model.on('invalid', self.handleModelValidationError);
+                this.addStylist(options);
+                /*self.model = new StylistModel();
+                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#stylists'}, {
+                 name: 'Add Application',
+                 path: '#stylists/add'
+                 }]);
+                 self.model.on('invalid', self.handleModelValidationError);
 
-                return self.render();
+                 return self.render();*/
             } else {
                 self.model = new StylistModel({_id: userId});
                 self.model.fetch({
@@ -53,7 +55,7 @@ define([
 
                         return self.render(JSONmodel);
                     },
-                    error: self.handleModelError
+                    error  : self.handleModelError
 
                 });
 
@@ -61,39 +63,54 @@ define([
 
         },
 
-        render: function (user) {
+        addStylist: function (options) {
             var self = this;
-            var $el = self.$el;
-            //user = user || {}; //new user
-            console.log(user);
 
+            App.Breadcrumbs.reset([{
+                name: 'New Applications',
+                path: '#newApplications'
+            }, {
+                name: 'Add Application',
+                path: '#newApplications/add'
+            }]);
+
+            App.menu.select('#nav_new_applications');
+
+            self.model = new StylistModel();
+            self.model.on('invalid', self.handleModelValidationError);
+
+            return self.render();
+        },
+
+        render: function () {
+            var model = this.model.toJSON();
+
+            this.$el.html(this.mainTemplate({user: model}));
+
+            /*
             user
                 ? $el.html(self.previewStylistTemplate({user: user}))
                 : $el.html(self.mainTemplate({user: {}}));
+            */
 
-            this.stylistsClientsView = new StylistsClientsView({id: user._id});
-            self.afterRender(user);
+            //this.stylistsClientsView = new StylistsClientsView({id: user._id});
+            //self.afterRender(user);
             return this;
         },
 
         afterRender: function (user) {
             var self = this;
-            var navContainer = $('.sidebar-menu');
-            var serviceContainer = self.$el.find('.services');
-
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_stylists').addClass('active');
 
             if (!user) {
                 $.ajax({
-                    type: 'GET',
-                    dataType: 'json',
+                    type       : 'GET',
+                    dataType   : 'json',
                     contentType: 'application/json',
-                    url: '/admin/services',
-                    success: function (data) {
+                    url        : '/admin/services',
+                    success    : function (data) {
                         serviceContainer.html(self.servicesTemplate({services: data}));
                     },
-                    error: function (err) {
+                    error      : function (err) {
                         alert(err);
                     }
                 })
@@ -136,26 +153,26 @@ define([
             //validation ...
 
             data = {
-                email: email,
+                email       : email,
                 personalInfo: {
-                    firstName: firstName,
-                    lastName: lastName,
-                    profession: role,
+                    firstName  : firstName,
+                    lastName   : lastName,
+                    profession : role,
                     phoneNumber: phone
                 },
-                salonInfo: {
-                    salonName: salonName,
-                    phoneNumber: salonNumber,
-                    email: salonEmail,
-                    businessRole: businessRole,
-                    address: salonAddress,
-                    city: city,
-                    state: region,
-                    zipCode: zip,
-                    country: country,
+                salonInfo   : {
+                    salonName    : salonName,
+                    phoneNumber  : salonNumber,
+                    email        : salonEmail,
+                    businessRole : businessRole,
+                    address      : salonAddress,
+                    city         : city,
+                    state        : region,
+                    zipCode      : zip,
+                    country      : country,
                     licenseNumber: license
                 },
-                services: services
+                services    : services
             };
 
             callback(null, data);
@@ -174,14 +191,9 @@ define([
                 model = self.model;
                 model.save(data, {
                     success: function () {
-                        console.log('success created');
-                        window.location.hash = 'newApplications';
+                        alert('success');
                     },
-                    error: self.handleModelError
-                    /*error: function (model, response, options) {
-                     var errMessage = response.responseJSON.error;
-                     self.handleError(errMessage);
-                     }*/
+                    error  : self.handleModelError
                 });
             });
         },

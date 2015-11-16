@@ -17,11 +17,11 @@ define([
             "login(/:type/*value)"      :  "login",
             "signup"                    :  "signup",
             "dashboard"                 :  "dashboard",
-            "newApplications/add"       :  "newApplicationDetails",
+            "newApplications/add"       :  'stylistDetails', //"newApplicationDetails",
             "newApplications/:id"       :  "newApplicationDetails",
             "pendingRequests/add": "addPendingRequest",
             "pendingRequests/:id": "pendingRequestDetails",
-            "stylists/add"              :  "addStylists",
+            "stylists/add"              :  'stylistDetails',//"addStylists",
             "stylists/:id"              :  "stylistDetails",
             "stylists/edit/:id"         :  "editStylistDetails",
             "gallery"                   :  "gallery",
@@ -146,7 +146,11 @@ define([
         },
 
         stylistDetails: function (id) {
-            this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
+            var options = {
+                id: id
+            };
+
+            this.loadWrapperView('stylists', options, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
         editStylistDetails: function (id) {
