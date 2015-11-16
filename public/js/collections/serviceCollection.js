@@ -7,7 +7,7 @@ define([
     var Collection = ParentCollection.extend({
         model: Model,
         url: function () {
-            return '/admin/services/requested';
+            return '/admin/services';
         }
     });
 
