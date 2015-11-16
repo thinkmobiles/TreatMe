@@ -13,10 +13,14 @@ var mongoose = require('mongoose');
 var CONSTANTS = require('../constants');
 var geocoder = require('geocoder');
 var SchedulerHelper = require('../helpers/scheduler');
+var StripeModule = require('../helpers/stripe');
 var _ = require('lodash');
 
 var ClientsHandler = function (app, db) {
 
+    var self = this;
+
+    var stripe = new StripeModule();
     var User = db.model('User');
     var Appointment = db.model('Appointment');
     var Gallery = db.model('Gallery');
@@ -341,7 +345,107 @@ var ClientsHandler = function (app, db) {
             });
     };
 
-    this.buySubscriptions = function(req, res, next){
+    this.buySubscriptions = function(clientId, subscriptionIds, callback){
+
+        async.each(subscriptionIds,
+
+            function(id, cb){
+                var currentDate = new Date();
+                var expirationDate = new Date();
+                var saveObj;
+                var subscriptionModel;
+
+                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+                saveObj = {
+                    client: clientId,
+                    subscriptionType : id,
+                    //TODO: price: 111,
+                    purchaseDate: currentDate,
+                    expirationDate: expirationDate
+                };
+
+                subscriptionModel = new Subscription(saveObj);
+
+                subscriptionModel
+                    .save(function(err){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb();
+                    });
+
+                //if need check for purchased subscriptions
+                /*SubscriptionType
+                 .findOne({_id: id}, function (err, subscriptionTypesModel) {
+                 var currentDate = new Date();
+                 var expirationDate = new Date();
+
+
+                 if (err) {
+                 return cb(err);
+                 }
+
+                 if (!subscriptionTypesModel) {
+                 return cb(badRequests.NotFound({target: 'Subscription with id: ' + id}));
+                 }
+                 Subscription
+                 .findOne({
+                 subscriptionType: id,
+                 client: ObjectId(clientId),
+                 expirationDate: {$gte: currentDate}
+                 }, function (err, someSubscriptionModel) {
+                 var error;
+                 var saveObj;
+                 var subscriptionModel;
+
+                 if (err) {
+                 return cb(err);
+                 }
+
+                 if (someSubscriptionModel) {
+                 error = new Error('Current user already have ' + subscriptionTypesModel.name);
+                 error.status = 400;
+
+                 return cb(error);
+                 }
+
+                 expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+                 saveObj = {
+                 client: clientId,
+                 subscriptionType: id,
+                 //TODO: price: 111,
+                 purchaseDate: currentDate,
+                 expirationDate: expirationDate
+                 };
+
+                 subscriptionModel = new Subscription(saveObj);
+
+                 subscriptionModel
+                 .save(function (err) {
+                 if (err) {
+                 return cb(err);
+                 }
+
+                 cb();
+                 });
+                 });
+                 });*/
+            },
+
+            function(err){
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null);
+            });
+
+    };
+
+    this.buySubscriptionsByClient = function(req, res, next){
 
         /**
          * __Type__ __`POST`__
@@ -396,101 +500,17 @@ var ClientsHandler = function (app, db) {
 
         ids = body.ids.toObjectId();
 
-        async.each(ids,
+        self.buySubscriptions(clientId, ids, function(err){
 
-            function(id, cb){
-                var currentDate = new Date();
-                var expirationDate = new Date();
-                var saveObj;
-                var subscriptionModel;
+            if (err){
+                return next(err);
+            }
 
-                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+            res.status(200).send({success: 'Subscriptions bought successfully'});
 
-                saveObj = {
-                    client: clientId,
-                    subscriptionType : id,
-                    //TODO: price: 111,
-                    purchaseDate: currentDate,
-                    expirationDate: expirationDate
-                };
-
-                subscriptionModel = new Subscription(saveObj);
-
-                subscriptionModel
-                    .save(function(err){
-                        if (err){
-                            return cb(err);
-                        }
-
-                        cb();
-                    });
-
-                //if need check for purchased subscriptions
-                /*SubscriptionType
-                    .findOne({_id: id}, function (err, subscriptionTypesModel) {
-                        var currentDate = new Date();
-                        var expirationDate = new Date();
+        });
 
 
-                        if (err) {
-                            return cb(err);
-                        }
-
-                        if (!subscriptionTypesModel) {
-                            return cb(badRequests.NotFound({target: 'Subscription with id: ' + id}));
-                        }
-                        Subscription
-                            .findOne({
-                                subscriptionType: id,
-                                client: ObjectId(clientId),
-                                expirationDate: {$gte: currentDate}
-                            }, function (err, someSubscriptionModel) {
-                                var error;
-                                var saveObj;
-                                var subscriptionModel;
-
-                                if (err) {
-                                    return cb(err);
-                                }
-
-                                if (someSubscriptionModel) {
-                                    error = new Error('Current user already have ' + subscriptionTypesModel.name);
-                                    error.status = 400;
-
-                                    return cb(error);
-                                }
-
-                                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
-
-                                saveObj = {
-                                    client: clientId,
-                                    subscriptionType: id,
-                                    //TODO: price: 111,
-                                    purchaseDate: currentDate,
-                                    expirationDate: expirationDate
-                                };
-
-                                subscriptionModel = new Subscription(saveObj);
-
-                                subscriptionModel
-                                    .save(function (err) {
-                                        if (err) {
-                                            return cb(err);
-                                        }
-
-                                        cb();
-                                    });
-                            });
-                    });*/
-            },
-
-            function(err){
-                if (err){
-                    return next(err);
-                }
-
-                res.status(200).send({success: 'Subscriptions purchased successfully'});
-            });
     };
 
     this.createAppointment = function (req, res, next) {
@@ -882,6 +902,120 @@ var ClientsHandler = function (app, db) {
                     });
             });
     };
+
+    //payments
+
+    function getCustomerId(userId, callback){
+
+        User
+            .findOne({_id: userId}, {'payments.customerId': 1}, function(err, user){
+                if (err){
+                    return callback(err);
+                }
+
+                if (!user){
+                    err = new Error('User not found');
+                    err.status = 400;
+                    return callback(err);
+                }
+
+                callback(null, user.payments.customerId);
+            });
+
+    }
+
+    this.addCardInfo = function (req, res, next) {
+
+        var userId = req.session.uId;
+        var body = req.body;
+
+        getCustomerId(userId, function (err, customerId) {
+            stripe
+                .addCard(customerId, {source: body.stripeToken}, function (err) {
+
+                    if (err) {
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'Card added successfully'});
+
+                });
+        });
+    };
+
+    this.getListCards = function (req, res, next) {
+
+        var userId = req.session.uId;
+
+        getCustomerId(userId, function (err, customerId) {
+
+            if (err){
+                return next(err);
+            }
+
+            stripe.getCustomerCards(customerId, function (err, cards) {
+
+                if (err) {
+                    return next(err);
+                }
+
+                res.status(200).send(cards);
+
+            });
+        });
+    };
+
+    this.updateCard = function(req, res, next){
+        var body = req.body;
+        var cardId = req.params.cardId;
+        var userId = req.session.uId;
+
+        getCustomerId(userId, function(err, customerId){
+
+            if (err){
+                return next(err);
+            }
+
+            stripe
+                .updateCustomerCard(customerId, cardId, body, function(err, card){
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'Card updated successfully'});
+
+                });
+        });
+
+    };
+
+    this.removeCard = function(req, res, next){
+        var cardId = req.params.cardId;
+        var userId = req.session.uId;
+
+        getCustomerId(userId, function(err, customerId){
+
+            if (err){
+                return next(err);
+            }
+
+            stripe
+                .removeCustomerCard(customerId, cardId, function(err, confirmation){
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    res.status(200).send(confirmation);
+
+                });
+
+        });
+
+    };
+
+
 
 };
 

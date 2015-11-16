@@ -9,18 +9,22 @@ var mongoose = require('mongoose');
 var badRequests = require('../helpers/badRequests');
 var ImageHandler = require('./image');
 var UserHandler = require('./users');
+var ClientHandler = require('./clients');
 var passGen = require('password-generator');
 var mailer = require('../helpers/mailer')();
 var crypto = require('crypto');
 var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
 var _ = require('lodash');
+var StripeModule = require('../helpers/stripe');
 
-var AdminHandler = function (db) {
+var AdminHandler = function (app, db) {
 
     var self = this;
+    var stripe = new StripeModule();
     var image = new ImageHandler(db);
-    var user = new UserHandler(null, db);
+    var user = new UserHandler(app, db);
+    var client = new ClientHandler(app, db);
     var Services = db.model('Service');
     var ServiceType = db.model('ServiceType');
     var SubscriptionType = db.model('SubscriptionType');
@@ -40,7 +44,7 @@ var AdminHandler = function (db) {
         var userObj;
 
         User
-            .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0}, function(err, resultModel){
+            .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0, 'salonInfo.availability': 0}, function(err, resultModel){
 
                 if (err){
                     return callback(err);
@@ -91,22 +95,32 @@ var AdminHandler = function (db) {
             });
     }
 
-    this.getStylistByCriterion = function(criterion, page, sortObj, limit, callback){
+    this.getUserByCriteria = function(role, criteria, page, sortObj, limit, callback){
 
         var resultArray = [];
         var obj;
         var total;
+        var projection;
 
-        criterion.role = CONSTANTS.USER_ROLE.STYLIST;
-
-        User
-            .find(criterion, {
+        if (role === CONSTANTS.USER_ROLE.STYLIST){
+            projection = {
                 'personalInfo.firstName': 1,
                 'personalInfo.lastName': 1,
                 'salonInfo': 1,
                 'createdAt': 1,
                 'approved': 1
-            })
+            };
+        } else {
+            projection = {
+                'personalInfo.firstName': 1,
+                'personalInfo.lastName': 1,
+                'email': 1,
+                'createdAt': 1
+            };
+        }
+
+        User
+            .find(criteria, projection)
             .sort(sortObj)
             .skip(limit * (page - 1))
             .limit(limit)
@@ -119,13 +133,23 @@ var AdminHandler = function (db) {
 
                 for (var i = resultModel.length; i--; ){
 
+                    if (role === CONSTANTS.USER_ROLE.STYLIST){
                         obj = {
                             _id: resultModel[i]._id,
                             personalInfo: resultModel[i].personalInfo,
-                            salonInfo: resultModel[i].salonInfo.salonName || {},
+                            salonInfo: resultModel[i].salonInfo || {},
                             createdAt: resultModel[i].createdAt,
                             approved:  resultModel[i].approved
                         };
+                    } else {
+
+                        obj = {
+                            _id: resultModel[i]._id,
+                            personalInfo: resultModel[i].personalInfo,
+                            email: resultModel[i].email
+                        }
+                    }
+
 
                     resultArray.push(obj);
                 }
@@ -202,7 +226,7 @@ var AdminHandler = function (db) {
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var statusRegExp = /^requested$|^all$/;
-        var sort = req.query.sort || 'date';
+        var sort = req.query.sort ? (req.query.sort).toLowerCase() : 'date';
         var order = (req.query.order === '1') ? 1 : -1;
         var status = req.query.status;
         var search = req.query.search || '';
@@ -218,7 +242,6 @@ var AdminHandler = function (db) {
             searchObj['$or'] = [
                     {'personalInfo.firstName': {$regex: searchRegExp}},
                     {'personalInfo.lastName': {$regex: searchRegExp}},
-                    {'email': {$regex: searchRegExp}},
                     {'salonInfo.salonName': {$regex: searchRegExp}}
                 ];
         }
@@ -253,7 +276,7 @@ var AdminHandler = function (db) {
                 },
 
                 function(cb){
-                    self.getStylistByCriterion(criterion, page, sortObj, limit, cb)
+                    self.getUserByCriteria(CONSTANTS.USER_ROLE.STYLIST, criterion, page, sortObj, limit, cb)
                 }
             ], function(err, result){
 
@@ -459,7 +482,7 @@ var AdminHandler = function (db) {
                     password: password
                 };
 
-                mailer.adminCreateStylist(mailOptions);
+                mailer.adminCreateUser(mailOptions);
 
                 res.status(200).send({success: 'Stylist created successfully'});
 
@@ -469,6 +492,153 @@ var AdminHandler = function (db) {
 
     };
 
+    this.createClient = function(req, res, next){
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/client/`__
+         *
+         * This __method__ allows add client by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/client/
+         *
+         * @example Body example:
+         * {
+         *      "email": "vashm@mail.ua",
+         *      "firstName": "Misha",
+         *      "lastName": "Vashkeba",
+         *      "phone": "21",
+         *      "stripeToken": "tok_21349tfdjkfsdf324" (optional)
+         *      "subscriptions": ["5638b976f8c11d9c04081343", "5638b965f8c11d9c04081341"] (optional)
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         * {"success": "Client created successfully"}
+         *
+         * @method createClient
+         * @instance
+         */
+
+        var body = req.body;
+        var firstName = body.firstName;
+        var lastName = body.lastName;
+        var phone = body.phone;
+        var email = body.email;
+        var stripeToken = body.stripeToken;
+        var password = passGen(12, false);
+        var subscriptionIds = body.subscriptions;
+
+        if (!firstName || !lastName || !phone || !email){
+            return next(badRequests.NotEnParams({reqParams: 'firstName or lastName or phone or email'}))
+        }
+
+        async
+            .waterfall([
+                function (cb) {
+
+                    User
+                        .findOne({email: email, role: CONSTANTS.USER_ROLE.CLIENT}, function (err, model) {
+                            if (err) {
+                                return cb(err);
+                            }
+
+                            if (model){
+                                return cb(badRequests.EmailInUse());
+                            }
+
+                            cb(null);
+
+                        });
+                },
+
+                function(cb){
+                    var data = {};
+
+                    if (stripeToken){
+                        data.source = stripeToken;
+                    }
+
+                    data.email = email;
+
+                    stripe
+                        .createCustomer(data, function(err, customer){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, customer.id);
+
+                        });
+                },
+
+                function(customerId, cb){
+                    var user;
+                    var client = {
+                        email: email,
+                        password: getEncryptedPass(password),
+                        role: CONSTANTS.USER_ROLE.CLIENT,
+                        personalInfo: {
+                            phone: phone,
+                            firstName: firstName,
+                            lastName: lastName
+                        }
+                    };
+
+                    if (customerId){
+                        client['payments'] = {
+                            customerId: customerId
+                        };
+                    }
+
+                    user = new User(client);
+
+                    user
+                        .save(function(err, userModel){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, userModel._id);
+                        });
+                },
+                function(clientId, cb){
+                    client.buySubscriptions(clientId, subscriptionIds, cb);
+                },
+
+                function(cb){
+                    var mailOptions = {
+                        name: firstName,
+                        email: email,
+                        password: password
+                    };
+
+                    mailer.adminCreateUser(mailOptions);
+
+                    cb(null);
+                }
+
+            ], function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Client created successfully'});
+
+            });
+
+
+
+    };
 
     this.approveStylist = function (req, res, next) {
 
@@ -502,15 +672,6 @@ var AdminHandler = function (db) {
 
         var body = req.body;
         var ids;
-        var availability = {
-            0: [{from: '00:00', to: '00:00'}], //Sunday
-            1: [{from: '00:00', to: '00:00'}], //Monday
-            2: [{from: '00:00', to: '00:00'}],
-            3: [{from: '00:00', to: '00:00'}],
-            4: [{from: '00:00', to: '00:00'}],
-            5: [{from: '00:00', to: '00:00'}],
-            6: [{from: '00:00', to: '00:00'}]
-        };
 
         if (!body.ids) {
             return next(badRequests.NotEnParams({reqParams: 'ids'}));
@@ -523,7 +684,7 @@ var AdminHandler = function (db) {
                 _id: {$in: ids},
                 approved: false,
                 role: CONSTANTS.USER_ROLE.STYLIST
-            }, {$set: {approved: true, 'salonInfo.availability': availability}}, {multi: true}, function (err) {
+            }, {$set: {approved: true}}, {multi: true}, function (err) {
                 if (err) {
                     return next(err);
                 }
@@ -859,7 +1020,6 @@ var AdminHandler = function (db) {
                             return next(err);
                         }
 
-
                         res.status(200).send({success: 'Service created successfully'});
 
                     });
@@ -1062,6 +1222,36 @@ var AdminHandler = function (db) {
     };
 
     this.removeAppointments = function (req, res, next) {
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/appointments/`__
+         *
+         * This __method__ allows remove requested appointment by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/appointment/
+         *
+         * @example Body example:
+         *  {
+         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *  }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Appointments was removed successfully"}
+         *
+         * @method removeAppointments
+         * @instance
+         */
+
         var arrayOfId = req.body.appointments;
 
         if (!arrayOfId || !arrayOfId.length) {
@@ -1081,6 +1271,36 @@ var AdminHandler = function (db) {
     };
 
     this.suspendAppointments = function (req, res, next) {
+
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/appointments/`__
+         *
+         * This __method__ allows remove suspend appointment by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/appointment/
+         *
+         * @example Body example:
+         *  {
+         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *  }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Appointments was suspended successfully"}
+         *
+         * @method suspendAppointments
+         * @instance
+         */
+
         var arrayOfId = req.body.appointments;
 
         if (!arrayOfId || !arrayOfId.length) {
@@ -1100,6 +1320,36 @@ var AdminHandler = function (db) {
     };
 
     this.bookAppointment = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/appointments/`__
+         *
+         * This __method__ allows to create appointment by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/appointment/
+         *
+         * @example Body example:
+         *  {
+         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *  }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {"success": "Appointments was suspended successfully"}
+         *
+         * @method suspendAppointments
+         * @instance
+         */
+
         var clientId = req.body.clientId;
         var stylistId = req.body.stylistId;
         var serviceTypeId = req.body.serviceTypeId;
@@ -1169,17 +1419,17 @@ var AdminHandler = function (db) {
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/admin/subscription/`__
+         * __URL: `/admin/subscriptionType/`__
          *
          * This __method__ allows create subscription by _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/subscription/
+         *         http://projects.thinkmobiles.com:8871/admin/subscriptionType/
          *
          * @example Body example:
          * {
          *  "name": "Manicure",
-         *  "price": "%99/MO",
+         *  "price": 99,
          *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
          * }
          *
@@ -1233,6 +1483,52 @@ var AdminHandler = function (db) {
     };
 
     this.getClientPackages = function (req, res, next) {
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/packages/`__
+         *
+         * This __method__ allows get list packages by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/packages/
+         *
+         * @example Response example:
+         *
+         * Response status: 200
+         * {
+         *   "total": 20,
+         *   "data": [
+         *           {
+         *               "_id": "5645bec0499bf1d80facd36a",
+         *               "client": "Petya Lyashenko",
+         *               "subscriptionType": "Unlimited Pass",
+         *               "purchaseDate": "2015-11-13T10:43:12.932Z"
+         *           },
+         *           {
+         *               "_id": "5645bbeb9b6b6df41f426357",
+         *               "client": "Petya Lyashenko",
+         *               "subscriptionType": "Unlimited Pass",
+         *               "purchaseDate": "2015-11-13T10:31:07.975Z"
+         *           },
+         *           {
+         *               "_id": "5645bbd49b6b6df41f426356",
+         *               "client": "Petya Lyashenko",
+         *               "subscriptionType": "Unlimited Blowout",
+         *               "purchaseDate": "2015-11-13T10:30:44.051Z"
+         *           }
+         *       ]
+         * }
+         *
+         * @method getClientPackages
+         * @instance
+         */
+
         var sortParam = req.query.sort;
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
@@ -1319,6 +1615,36 @@ var AdminHandler = function (db) {
     };
 
     this.removePackages = function (req, res, next) {
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/packages/`__
+         *
+         * This __method__ allows get list packages by _Admin_
+         *
+         * @example Request example:
+         *        http://projects.thinkmobiles.com:8871/admin/packages/
+         *
+         * @example Body example:
+         *
+         * {
+         *      "packagesArray": ["5645bec0499bf1d80facd36a", "5645bec0499bf1d80facd36b"]
+         * }
+         *
+         * @example Response example:
+         *
+         * Response status: 200
+         * {"success": "Subscriptions removed successfully"}
+         *
+         * @method removePackages
+         * @instance
+         */
+
         var arrayOfIds = req.body.packagesArray;
 
         if (!arrayOfIds) {
@@ -1338,6 +1664,63 @@ var AdminHandler = function (db) {
 
     this.getSubscriptionType = function (req, res, next) {
 
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/subscriptionType/`__
+         *
+         * This __method__ allows get list subscriptions by _Admin_
+         *
+         * @example Request example:
+         *        http://projects.thinkmobiles.com:8871/admin/subscriptionType/
+         *
+         * @example Response example:
+         *
+         * Response status: 200
+         *
+         * [
+         *     {
+         *        "_id": "5638b946f8c11d9c0408133f",
+         *        "name": "Unlimited Pass",
+         *        "logo": "5638b946f8c11d9c0408133e",
+         *        "__v": 0,
+         *        "allowServices": [
+         *            "563757004397730a2be12f0a",
+         *            "56387644a2e4362617283dce"
+         *        ],
+         *        "price": 135
+         *     },
+         *     {
+         *        "_id": "5638b965f8c11d9c04081341",
+         *        "name": "Unlimited Maniqure",
+         *        "logo": "5638b965f8c11d9c04081340",
+         *        "__v": 0,
+         *        "allowServices": [
+         *            "563757004397730a2be12f0a"
+         *        ],
+         *        "price": 49
+         *     },
+         *     {
+         *        "_id": "5638b976f8c11d9c04081343",
+         *        "name": "Unlimited BlowJOB :) ",
+         *        "logo": "5638b976f8c11d9c04081342",
+         *        "__v": 0,
+         *        "allowServices": [
+         *            "56387644a2e4362617283dce"
+         *        ],
+         *        "price": 99
+         *     }
+         *  ]
+         *
+         *
+         * @method getListSubscription
+         * @instance
+         */
+
         SubscriptionType
             .find({}, function (err, subscriptionModelsArray) {
                 if (err) {
@@ -1349,9 +1732,45 @@ var AdminHandler = function (db) {
     };
 
     this.updateSubscriptionType = function (req, res, next) {
+
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/subscriptionType/:id`__
+         *
+         * This __method__ allows update subscription by _Admin_
+         *
+         * @example Request example:
+         *        http://projects.thinkmobiles.com:8871/admin/subscriptionType/56387644a2e4362617283dc1
+         *
+         * @example Body example:
+         *
+         *  {
+         *      "name": "BlowOut",
+         *      "price": 99,
+         *      "logo": "data:image/png;base64, /9j/4AAQSkZJRgABAQAAAQABAAD/2",
+         *      "allowServices": ["56387644a2e4362617283dce"]
+         *  }
+         *
+         * @example Response example:
+         *
+         * Response status: 200
+         *
+         * {"success": "Subscription type was updated successfully"}
+         *
+         *
+         * @method updateSubscriptionType
+         * @instance
+         */
+
+        var body = req.body;
         var subscriptionTypeId = req.params.id;
-        var name = req.body.name;
-        var price = req.body.price;
+        var name = body.name;
+        var price = body.price;
         var imageString = body.logo;
         var imageName;
         var allowServices = body.allowServices;
@@ -1366,7 +1785,6 @@ var AdminHandler = function (db) {
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionTypeId)) {
             return next(badRequests.InvalidValue({value: subscriptionTypeId, param: 'id'}));
         }
-
 
         if (name) {
             updateObj.name = name;
@@ -1389,6 +1807,10 @@ var AdminHandler = function (db) {
         async.series([
 
                 function (cb) {
+                    if (!imageString){
+                        return cb(null);
+                    }
+
                     image.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, cb);
                 },
 
@@ -1410,7 +1832,7 @@ var AdminHandler = function (db) {
                 },
 
                 function(cb){
-                    if (!oldLogoName){
+                    if (!imageString || !oldLogoName){
                         return cb();
                     }
 
@@ -1430,6 +1852,34 @@ var AdminHandler = function (db) {
     };
 
     this.removeSubscriptionType = function (req, res, next) {
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/subscriptionType/`__
+         *
+         * This __method__ allows delete subscription by _Admin_
+         *
+         * @example Request example:
+         *        http://projects.thinkmobiles.com:8871/admin/subscriptionType/
+         *
+         * @example Body example:
+         *
+         * @example Response example:
+         *
+         * Response status: 200
+         *
+         * {"success": "Subscription type was updated successfully"}
+         *
+         * @method updateSubscriptionType
+         * @instance
+         */
+
+
         var subscriptionTypeId = req.params.id;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionTypeId)) {
@@ -1498,14 +1948,14 @@ var AdminHandler = function (db) {
          * @instance
          */
 
-        var sortParam = req.query.sort;
+        var sortParam = req.query.sort ? (req.query.sort).toLowerCase() : 'date';
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var search = req.query.search;
         var searchRegExp;
         var sortObj = {};
-        var findObj;
+        var criteria;
         var roleObj = {};
         var searchObj = {};
 
@@ -1519,38 +1969,37 @@ var AdminHandler = function (db) {
             ];
         }
 
-        if (sortParam && sortParam !== 'Name' && sortParam !== 'Email') {
+        if (sortParam && sortParam !== 'name' && sortParam !== 'email' && sortParam !== 'date') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'Name' || !sortParam) {
+        if (sortParam === 'name' || !sortParam) {
             sortObj['personalInfo.firstName'] = order;
             sortObj['personalInfo.lastName'] = order;
         }
 
-        if (sortParam === 'Email') {
+        if (sortParam === 'email') {
             sortObj.email = order;
+        }
+
+        if (sortParam === 'date'){
+            sortObj.createdAt = order;
         }
 
         roleObj['role'] = CONSTANTS.USER_ROLE.CLIENT;
 
-        findObj = {
+        criteria = {
             $and: [roleObj, searchObj]
         };
 
         async
             .parallel([
                 function(cb){
-                    getCountByCriterion(findObj, cb);
+                    getCountByCriterion(criteria, cb);
                 },
 
                 function(cb){
-                    User
-                        .find(findObj, {email: 1, 'personalInfo.firstName' :1, 'personalInfo.lastName' : 1})
-                        .sort(sortObj)
-                        .skip(limit * (page - 1))
-                        .limit(limit)
-                        .exec(cb)
+                   self.getUserByCriteria(CONSTANTS.USER_ROLE.CLIENT, criteria, page, sortObj, limit, cb)
                 }
             ], function(err, result){
                 if (err){
@@ -1627,7 +2076,8 @@ var AdminHandler = function (db) {
                                 return cb(badRequests.DatabaseError());
                             }
 
-                            resultObj.name = clientModel.personalInfo.firstName + ' ' + clientModel.personalInfo.lastName;
+                            resultObj.firstName = clientModel.personalInfo.firstName;
+                            resultObj.lastName = clientModel.personalInfo.lastName;
                             resultObj.phone = clientModel.personalInfo.phone;
                             resultObj.email = clientModel.email;
                             resultObj.suspend = clientModel.suspend;
@@ -2105,12 +2555,14 @@ var AdminHandler = function (db) {
          */
 
         var userId = req.params.id;
+        var globalUserModel;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(userId)){
             return next(badRequests.InvalidValue({value: userId, param: 'id'}));
         }
 
-        async.parallel([
+
+        async.series([
 
             function(cb){
                 User
@@ -2124,6 +2576,8 @@ var AdminHandler = function (db) {
                         if (!userModel){
                             return cb(badRequests.DatabaseError());
                         }
+
+                        globalUserModel = userModel.toJSON();
 
                         avatarName = userModel.get('personalInfo.avatar');
 
@@ -2174,6 +2628,17 @@ var AdminHandler = function (db) {
                                 cb();
                             });
                 });
+            },
+
+            function(cb){
+                var customerId = globalUserModel.payments.customerId;
+
+                if (!customerId){
+                    return cb(null);
+                }
+
+                stripe
+                    .deleteCustomer(customerId, cb)
             }
 
         ], function(err){
@@ -2189,9 +2654,6 @@ var AdminHandler = function (db) {
         res.status(400).send('Not implemented yet');
     };
 
-    this.createClient = function(req, res, next){
-        res.status(400).send('Not implemented yet');
-    };
 
 };
 

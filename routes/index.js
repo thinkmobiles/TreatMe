@@ -5,7 +5,7 @@ module.exports = function (app, db) {
     var logWriter = require('../modules/logWriter')();
 
     var clientsRouter = require('./clients')(app, db);
-    var adminRouter = require('./admin')(db);
+    var adminRouter = require('./admin')(app, db);
     var stylistRouter = require('./stylist')(app, db);
 
     var SubscriptionHandler = require('../handlers/subscription');
@@ -40,28 +40,28 @@ module.exports = function (app, db) {
     app.post('/signUp', user.signUp);
     app.post('/signIn', user.signIn);
     app.get('/signOut', user.signOut);
-
+    app.post('/createAdmin', user.createAdmin);
 
     app.get('/confirm/:token', user.confirmRegistration);
     app.post('/forgot', user.forgotPassword);
     app.get('/passwordChange', user.confirmForgotPass);
     app.post('/passwordChange', user.changePassword);
 
-    app.get('/profile/:userId?', sessionHandler.authenticatedUser, user.getProfile);
+    app.get('/profile/:userId?', user.getProfile);
     app.put('/profile/:userId?', sessionHandler.authenticatedUser, user.updateUserProfile);
     app.post('/avatar', sessionHandler.authenticatedUser, user.uploadAvatar);
     app.delete('/avatar/:id?', sessionHandler.authenticatedUser, user.removeAvatar);
     app.put('/coordinates', sessionHandler.authenticatedUser, user.updateLocation);
 
-    app.get('/service/:stylistId?', sessionHandler.authenticatedUser, sessionHandler.stylistOrAdmin, user.getStylistServices);
+    app.get('/service/:stylistId?', sessionHandler.stylistOrAdmin, user.getStylistServices);
 
     app.get('/gallery/:id?', sessionHandler.authenticatedUser, user.getGalleryPhotos);
-    app.delete('/gallery/:id', sessionHandler.authenticatedUser, sessionHandler.clientOrStylist, user.removePhotoFromGallery);
+    app.delete('/gallery/:id', sessionHandler.clientOrStylist, user.removePhotoFromGallery);
 
     app.get('/appointment', sessionHandler.authenticatedUser, user.getAppointments); //can accept query ?id=123 [&status=Pending //or Booked &page=2&limit=20] status for admin only
-    app.post('/appointment/cancel', sessionHandler.authenticatedUser, sessionHandler.clientOrStylist, user.cancelByUser);
+    app.post('/appointment/cancel',sessionHandler.clientOrStylist, user.cancelByUser);
 
-    app.get('/subscriptionTypes/:id?', sessionHandler.authenticatedUser, sessionHandler.clientOrAdmin, subscriptionHandler.getSubscriptionTypes);
+    app.get('/subscriptionTypes/:id?', sessionHandler.clientOrAdmin, subscriptionHandler.getSubscriptionTypes);
     //app.post('/subscriptionTypes', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.createSubscriptionType);
     //app.put('/subscriptionTypes/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.updateSubscriptionType);
 

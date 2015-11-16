@@ -7,11 +7,11 @@ module.exports = function(){
 
     var confirmAccountHTML = fs.readFileSync('public/templates/mailer/createUser.html', encoding = "utf-8");
     var changePassHTML = fs.readFileSync('public/templates/mailer/changePassword.html', encoding = "utf-8");
-    var adminCreateStylistHTML = fs.readFileSync('public/templates/mailer/adminCreateStylist.html', encoding = "utf-8");
+    var adminCreateUserHTML = fs.readFileSync('public/templates/mailer/adminCreateStylist.html', encoding = "utf-8");
 
     var confirmAccountTemplate = _.template(confirmAccountHTML);
     var changePasswordTemplate = _.template(changePassHTML);
-    var adminCreateStylistTemplate = _.template(adminCreateStylistHTML);
+    var adminCreateUserTemplate = _.template(adminCreateUserHTML);
 
     function confirmRegistration (options, status){
 
@@ -52,7 +52,7 @@ module.exports = function(){
         sendEmail(mailOptions);
     }
 
-    function adminCreateStylist (options){
+    function adminCreateUser (options){
         var templateOptions = {
             name: options.name,
             email: options.email,
@@ -64,7 +64,7 @@ module.exports = function(){
             to: templateOptions.email,
             subject: 'Stylist created',
             generateTextFromHTML: true,
-            html: adminCreateStylistTemplate(templateOptions)
+            html: adminCreateUserTemplate(templateOptions)
         };
 
         sendEmail(mailOptions);
@@ -101,6 +101,6 @@ module.exports = function(){
     return {
         confirmRegistration: confirmRegistration,
         forgotPassword: forgotPassword,
-        adminCreateStylist: adminCreateStylist
+        adminCreateUser: adminCreateUser
     }
 };

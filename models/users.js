@@ -10,7 +10,6 @@ module.exports = function (db) {
         password: String,
         token: String,
         forgotToken: String,
-
         fbId: {type: String, default: null},
         confirmed: {type: Date},
         approved: {type: Boolean, default: false},
@@ -45,14 +44,17 @@ module.exports = function (db) {
             country: {type: String, default: ''},
             licenseNumber: {type: String, default: ''},
             availability: {
-                0: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}], //Sunday
-                1: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}], //Monday
-                2: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}],
-                3: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}],
-                4: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}],
-                5: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}],
-                6: [{from: {type: String, default: '00:00'}, to: {type: String, default: '00:00'}}]
+                0: [{from: '', to: ''}], //Sunday
+                1: [{from: '', to: ''}], //Monday
+                2: [{from: '', to: ''}],
+                3: [{from: '', to: ''}],
+                4: [{from: '', to: ''}],
+                5: [{from: '', to: ''}],
+                6: [{from: '', to: ''}]
             }
+        },
+        payments: {
+          customerId: {type: String, default: null}
         },
         loc: {
             type: {

@@ -19,10 +19,12 @@ var _ = require('lodash');
 var ObjectId = mongoose.Types.ObjectId;
 var fs = require('fs');
 var geocoder = require('geocoder');
+var StripeModule = require('../helpers/stripe');
 
 var UserHandler = function (app, db) {
 
     var self = this;
+    var stripe = new StripeModule();
     var User = db.model('User');
     var Gallery = db.model('Gallery');
     var Appointment = db.model('Appointment');
@@ -43,6 +45,7 @@ var UserHandler = function (app, db) {
         var projectionObj;
         var populateArray = [];
         var sortObj = {};
+        var APPOINTMENT = CONSTANTS.STATUSES.APPOINTMENT;
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
             findObj.client = userId;
@@ -84,6 +87,8 @@ var UserHandler = function (app, db) {
             };
 
             if (appointmentStatus ===  CONSTANTS.STATUSES.APPOINTMENT.PENDING){
+
+
                 if (sortParam === 'Date') {
                     sortObj.requestDate = order;
                 }
@@ -94,7 +99,7 @@ var UserHandler = function (app, db) {
 
                 projectionObj.bookingDate = 0;
 
-                findObj.status = {$in : [CONSTANTS.STATUSES.APPOINTMENT.CREATED, CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED]}
+                findObj.status = {$in : [CONSTANTS.STATUSES.APPOINTMENT.CREATED, CONSTANTS.STATUSES.APPOINTMENT.SUSPENDED]};
 
                 populateArray.push({path: 'serviceType', select: 'name'});
             }
@@ -113,11 +118,11 @@ var UserHandler = function (app, db) {
                 projectionObj.serviceType = 0;
 
                 findObj.status = {$in : [
-                    CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED,
-                    CONSTANTS.STATUSES.APPOINTMENT.BEGINS,
-                    CONSTANTS.STATUSES.APPOINTMENT.SUCCEEDED,
-                    CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_CLIENT,
-                    CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_STYLIST
+                   APPOINTMENT.CONFIRMED,
+                   APPOINTMENT.BEGINS,
+                   APPOINTMENT.SUCCEEDED,
+                   APPOINTMENT.CANCEL_BY_CLIENT,
+                   APPOINTMENT.CANCEL_BY_STYLIST
                 ]}
             }
 
@@ -300,15 +305,6 @@ var UserHandler = function (app, db) {
                 addressString = createObj.salonInfo.address + ' ' + createObj.salonInfo.city + ' ' + createObj.salonInfo.country;
 
                 geocoder.geocode(addressString, function(err, data){
-                    var availability = {
-                        0: [{from: '00:00', to: '00:00'}], //Sunday
-                        1: [{from: '00:00', to: '00:00'}], //Monday
-                        2: [{from: '00:00', to: '00:00'}],
-                        3: [{from: '00:00', to: '00:00'}],
-                        4: [{from: '00:00', to: '00:00'}],
-                        5: [{from: '00:00', to: '00:00'}],
-                        6: [{from: '00:00', to: '00:00'}]
-                    };
 
                     if (err){
                         return callback(err);
@@ -320,7 +316,6 @@ var UserHandler = function (app, db) {
                     createObj.loc = {
                         coordinates : [data.results[0].geometry.location.lng, data.results[0].geometry.location.lat]
                     };
-                    createObj.salonInfo.availability = availability;
 
                     userModel = new User(createObj);
 
@@ -335,6 +330,49 @@ var UserHandler = function (app, db) {
                         });
                 });
             });
+    };
+
+    this.createAdmin = function (req, res, next) {
+
+        var body = req.body;
+        var email = body.email;
+        var password = body.password;
+
+        if (!email || !password) {
+            return next(badRequests.NotEnParams({reqParams: 'Email or password'}));
+        }
+
+        password = getEncryptedPass(password);
+
+        User.findOne({
+            email: body.email,
+            password: password,
+            role: CONSTANTS.USER_ROLE.ADMIN,
+            approved: true
+        }, function (err, result) {
+
+            if (err) {
+                return next(err);
+            }
+
+            if (result) {
+                return next(badRequests.EmailInUse());
+            }
+
+            user = new User({email: body.email, password: password, role: CONSTANTS.USER_ROLE.ADMIN, approved: true});
+
+            user
+                .save(function (err) {
+
+                    if (err) {
+                        return next(err);
+                    }
+
+                    session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.ADMIN);
+
+                });
+        });
+
     };
 
     this.signUp = function (req, res, next) {
@@ -407,126 +445,115 @@ var UserHandler = function (app, db) {
         var createObj;
         var user;
 
-        if (!body.role){
+        if (!body.role) {
             return next(badRequests.NotEnParams({reqParams: 'role'}));
         }
 
-        if (body.role === 'Admin'){
-            if (!body.email || !body.password){
-                return next(badRequests.NotEnParams({reqParams: 'Email or password'}));
-            }
+        if (body.fbId) {
 
-            password = getEncryptedPass(body.password);
+            User
+                .findOne({fbId: body.fbId, role: body.role}, function (err, resultModel) {
 
-            User.findOne({email: body.email, password: password, role: CONSTANTS.USER_ROLE.ADMIN, approved: true}, function(err, result){
+                    if (err) {
+                        return next(err);
+                    }
 
-                if (err){
-                    return next(err);
-                }
+                    if (resultModel) {
+                        return next(badRequests.FbIdInUse());
+                    }
 
-                if (result){
-                    return next(badRequests.EmailInUse());
-                }
+                    userModel = new User(body);
 
-                user = new User({email: body.email, password: password, role: CONSTANTS.USER_ROLE.ADMIN, approved: true});
+                    userModel
+                        .save(function (err) {
 
-                user
-                    .save(function(err){
+                            if (err) {
+                                return next(err);
+                            }
 
-                        if (err){
-                            return next(err);
-                        }
+                            if (body.name) {
+                                name = body.name;
+                            }
 
-                        session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.ADMIN);
-
-                    });
-            });
+                            session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.STYLIST);
+                        });
+                });
 
         } else {
-            if (body.fbId){
+            if (!body.password || !body.email || !body.firstName || !body.lastName || !body.phone) {
+                return next(badRequests.NotEnParams({reqParams: 'password or email or First name or Last name'}));
+            }
 
-                User
-                    .findOne({fbId: body.fbId, role: body.role}, function(err, resultModel){
+            email = body.email;
+            password = body.password;
 
-                        if (err){
-                            return next(err);
-                        }
+            if (!validator.isEmail(email)) {
+                return next(badRequests.InvalidEmail());
+            }
 
-                        if (resultModel){
-                            return next(badRequests.FbIdInUse());
-                        }
+            email = validator.escape(email);
 
-                        userModel = new User(body);
+            createObj = {
+                personalInfo: {
+                    firstName: body.firstName,
+                    lastName: body.lastName,
+                    phone: body.phone
+                },
+                email: email,
+                password: getEncryptedPass(password),
+                token: token,
+                role: body.role
+            };
 
-                        userModel
-                            .save(function (err) {
+            User
+                .findOne({email: createObj.email, role: body.role}, function (err, resultModel) {
 
-                                if (err) {
-                                    return next(err);
+                    if (err) {
+                        return next(err);
+                    }
+
+                    if (resultModel) {
+                        return next(badRequests.EmailInUse());
+                    }
+
+                    async
+                        .waterfall([
+                            function(cb){
+                                if (body.role !== CONSTANTS.USER_ROLE.CLIENT){
+                                    return cb(null, null);
                                 }
 
-                                if (body.name) {
-                                    name = body.name;
-                                }
+                                stripe
+                                    .createCustomer({
+                                        email: body.email
+                                    }, function(err, customer){
 
-                                //res.status(200).send({success: 'User registered successfully'});
-                                session.register(req, res, user._id, true, CONSTANTS.USER_ROLE.STYLIST);
+                                        if (err){
+                                            return cb(err);
+                                        }
 
-                            });
+                                        cb(null, customer.id);
 
+                                    });
+                            },
 
-                    });
+                            function(customerId, cb){
+                                createObj['payments'] = {
+                                    customerId: customerId
+                                };
 
-            } else {
-                if (!body.password || !body.email || !body.firstName || !body.lastName || !body.phone) {
-                    return next(badRequests.NotEnParams({reqParams: 'password or email or First name or Last name'}));
-                }
+                                user = new User(createObj);
 
-                email = body.email;
-                password = body.password;
+                                user.save(function(err){
+                                    if (err){
+                                        return cb(err);
+                                    }
 
-                if (!validator.isEmail(email)) {
-                    return next(badRequests.InvalidEmail());
-                }
+                                    cb(null);
+                                });
+                            },
 
-                email = validator.escape(email);
-
-                createObj = {
-                    personalInfo: {
-                        firstName: body.firstName,
-                        lastName: body.lastName,
-                        phone: body.phone
-                    },
-                    email: email,
-                    password: getEncryptedPass(password),
-                    token: token,
-                    role: body.role
-                };
-
-                User
-                    .findOne({email: createObj.email, role: body.role}, function(err, resultModel){
-
-                        if (err){
-                            return next(err);
-                        }
-
-                        if (resultModel){
-                            return next(badRequests.EmailInUse());
-                        }
-
-                        user = new User(createObj);
-
-                        user
-                            .save(function (err) {
-
-                                if (err) {
-                                    return next(err);
-                                }
-
-                                if (body.name) {
-                                    name = body.name;
-                                }
-
+                            function(cb){
                                 mailer.confirmRegistration({
                                     name: body.firstName + ' ' + body.lastName,
                                     email: body.email,
@@ -534,16 +561,19 @@ var UserHandler = function (app, db) {
                                     token: token
                                 });
 
-                                res.status(201).send({success: 'User created successful. For using your account you must verify it. Please check email.'});
+                                cb(null);
+                            }
+                        ], function(err){
 
-                            });
+                            if (err){
+                                return next(err);
+                            }
 
-                    });
+                            res.status(201).send({success: body.role + ' created successful. For using your account you must verify it. Please check email.'});
+                        });
 
-            }
+                });
         }
-
-
     };
 
     this.signOut = function (req, res, next) {
@@ -599,7 +629,7 @@ var UserHandler = function (app, db) {
                 }
 
                 if (!userModel){
-                    return res.status(200).send({success: "You are already confirmed your account"}); // TODO send pretty html page insted of JSON
+                    return res.status(200).send({success: "You are already confirmed your account"}); // TODO send pretty html page instead of JSON
                 }
 
                 uId = userModel.get('_id');

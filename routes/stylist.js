@@ -16,7 +16,7 @@ module.exports = function(app, db){
     var stylistHandler = new StylistHandler(app, db);
     var sessionHandler = new SessionHandler(db);
     var user = new UserHandler(app, db);
-    var adminHandler = new AdminHandler(db);
+    var adminHandler = new AdminHandler(app, db);
 
     /**
      * __Type__ __`GET`__
@@ -73,15 +73,15 @@ module.exports = function(app, db){
      * @instance
      */
 
-    router.get('/services/request/:serviceId', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.sendRequestForService);
+    router.get('/services/request/:serviceId', sessionHandler.isStylist, stylistHandler.sendRequestForService);
 
-    router.get('/appointment/start/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.startAppointmentById);
-    router.get('/appointment/finish/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.finishAppointmentById);
-    router.get('/appointment/accept/:id', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.acceptAppointmentById);
+    router.get('/appointment/start/:id', sessionHandler.isStylist, stylistHandler.startAppointmentById);
+    router.get('/appointment/finish/:id', sessionHandler.isStylist, stylistHandler.finishAppointmentById);
+    router.get('/appointment/accept/:id', sessionHandler.isStylist, stylistHandler.acceptAppointmentById);
 
-    router.put('/availability', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.updateAvailabilityHours);
+    router.put('/availability', sessionHandler.isStylist, stylistHandler.updateAvailabilityHours);
 
-    router.put('/online', sessionHandler.authenticatedUser, sessionHandler.isStylist, stylistHandler.changeOnlineStatus);
+    router.put('/online', sessionHandler.isStylist, stylistHandler.changeOnlineStatus);
     //router.get('/appointment/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getBusinessAppointmentById);
 
     return router;
