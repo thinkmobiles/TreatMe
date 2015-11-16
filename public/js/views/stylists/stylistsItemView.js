@@ -28,6 +28,8 @@ define([
             var self = this;
             var userId = (options && options.id) ? options.id : null;
 
+            App.menu.select('#nav_stylists');
+
             if (!userId) {
                 self.model = new StylistModel();
                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#stylists'}, {
@@ -78,11 +80,6 @@ define([
 
         afterRender: function (user) {
             var self = this;
-            var navContainer = $('.sidebar-menu');
-            var serviceContainer = self.$el.find('.services');
-
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_stylists').addClass('active');
 
             if (!user) {
                 $.ajax({
@@ -178,10 +175,6 @@ define([
                         window.location.hash = 'newApplications';
                     },
                     error: self.handleModelError
-                    /*error: function (model, response, options) {
-                     var errMessage = response.responseJSON.error;
-                     self.handleError(errMessage);
-                     }*/
                 });
             });
         },

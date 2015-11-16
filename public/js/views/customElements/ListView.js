@@ -22,7 +22,6 @@ define([
         listTemplate      : null,
         Collection        : null,
         url               : null,
-        navElement        : null, //'#nav_dashborad',
         defaults          : {
             page  : 1,
             count : 5,
@@ -91,8 +90,6 @@ define([
         render: function () {
             this.$el.html(this.mainTemplate(this.pageParams));
 
-            this.changeSelectedMenu();
-
             return this;
         },
 
@@ -121,18 +118,6 @@ define([
             }
 
             return this;
-        },
-
-        changeSelectedMenu: function () {
-            var navElement = this.navElement;
-            var navContainer;
-
-            if (navElement) {
-                navContainer = $('.sidebar-menu');
-
-                navContainer.find('.active').removeClass('active');
-                navContainer.find(navElement).addClass('active');
-            }
         },
 
         changeLocationHash: function () {
