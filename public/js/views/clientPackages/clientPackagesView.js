@@ -27,6 +27,7 @@ define([
 
         initialize: function (options) {
             App.Breadcrumbs.reset([{name: 'Client Packages', path: '#clientPackages'}]);
+            App.menu.select('#nav_client_packages');
 
             ListView.prototype.initialize.call(this, options);
         },

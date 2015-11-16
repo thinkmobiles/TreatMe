@@ -23,6 +23,7 @@ define([
             navContainer.find('#nav_dashborad').addClass('active');
 
             App.Breadcrumbs.reset([{name: 'Dashboard', path: '#dashboard'}]);
+            App.menu.select('#nav_dashboard');
 
             this.render();
         },

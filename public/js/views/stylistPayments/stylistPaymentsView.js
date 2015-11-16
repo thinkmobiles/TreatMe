@@ -12,8 +12,6 @@ define([
         Collection: Collection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
-
-        navElement: '#nav_stylist_payments',
         url: '#stylistPayments',
 
         events: _.extend({
@@ -22,6 +20,7 @@ define([
 
         initialize: function (options) {
             App.Breadcrumbs.reset([{name: 'Stylist Payments', path: '#stylistPayments'}]);
+            App.menu.select('#nav_stylist_payments');
 
             ListView.prototype.initialize.call(this, options);
         }
