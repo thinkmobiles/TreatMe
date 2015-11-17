@@ -2909,6 +2909,29 @@ var AdminHandler = function (app, db) {
             });
     };
 
+    this.getAppointmentsStatistic = function(req, res, next){
+        var currentDate = new Date();
+        var currentYear = currentDate.getFullYear();
+        var startOfYear = new Date(currentYear, 0, 1);
+
+        Appointment
+            .aggregate([
+                {$match: {bookingDate: {$gte: startOfYear}, status: {$ne: CONSTANTS.STATUSES.APPOINTMENT.CREATED}}},
+                {
+                    $group: {
+                        _id: {$month: '$bookingDate'},
+                        count: {$sum: 1}
+                    }
+                }
+            ], function (err, resultModels) {
+                if (err) {
+                    return next(err);
+                }
+
+                res.status(200).send(resultModels);
+            });
+    };
+
 
 };
 
