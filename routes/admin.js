@@ -49,7 +49,7 @@ module.exports = function(app, db){
     router.get('/stylistPayments/', sessionHandler.isAdmin, admin.getStylistPayments);
 
     router.get('/clients/:stylistId', sessionHandler.isAdmin, admin.getStylistClients);
-    router.get('/appointments/:clientId', sessionHandler.isAdmin, admin.getBookedAppointment);
+    router.get('/appointments/:clientId', sessionHandler.isAdmin, admin.getBookedAppointment); //TODO: переробити і видалити, є метод який вертає всі юукед зустрічі
     router.post('/appointments/', sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments/', sessionHandler.isAdmin, admin.suspendAppointments);
     router.delete('/appointments/', sessionHandler.isAdmin, admin.removeAppointments);
