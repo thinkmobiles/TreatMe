@@ -748,9 +748,10 @@ var ClientsHandler = function (app, db) {
          * @instance
          */
 
+        var body = req.body;
         var clientId = req.session.uId;
-        var appointmentId = req.body.appointmentId;
-        var imageString = req.body.image;
+        var appointmentId = body.appointmentId;
+        var imageString = body.image;
 
         if (!appointmentId || !imageString) {
             return next(badRequests.NotEnParams({reqParams: 'appointmentId and image'}));
