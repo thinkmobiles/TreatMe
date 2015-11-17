@@ -186,7 +186,7 @@ var StylistHandler = function (app, db) {
         Appointment
             .findOneAndUpdate({
                 _id: appointmentId,
-                'stylist.id': stylistId
+                'stylist.id': ObjectId(stylistId)
             }, {$set: updateObj}, function (err, appointmentModel) {
                 if (err) {
                     return next(err);
@@ -313,63 +313,6 @@ var StylistHandler = function (app, db) {
 
             res.status(200).send({success: 'Appointment accepted successfully'});
         });
-
-
-
-
-
-        /*Appointment
-            .findOne({_id: appointmentId}, function (err, appointmentModel) {
-                var serviceType;
-
-                if (err) {
-                    return next(err);
-                }
-
-                if (!appointmentModel) {
-                    return next(badRequests.NotFound({target: 'Appointment'}));
-                }
-
-                if ((appointmentModel.stylist && appointmentModel.stylist.id) || appointmentModel.status !== CONSTANTS.STATUSES.APPOINTMENT.CREATED) {
-                    var error = new Error('Somebody accepted appointment earlier then you');
-
-                    error.status = 400;
-
-                    return next(error);
-                }
-
-                serviceType = appointmentModel.get('serviceType.id');
-
-                Services
-                    .findOne({stylist: ObjectId(stylistId), serviceId: serviceType, approved: true}, {price: 1, oneTimeService: 1}, function(err, serviceModel){
-                        var price;
-
-                        if (err){
-                            return next(err);
-                        }
-
-                        price = serviceModel.get('price');
-
-                        if (!serviceModel || !price){
-                            return next(badRequests.NotFound({target: 'Service'}));
-                        }
-
-                        updateObj.price = price;
-
-                        //TODO: write off money from the clients STRIPE account and then update appointment
-                        // clientId = appointmentModel.get('client').toString();
-                        //if (appointmentModel.oneTimeService){ write off money from client}
-
-                        appointmentModel
-                            .update({$set: updateObj}, function (err) {
-                                if (err) {
-                                    return next(err);
-                                }
-
-                                res.status(200).send({success: 'Appointment accepted successfully'});
-                            });
-                    });
-            });*/
     };
 
     this.finishAppointmentById = function (req, res, next) {
@@ -390,7 +333,7 @@ var StylistHandler = function (app, db) {
         Appointment
             .findOneAndUpdate({
                 _id: appointmentId,
-                'stylist.id': stylistId
+                'stylist.id': ObjectId(stylistId)
             }, {$set: updateObj}, function (err, appointmentModel) {
                 if (err) {
                     return next(err);

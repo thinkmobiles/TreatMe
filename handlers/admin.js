@@ -1288,7 +1288,7 @@ var AdminHandler = function (app, db) {
          *
          * @example Body example:
          *  {
-         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *      "ids": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
          *  }
          *
          * @example Response example:
@@ -1301,10 +1301,10 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var arrayOfId = req.body.appointments;
+        var arrayOfId = req.body.ids;
 
         if (!arrayOfId || !arrayOfId.length) {
-            return next(badRequests.NotEnParams({reqParams: 'arrayOfId'}))
+            return next(badRequests.NotEnParams({reqParams: 'ids'}))
         }
 
         arrayOfId = arrayOfId.toObjectId();
@@ -1463,7 +1463,7 @@ var AdminHandler = function (app, db) {
             //onetime service or not
             function(cb){
                 Subscription
-                    .find({client: clientId, expirationDate: {$gte: bookingDate}})
+                    .find({'client.id': clientId, expirationDate: {$gte: bookingDate}})
                     .populate({path: 'subscriptionType', select: 'allowServices'})
                     .exec(function(err, subscriptionModelsArray){
                         var allowedServices = [];
@@ -2253,7 +2253,7 @@ var AdminHandler = function (app, db) {
 
                 function(cb){
                     Subscription
-                        .find({client: clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
+                        .find({'client.id': clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
                         .populate({path: 'subscriptionType.id', select: 'name price'})
                         .exec(function (err, subscriptionModelsArray) {
                             var currentSubscriptions;
@@ -2312,7 +2312,7 @@ var AdminHandler = function (app, db) {
             status: 1
         };
         var criteria = {
-            'client.id': clientId,
+            'client.id': ObjectId(clientId),
             status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
         };
 
@@ -2421,7 +2421,7 @@ var AdminHandler = function (app, db) {
             client: 1
         };
         var criteria = {
-            'stylist.id': stylistId,
+            'stylist.id': ObjectId(stylistId),
             status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
         };
 
