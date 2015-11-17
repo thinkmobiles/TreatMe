@@ -276,7 +276,7 @@ var UserHandler = function (app, db) {
                 stylist: 0
 
             };
-            populateArray.push({path: 'client.id', select: 'personalInfo.firstName personalInfo.lastName personalInfo.avatar personalInfo.phone'});
+            populateArray.push({path: 'client.id', select: 'personalInfo.avatar personalInfo.phone'});
         }
 
         Appointment
@@ -294,16 +294,16 @@ var UserHandler = function (app, db) {
                 }
 
                 if (role === CONSTANTS.USER_ROLE.CLIENT){
-                    avatarName = appointmentModel.get('stylist.personalInfo.avatar');
+                    avatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
 
                     if (avatarName){
                         appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                     }
                 } else {
-                    avatarName = appointmentModel.get('client.personalInfo.avatar');
+                    avatarName = appointmentModel.get('client.id.personalInfo.avatar');
 
                     if (avatarName){
-                        appointmentModel.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                        appointmentModel.client.id.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                     }
                 }
 
@@ -1185,6 +1185,16 @@ var UserHandler = function (app, db) {
 
                             Appointment
                                 .update(criteria, {$set: update}, {multi: true}, cb)
+                        },
+
+                        function(cb){
+
+                            // TODO update subscripytion when update client profile
+                            if (userObj !== CONSTANTS.USER_ROLE.CLIENT){
+                                return cb(null);
+                            }
+
+                            cb(null)
                         }
 
                     ], function(err){
