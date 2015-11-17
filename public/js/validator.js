@@ -4,7 +4,8 @@ define([
     'Validator'
 ], function (validator) {
     validator.extend('isLocation', function (str) {
-        return true;
+        return false;
     });
+
     return validator;
 });

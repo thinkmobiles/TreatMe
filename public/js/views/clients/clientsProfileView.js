@@ -31,7 +31,7 @@ define([
                     success: function (userModel) {
                         self.model = userModel;
                         App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {
-                            name: userModel.toJSON().name,
+                            name: userModel.toJSON().firstName + ' '  + userModel.toJSON().lastName,
                             path: '#clients/:id'
                         }]);
                         self.renderClient();

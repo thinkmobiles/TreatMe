@@ -14,6 +14,7 @@ define([
         servicesTemplate: _.template(ServicesTemplate),
 
         events: {
+            "click .saveBtn": "saveClients"
         },
 
         initialize: function (options) {
@@ -35,13 +36,16 @@ define([
                     success: function (userModel){
                         self.model = userModel;
                         App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {
-                            name: self.model.toJSON().name,
+                            name: self.model.toJSON().firstName + ' ' + self.model.toJSON().lastName,
                             path: '#clients/:id'
                         }, {
                             name: 'Edit',
                             path: '#clients/:id/edit'
                         }]);
                         App.menu.select('#nav_clients');
+
+                        self.model.on('invalid', self.handleModelValidationError);
+
                         return self.render();
                     },
                     error: self.handleModelError
@@ -56,6 +60,46 @@ define([
             this.$el.html(this.mainTemplate({item: item}));
 
             return this;
+        },
+
+        prepareSaveData: function (callback) {
+            var thisEl = this.$el.find('.infoAccount');
+            var data;
+            var firstName = thisEl.find('.firstName').val();
+            var lastName = thisEl.find('.lastName').val();
+            var phone = thisEl.find('.phone').val();
+            var email = thisEl.find('.email').val();
+            var password = thisEl.find('.password').val();
+
+            data = {
+                firstName : firstName,
+                lastName  : lastName,
+                phone     : phone,
+                email     : email,
+                password  : password
+            };
+
+            callback(null, data)
+        },
+
+        saveClients: function (e) {
+            var self = this;
+
+            self.prepareSaveData(function (err, data) {
+                var model;
+
+                if (err) {
+                    self.handleError(err);
+                }
+
+                model = self.model;
+                model.save(data, {
+                    success: function () {
+                        alert('success');
+                    },
+                    error: self.handleModelError
+                });
+            });
         }
 
     });
