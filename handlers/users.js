@@ -83,7 +83,7 @@ var UserHandler = function (app, db) {
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
-            if (sortParam && sortParam !== 'date' && sortParam !== 'client' && sortParam !== 'service' && sortParam !== 'stylist') {
+            if (sortParam && sortParam !== 'date' && sortParam !== 'client' && sortParam !== 'service' && sortParam !== 'stylist' && sortParam !== 'status') {
                 return callback(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
             }
 
@@ -148,6 +148,10 @@ var UserHandler = function (app, db) {
                 if (sortParam === 'stylist') {
                     sortObj['stylist.firstName'] = order;
                     sortObj['stylist.lastName'] = order;
+                }
+
+                if (sortParam === 'status') {
+                    sortObj.status = order;
                 }
 
                 projectionObj.requestDate = 0;
