@@ -16,10 +16,6 @@ module.exports = function (app, db) {
     var user = new UserHandler(app, db);
     var sessionHandler = new SessionHandler(db);
 
-    /*app.get('/', function (req, res, next) {
-        res.status(200).send('Express start succeed');
-    });*/
-
     app.get('/', function (req, res, next) {
         res.sendfile('index.html');
     });
