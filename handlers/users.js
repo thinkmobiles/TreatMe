@@ -40,7 +40,7 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
-    function getAppDetailsForSearch (search, status, callback){
+    /*function getAppDetailsForSearch (search, status, callback){
         var APPOINTMENT = CONSTANTS.STATUSES.APPOINTMENT;
         var searchRegExp = new RegExp('.*' + search + '.*', 'ig');
         var userCriteria = {};
@@ -122,7 +122,7 @@ var UserHandler = function (app, db) {
                 });
             });
 
-    }
+    }*/
 
     function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, order, search, callback){
         var findObj = {};
@@ -130,6 +130,8 @@ var UserHandler = function (app, db) {
         var populateArray = [];
         var sortObj = {};
         var APPOINTMENT = CONSTANTS.STATUSES.APPOINTMENT;
+        var searchRegExp;
+        var searchCriteria = {};
 
         if (!callback && typeof search === 'function'){
             callback = search;
@@ -145,7 +147,7 @@ var UserHandler = function (app, db) {
                 requestDate: 0,
                 status: 0
             };
-            populateArray.push({path: 'serviceType', select: 'name'}, {path: 'stylist', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
+            populateArray.push({path: 'serviceType.id', select: 'name'}, {path: 'stylist.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
         }
 
         if (role === CONSTANTS.USER_ROLE.STYLIST){
@@ -157,7 +159,7 @@ var UserHandler = function (app, db) {
                 requestDate: 0,
                 status: 0
             };
-            populateArray.push({path: 'serviceType', select: 'name'}, {path: 'client', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
+            populateArray.push({path: 'serviceType.id', select: 'name'}, {path: 'client.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
@@ -165,9 +167,9 @@ var UserHandler = function (app, db) {
                 return callback(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
             }
 
-            if (sortParam === 'Name' || !sortParam) {
-                sortObj['client.personalInfo.firstName'] = order;
-                sortObj['client.personalInfo.lastName'] = order;
+            if (sortParam === 'Client' || !sortParam) {
+                sortObj['client.firstName'] = order;
+                sortObj['client.lastName'] = order;
             }
 
             projectionObj = {
@@ -175,7 +177,17 @@ var UserHandler = function (app, db) {
                 clientLoc: 0
             };
 
-            if (appointmentStatus ===  APPOINTMENT.PENDING){
+            if (appointmentStatus === APPOINTMENT.PENDING){
+                if (search){
+                    searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+                    searchCriteria = {
+                        $or: [
+                            {'client.firstName': {$regex: searchRegExp}},
+                            {'client.lastName': {$regex: searchRegExp}},
+                            {'serviceType.name': {$regex: searchRegExp}}
+                        ]
+                    };
+                }
 
 
                 if (sortParam === 'Date') {
@@ -189,21 +201,34 @@ var UserHandler = function (app, db) {
                 projectionObj.bookingDate = 0;
 
                 findObj['$and'] = [
-                    {status: {$in : [APPOINTMENT.CREATED, APPOINTMENT.SUSPENDED]}}
+                    {status: {$in : [APPOINTMENT.CREATED, APPOINTMENT.SUSPENDED]}},
+                    searchCriteria
                 ];
 
-
-                populateArray.push({path: 'serviceType', select: 'name'});
             }
 
             if (appointmentStatus ===  APPOINTMENT.BOOKED){
+
+                if (search) {
+                    searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+                    searchCriteria = {
+                        $or: [
+                            {'client.firstName': {$regex: searchRegExp}},
+                            {'client.lastName': {$regex: searchRegExp}},
+                            {'stylist.firstName': {$regex: searchRegExp}},
+                            {'stylist.lastName': {$regex: searchRegExp}}
+                        ]
+                    };
+                }
+
                 if (sortParam === 'Date') {
                     sortObj.bookingDate = order;
                 }
 
                 if (sortParam === 'Stylist') {
-                    sortObj['stylist.personalInfo.firstName'] = order;
-                    sortObj['stylist.personalInfo.lastName'] = order;
+                    sortObj['stylist.firstName'] = order;
+                    sortObj['stylist.lastName'] = order;
                 }
 
                 projectionObj.requestDate = 0;
@@ -216,51 +241,17 @@ var UserHandler = function (app, db) {
                         APPOINTMENT.SUCCEEDED,
                         APPOINTMENT.CANCEL_BY_CLIENT,
                         APPOINTMENT.CANCEL_BY_STYLIST
-                    ]}}
+                    ]}},
+                    searchCriteria
                 ];
 
             }
 
-            populateArray.push(
-                {path: 'client', select: 'personalInfo.firstName personalInfo.lastName'},
-                {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}
-            );
         }
 
-
-        async.waterfall([
+        async.parallel([
 
             function(cb){
-                if (!search){
-                    return cb(null, null)
-                }
-
-                getAppDetailsForSearch(search, appointmentStatus, cb)
-            },
-
-            function(searchIds, cb){
-                var criteria;
-
-                if (searchIds){
-
-                    if (appointmentStatus ===  APPOINTMENT.PENDING){
-                        criteria = {
-                            $or: [
-                                {client: {$in: searchIds.usersId}},
-                                {serviceType: {$in: searchIds.serviceId}}
-                            ]
-                        };
-                    } else if (appointmentStatus ===  APPOINTMENT.BOOKED){
-                        criteria = {
-                            $or: [
-                                {client: {$in: searchIds.usersId}},
-                                {stylist: {$in: searchIds.usersId}}
-                            ]
-                        };
-                    }
-
-                    findObj['$and'].push(criteria);
-                }
 
                 Appointment
                     .count(findObj, function(err, count){
@@ -272,12 +263,12 @@ var UserHandler = function (app, db) {
                     });
             },
 
-            function(count, cb){
+            function(cb){
                 Appointment
                     .find(findObj, projectionObj)
                     .populate(populateArray)
                     .sort(sortObj)
-                    .skip(limit * (page -1))
+                    .skip(limit * (page - 1))
                     .limit(limit)
                     .exec(function(err, appointmentModelsArray){
                         var avatarName;
@@ -303,21 +294,21 @@ var UserHandler = function (app, db) {
                             }
                         });
 
-                        cb(null, count, appointmentModelsArray);
+                        cb(null, appointmentModelsArray);
                     });
             }],
 
-            function(err, count, appointmentsArray){
+            function(err, result){
                 if (err){
                     return callback(err);
                 }
 
-                callback(null, {total: count, data: appointmentsArray})
+                callback(null, {total: result[0], data: result[1]});
             });
     }
 
     function getUserAppointmentById(userId, appointmentId, role, callback){
-        var populateArray = [{path: 'serviceType', select: 'name'}];
+        var populateArray = [];
         var projectionObj;
         var findObj = {_id: appointmentId};
 
@@ -338,7 +329,7 @@ var UserHandler = function (app, db) {
                 rate: 0,
                 rateComment: 0
             };
-            populateArray.push({path: 'stylist', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
+            populateArray.push({path: 'stylist.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
         }
 
         if (role === CONSTANTS.USER_ROLE.STYLIST){
@@ -354,7 +345,7 @@ var UserHandler = function (app, db) {
                 rate: 0,
                 rateComment: 0
             };
-            populateArray.push({path: 'client', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
+            populateArray.push({path: 'client.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
@@ -370,7 +361,7 @@ var UserHandler = function (app, db) {
                 stylist: 0
 
             };
-            populateArray.push({path: 'client', select: 'personalInfo.firstName personalInfo.lastName personalInfo.avatar personalInfo.phone'});
+            populateArray.push({path: 'client.id', select: 'personalInfo.firstName personalInfo.lastName personalInfo.avatar personalInfo.phone'});
         }
 
         Appointment
@@ -397,7 +388,7 @@ var UserHandler = function (app, db) {
                     avatarName = appointmentModel.get('client.personalInfo.avatar');
 
                     if (avatarName){
-                        appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                        appointmentModel.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                     }
                 }
 
@@ -477,6 +468,7 @@ var UserHandler = function (app, db) {
             role: CONSTANTS.USER_ROLE.ADMIN,
             approved: true
         }, function (err, result) {
+            var user;
 
             if (err) {
                 return next(err);
@@ -1012,6 +1004,90 @@ var UserHandler = function (app, db) {
         }
     };
 
+    function getUpdateData(userObj, body){
+        var salonInfo;
+        var personalInfo = userObj.personalInfo;
+
+        if (body.personalInfo){
+            if (body.personalInfo.firstName) {
+                personalInfo.firstName = body.personalInfo.firstName;
+            }
+
+            if (body.personalInfo.lastName) {
+                personalInfo.lastName = body.personalInfo.lastName;
+            }
+
+            if (body.personalInfo.profession && (userObj.role === CONSTANTS.USER_ROLE.STYLIST)) {
+                personalInfo.profession = body.personalInfo.profession;
+            }
+
+            if (body.personalInfo.phone) {
+                personalInfo.phone = body.personalInfo.phone;
+            }
+
+            if (body.personalInfo.facebookURL && (userObj.role === CONSTANTS.USER_ROLE.STYLIST)) {
+                personalInfo.facebookURL = body.personalInfo.facebookURL;
+            }
+        }
+
+        if (userObj.role === CONSTANTS.USER_ROLE.STYLIST) {
+
+            salonInfo = userObj.salonInfo;
+
+            if (body.salonInfo){
+                if (body.salonInfo.salonName){
+                    salonInfo.salonName = body.salonInfo.salonName;
+                }
+
+                if (body.salonInfo.yourBusinessRole){
+                    salonInfo.yourBusinessRole = body.salonInfo.yourBusinessRole;
+                }
+
+                if (body.salonInfo.phone){
+                    salonInfo.phone = body.salonInfo.phone;
+                }
+
+                if (body.salonInfo.email){
+                    salonInfo.email = body.salonInfo.email;
+                }
+
+                if (body.salonInfo.address){
+                    salonInfo.address = body.salonInfo.address;
+                }
+
+                if (body.salonInfo.state){
+                    salonInfo.state = body.salonInfo.state;
+                }
+
+                if (body.salonInfo.zipCode){
+                    salonInfo.zipCode = body.salonInfo.zipCode;
+                }
+
+                if (body.salonInfo.phone){
+                    salonInfo.phone = body.salonInfo.phone;
+                }
+
+                if (body.salonInfo.licenseNumber){
+                    salonInfo.licenseNumber = body.salonInfo.licenseNumber;
+                }
+
+                if (body.salonInfo.city){
+                    salonInfo.city = body.salonInfo.city;
+                }
+
+                if (body.salonInfo.country){
+                    salonInfo.country = body.salonInfo.country;
+                }
+            }
+
+        }
+
+        return {
+            personalInfo: personalInfo,
+            salonInfo: salonInfo
+        }
+    }
+
     this.updateUserProfile = function (req, res, next) {
 
         /**
@@ -1083,7 +1159,7 @@ var UserHandler = function (app, db) {
         var personalInfo;
         var salonInfo = {};
         var userObj;
-        var services;
+        var update;
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
             if (!req.params.userId){
@@ -1114,94 +1190,21 @@ var UserHandler = function (app, db) {
 
                 userObj = resultModel.toJSON();
 
-                personalInfo = userObj.personalInfo;
+                update = getUpdateData(userObj, body);
 
-                if (body.personalInfo){
-                    if (body.personalInfo.firstName) {
-                        personalInfo.firstName = body.personalInfo.firstName;
-                    }
+                async
+                    .parallel([
+                        function(cb){
+                            resultModel.update({$set: {personalInfo: personalInfo, salonInfo: salonInfo}}, cb);
+                        },
 
-                    if (body.personalInfo.lastName) {
-                        personalInfo.lastName = body.personalInfo.lastName;
-                    }
+                        function(cb){
+                            var services = body.services;
 
-                    if (body.personalInfo.profession && (resultModel.role === CONSTANTS.USER_ROLE.STYLIST)) {
-                        personalInfo.profession = body.personalInfo.profession;
-                    }
+                            if (userObj.role !== CONSTANTS.USER_ROLE.STYLIST || !body.services){
+                                return cb(null);
+                            }
 
-                    if (body.personalInfo.phone) {
-                        personalInfo.phone = body.personalInfo.phone;
-                    }
-
-                    if (body.personalInfo.facebookURL && (resultModel.role === CONSTANTS.USER_ROLE.STYLIST)) {
-                        personalInfo.facebookURL = body.personalInfo.facebookURL;
-                    }
-                }
-
-                if (resultModel.role === CONSTANTS.USER_ROLE.STYLIST) {
-
-                    salonInfo = userObj.salonInfo;
-
-                    if (body.salonInfo){
-                        if (body.salonInfo.salonName){
-                            salonInfo.salonName = body.salonInfo.salonName;
-                        }
-
-                        if (body.salonInfo.yourBusinessRole){
-                            salonInfo.yourBusinessRole = body.salonInfo.yourBusinessRole;
-                        }
-
-                        if (body.salonInfo.phone){
-                            salonInfo.phone = body.salonInfo.phone;
-                        }
-
-                        if (body.salonInfo.email){
-                            salonInfo.email = body.salonInfo.email;
-                        }
-
-                        if (body.salonInfo.address){
-                            salonInfo.address = body.salonInfo.address;
-                        }
-
-                        if (body.salonInfo.state){
-                            salonInfo.state = body.salonInfo.state;
-                        }
-
-                        if (body.salonInfo.zipCode){
-                            salonInfo.zipCode = body.salonInfo.zipCode;
-                        }
-
-                        if (body.salonInfo.phone){
-                            salonInfo.phone = body.salonInfo.phone;
-                        }
-
-                        if (body.salonInfo.licenseNumber){
-                            salonInfo.licenseNumber = body.salonInfo.licenseNumber;
-                        }
-
-                        if (body.salonInfo.city){
-                            salonInfo.city = body.salonInfo.city;
-                        }
-
-                        if (body.salonInfo.country){
-                            salonInfo.country = body.salonInfo.country;
-                        }
-                    }
-
-                }
-
-                resultModel
-                    .update({$set: {personalInfo: personalInfo, salonInfo: salonInfo}}, function(err){
-
-                        if (err){
-                            return next(err);
-                        }
-
-                        if (resultModel.role === CONSTANTS.USER_ROLE.STYLIST && body.services){
-
-                            services = body.services;
-
-                            //TODO remake with async
 
                             services = services.map(function(service){
                                 service.stylist = ObjectId(uId);
@@ -1220,24 +1223,62 @@ var UserHandler = function (app, db) {
                                 .remove({stylist: uId}, function(err){
 
                                     if (err){
-                                        return next(err);
+                                        return cb(err);
                                     }
 
-                                    Services.create(services, function(err){
-
-                                            if (err){
-                                                return next(err);
-                                            }
-
-                                            res.status(200).send({success: resultModel.role + ' updated successfully'});
-
-                                        });
-
+                                    Services.create(services, cb);
 
                                 });
-                        } else {
-                            res.status(200).send({success: resultModel.role + ' updated successfully'});
+
+                        },
+
+                        function(cb){
+                            var update = {};
+                            var criteria = {};
+
+                            if (!body.personalInfo.firstName &&  !body.personalInfo.lastName){
+                                return cb(null);
+                            }
+
+
+                            if (userObj.role === CONSTANTS.USER_ROLE.STYLIST){
+                                criteria.stylist = {
+                                    id: ObjectId(uId)
+                                };
+
+                                if (body.personalInfo.firstName){
+                                    update['stylist.firstName'] = body.personalInfo.firstName;
+                                }
+
+                                if (body.personalInfo.lastName){
+                                    update['stylist.lastName'] = body.personalInfo.lastName;
+                                }
+
+                            } else {
+                                criteria.client = {
+                                    id: ObjectId(uId)
+                                };
+
+                                if (body.personalInfo.firstName){
+                                    update['client.firstName'] = body.personalInfo.firstName;
+                                }
+
+                                if (body.personalInfo.lastName){
+                                    update['client.lastName'] = body.personalInfo.lastName;
+                                }
+                            }
+
+                            Appointment
+                                .update(criteria, {$set: update}, {multi: true}, cb)
                         }
+
+                    ], function(err){
+
+                        if (err) {
+                            return next(err);
+                        }
+
+                        res.status(200).send({success: userObj.role + ' updated successfully'});
 
                     });
 
@@ -1764,7 +1805,7 @@ var UserHandler = function (app, db) {
     };
 
     this.getAppointments = function(req, res, next){
-        var appointmentId = req.query.id;
+        var appointmentId = req.params.id;
         var sortParam = req.query.sort;
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;

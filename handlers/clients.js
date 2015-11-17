@@ -558,6 +558,9 @@ var ClientsHandler = function (app, db) {
         var clientLoc;
         var locationAddress;
         var oneTimeService = true;
+        var clientFirstName;
+        var clientLastName;
+        var serviceTypeName;
 
         if (!body.serviceType || !body.bookingDate) {
             return next(badRequests.NotEnParams({reqParams: 'clientId and serviceType and bookingDate'}));
@@ -594,6 +597,8 @@ var ClientsHandler = function (app, db) {
                         }
 
                         clientLoc = clientModel.get('loc');
+                        clientFirstName = clientModel.personalInfo.firstName || '';
+                        clientLastName = clientModel.personalInfo.lastName || '';
 
                         if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
                             if (body.coordinates){
@@ -682,11 +687,35 @@ var ClientsHandler = function (app, db) {
                     });
             },
 
+            function(cb){
+                ServiceType
+                    .findOne({_id: body.serviceType}, {name: 1}, function(err, serviceTypeModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!serviceTypeModel){
+                            return cb(badRequests.NotFound({target: 'ServiceType'}))
+                        }
+
+                        serviceTypeName = serviceTypeModel.get('name');
+
+                        cb();
+                    });
+            },
+
             function (cb) {
                 saveObj = {
-                    client: ObjectId(clientId),
+                    client: {
+                        id: ObjectId(clientId),
+                        firstName: clientFirstName,
+                        lastName: clientLastName
+                    },
                     clientLoc: clientLoc,
-                    serviceType: ObjectId(body.serviceType),
+                    serviceType: {
+                        id: ObjectId(body.serviceType),
+                        name: serviceTypeName
+                    },
                     bookingDate: body.bookingDate,
                     status: CONSTANTS.STATUSES.APPOINTMENT.CREATED,
                     oneTimeService: oneTimeService
@@ -717,7 +746,7 @@ var ClientsHandler = function (app, db) {
             }
 
             userCoordinates = result[0];
-            appointmentId = result[3];
+            appointmentId = result[4];
 
             schedulerHelper.startLookStylistForAppointment(appointmentId, userCoordinates, body.serviceType);
 
