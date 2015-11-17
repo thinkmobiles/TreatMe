@@ -63,6 +63,7 @@ module.exports = function(app, db){
     router.get('/packages/', sessionHandler.isAdmin, admin.getClientPackages);
     router.delete('/packages/', sessionHandler.isAdmin, admin.removePackages);
 
+    router.get('/statistic/overview', sessionHandler.isAdmin, admin.getOverviewByPeriod);
     router.get('/statistic/appointments', sessionHandler.isAdmin, admin.getAppointmentsStatistic);
 
     return router;

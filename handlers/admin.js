@@ -2909,6 +2909,72 @@ var AdminHandler = function (app, db) {
             });
     };
 
+    function setZero (d){
+        d.setHours(0);
+        d.setMinutes(0);
+        d.setSeconds(0);
+
+        return d;
+    }
+
+    function getBeginWeek(d) {
+        d = new Date(d);
+        var day = d.getDay(),
+            diff = d.getDate() - day + (day == 0 ? -6 : 1); // adjust when day is sunday
+        return new Date(d.setDate(diff));
+    }
+
+    function getBeginmonth(d){
+        return new Date(d.getFullYear(), d.getMonth(), 1);
+    }
+
+    this.getOverviewByPeriod = function(req, res, next){
+        var date = new Date();
+        var period = req.query.period || 'd';
+
+        switch (period){
+            case 'd': {
+                date = setZero(date);
+            }
+                break;
+            case 'w': {
+                date = setZero(getBeginWeek(date));
+            }
+                break;
+            case 'm': {
+                date = getBeginmonth(date);
+            }
+                break;
+        }
+
+        async
+            .parallel({
+                requestSent: function (cb) {
+                    Appointment
+                        .count({requestDate: {$gte: date}})
+                        .exec(cb);
+                },
+
+                appointmentBooked: function(cb){
+                    Appointment
+                        .count({requestDate: {$gte: date}, status: CONSTANTS.STATUSES.APPOINTMENT.BOOKED})
+                        .exec(cb);
+                },
+
+                packageSold: function(cb){
+                    Subscription
+                        .count({purchaseDate: {$gte: date}})
+                        .exec(cb);
+                }
+            }, function(err, result){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(result);
+            });
+    };
+
     this.getAppointmentsStatistic = function(req, res, next){
         var currentDate = new Date();
         var currentYear = currentDate.getFullYear();
