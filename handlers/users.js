@@ -60,7 +60,7 @@ var UserHandler = function (app, db) {
         }
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
-            findObj.client = userId;
+            findObj['client.id'] = userId;
             projectionObj = {
                 __v: 0,
                 client: 0,
@@ -72,7 +72,7 @@ var UserHandler = function (app, db) {
         }
 
         if (role === CONSTANTS.USER_ROLE.STYLIST){
-            findObj.stylist = userId;
+            findObj['stylist.id'] = userId;
             projectionObj = {
                 __v: 0,
                 stylist: 0,
@@ -84,7 +84,7 @@ var UserHandler = function (app, db) {
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
-            if (sortParam && sortParam !== 'date' && sortParam !== 'client' && sortParam !== 'service' && sortParam !== 'stylist') {
+            if (sortParam && sortParam !== 'date' && sortParam !== 'client' && sortParam !== 'service' && sortParam !== 'stylist' && sortParam !== 'status') {
                 return callback(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
             }
 
@@ -151,6 +151,10 @@ var UserHandler = function (app, db) {
                     sortObj['stylist.lastName'] = order;
                 }
 
+                if (sortParam === 'status') {
+                    sortObj.status = order;
+                }
+
                 projectionObj.requestDate = 0;
                 projectionObj.serviceType = 0;
 
@@ -192,38 +196,29 @@ var UserHandler = function (app, db) {
                     .limit(limit)
                     .exec(function(err, appointmentModelsArray){
                         var avatarName;
-                        var resultArray;
 
                         if (err){
                             return cb(err);
                         }
 
-                        resultArray = appointmentModelsArray.map(function(appointmentModel){
-                            var modelJSON = appointmentModel.toJSON();
+                        appointmentModelsArray.map(function(appointmentModel){
 
                             if (role === CONSTANTS.USER_ROLE.CLIENT){
                                 avatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
 
                                 if (avatarName){
-                                    modelJSON.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                                    appointmentModelsArray.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                                 }
                             } else {
                                 avatarName = appointmentModel.get('client.id.personalInfo.avatar');
 
                                 if (avatarName){
-                                    modelJSON.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                                    appointmentModelsArray.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                                 }
                             }
-
-                            if (role === CONSTANTS.USER_ROLE.ADMIN){
-                                modelJSON.client = modelJSON.client.firstName + ' ' + modelJSON.client.lastName;
-                                modelJSON.serviceType = modelJSON.serviceType.name;
-                            }
-
-                            return modelJSON;
                         });
 
-                        cb(null, resultArray);
+                        cb(null, appointmentModelsArray);
                     });
             }],
 
