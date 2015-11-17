@@ -13,7 +13,7 @@ module.exports = function (db) {
             lastName: String
         },
         subscriptionType: {
-            id:{ type: ObjectId, ref: 'SubscriptionType'},
+            id: { type: ObjectId, ref: 'SubscriptionType'},
             name: String
         },
         price: Number, //for current user, maybe with discount

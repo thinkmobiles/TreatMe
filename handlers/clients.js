@@ -345,102 +345,59 @@ var ClientsHandler = function (app, db) {
             });
     };
 
-    this.buySubscriptions = function(clientId, subscriptionIds, callback){
+    this.buySubscriptions = function(clientId, clientName, subscriptionIds, callback){
 
-        async.each(subscriptionIds,
+        SubscriptionType
+            .find({_id: {$in: subscriptionIds}}, {name: 1}, function(err, subscriptionColl){
 
-            function(id, cb){
-                var currentDate = new Date();
-                var expirationDate = new Date();
-                var saveObj;
-                var subscriptionModel;
-
-                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
-
-                saveObj = {
-                    client: clientId,
-                    subscriptionType : id,
-                    //TODO: price: 111,
-                    purchaseDate: currentDate,
-                    expirationDate: expirationDate
-                };
-
-                subscriptionModel = new Subscription(saveObj);
-
-                subscriptionModel
-                    .save(function(err){
-                        if (err){
-                            return cb(err);
-                        }
-
-                        cb();
-                    });
-
-                //if need check for purchased subscriptions
-                /*SubscriptionType
-                 .findOne({_id: id}, function (err, subscriptionTypesModel) {
-                 var currentDate = new Date();
-                 var expirationDate = new Date();
-
-
-                 if (err) {
-                 return cb(err);
-                 }
-
-                 if (!subscriptionTypesModel) {
-                 return cb(badRequests.NotFound({target: 'Subscription with id: ' + id}));
-                 }
-                 Subscription
-                 .findOne({
-                 subscriptionType: id,
-                 client: ObjectId(clientId),
-                 expirationDate: {$gte: currentDate}
-                 }, function (err, someSubscriptionModel) {
-                 var error;
-                 var saveObj;
-                 var subscriptionModel;
-
-                 if (err) {
-                 return cb(err);
-                 }
-
-                 if (someSubscriptionModel) {
-                 error = new Error('Current user already have ' + subscriptionTypesModel.name);
-                 error.status = 400;
-
-                 return cb(error);
-                 }
-
-                 expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
-
-                 saveObj = {
-                 client: clientId,
-                 subscriptionType: id,
-                 //TODO: price: 111,
-                 purchaseDate: currentDate,
-                 expirationDate: expirationDate
-                 };
-
-                 subscriptionModel = new Subscription(saveObj);
-
-                 subscriptionModel
-                 .save(function (err) {
-                 if (err) {
-                 return cb(err);
-                 }
-
-                 cb();
-                 });
-                 });
-                 });*/
-            },
-
-            function(err){
                 if (err){
                     return callback(err);
                 }
 
-                callback(null);
+                async.each(subscriptionColl,
+
+                    function(subscription, cb){
+                        var expirationDate = new Date();
+                        var saveObj;
+                        var subscriptionModel;
+
+                        expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+                        saveObj = {
+                            client: {
+                                id: clientId,
+                                firstName: clientName.firstName,
+                                lastName: clientName.lastName
+                            },
+                            subscriptionType : {
+                                id: subscription._id,
+                                name: subscription.name
+                            },
+                            //TODO: price: 111,
+                            expirationDate: expirationDate
+                        };
+
+                        subscriptionModel = new Subscription(saveObj);
+
+                        subscriptionModel
+                            .save(function(err){
+                                if (err){
+                                    return cb(err);
+                                }
+
+                                cb();
+                            });
+                    },
+
+                    function(err){
+                        if (err){
+                            return callback(err);
+                        }
+
+                        callback(null);
+                    });
+
+
             });
 
     };
@@ -500,16 +457,35 @@ var ClientsHandler = function (app, db) {
 
         ids = body.ids.toObjectId();
 
-        self.buySubscriptions(clientId, ids, function(err){
+        User
+            .findOne({_id: clientId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1}, function(err, userModel){
+                var clientName;
 
-            if (err){
-                return next(err);
-            }
+                if (err){
+                    return next(err);
+                }
 
-            res.status(200).send({success: 'Subscriptions bought successfully'});
+                if (!userModel){
+                    err = new Error('Client not found');
+                    err.status = 404;
+                    return next(err);
+                }
 
-        });
+                clientName = {
+                    firstName: userModel.personalInfo.firstName,
+                    lastName: userModel.personalInfo.lastName
+                };
 
+                self.buySubscriptions(clientId, clientName, ids, function(err){
+
+                    if (err){
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'Subscriptions bought successfully'});
+
+                });
+            });
 
     };
 

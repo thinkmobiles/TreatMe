@@ -611,7 +611,7 @@ var AdminHandler = function (app, db) {
                         });
                 },
                 function(clientId, cb){
-                    client.buySubscriptions(clientId, subscriptionIds, cb);
+                    client.buySubscriptions(clientId, {firstName: firstName, lastName: lastName}, subscriptionIds, cb);
                 },
 
                 function(cb){
@@ -1629,68 +1629,6 @@ var AdminHandler = function (app, db) {
         });
     };
 
-    function getIdsForSearch(search, callback){
-        var searchRegExp = new RegExp('.*' + search + '.*', 'ig');
-        var userCriteria = {};
-        var packageCriteria = {};
-
-        userCriteria['$and']= [
-            {role: CONSTANTS.USER_ROLE.CLIENT},
-            {
-                $or: [
-                    {'personalInfo.firstName': {$regex: searchRegExp}},
-                    {'personalInfo.lastName': {$regex: searchRegExp}}
-                ]
-            }
-        ];
-
-        packageCriteria.name = {$regex: searchRegExp};
-
-        async
-            .parallel([
-                function(cb){
-                    var usersId;
-                    User
-                        .find(userCriteria, {_id: 1})
-                        .exec(function(err, usersCollection){
-                            if (err){
-                                return cb(err);
-                            }
-
-                            usersId = _.pluck(usersCollection, '_id');
-
-                            cb(null, usersId);
-                        });
-                },
-
-                function(cb){
-                    var packagesId;
-                    SubscriptionType
-                        .find(packageCriteria, {_id: 1})
-                        .exec(function(err, subscriptionCollection){
-
-                            if (err){
-                                return cb(err);
-                            }
-
-                            packagesId = _.pluck(subscriptionCollection, '_id');
-
-                            cb(null, packagesId);
-                        });
-                }
-            ],function(err, result){
-
-                if (err){
-                    return callback(err);
-                }
-
-                callback(null, {
-                    usersId: result[0],
-                    packagesId: result[1]
-                });
-            });
-    }
-
     this.getClientPackages = function (req, res, next) {
 
         /**
@@ -1744,6 +1682,8 @@ var AdminHandler = function (app, db) {
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
         var search = req.query.search;
+        var searchCriteria = {};
+        var searchRegExp;
 
         var criteria = {
             $and:[{expirationDate: {$gte: new Date()}}]
@@ -1766,28 +1706,19 @@ var AdminHandler = function (app, db) {
             sortObj['subscriptionType.name'] = order;
         }
 
-        async.waterfall([
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+            searchCriteria['$or'] = [
+                {'client.firstName': {$regex: searchRegExp}},
+                {'client.lastName': {$regex: searchRegExp}},
+                {'subscriptionType.name': {$regex: searchRegExp}}
+            ];
+
+            criteria['$and'].push(searchCriteria);
+        }
+
+        async.parallel([
             function(cb){
-                if (!search){
-                    return cb(null, null);
-                }
-
-                getIdsForSearch(search, cb);
-
-            },
-            function(searchIds, cb){
-                var searchCriteria;
-                if(searchIds){
-                    searchCriteria = {
-                        $or: [
-                            {client: {$in: searchIds.usersId}},
-                            {subscriptionType: {$in: searchIds.packagesId}}
-                        ]
-                    };
-
-                    criteria['$and'].push(searchCriteria);
-                }
-
                 Subscription
                     .count(criteria, function(err, count){
                         if (err){
@@ -1798,13 +1729,9 @@ var AdminHandler = function (app, db) {
                     });
             },
 
-            function(count, cb) {
+            function(cb) {
                 Subscription
                     .find(criteria, {__v: 0, expirationDate: 0})
-                    .populate([{path: 'subscriptionType', select: 'name'}, {
-                        path: 'client',
-                        select: 'personalInfo.firstName personalInfo.lastName'
-                    }])
                     .sort(sortObj)
                     .skip(limit * (page - 1))
                     .limit(limit)
@@ -1819,7 +1746,7 @@ var AdminHandler = function (app, db) {
                             var modelJson = model.toJSON();
 
                             if (model.client) {
-                                modelJson.client = modelJson.client.personalInfo.firstName + ' ' + modelJson.client.personalInfo.lastName;
+                                modelJson.client = modelJson.client.firstName + ' ' + modelJson.client.lastName;
                             } else {
                                 modelJson.client = 'Client was removed'
                             }
@@ -1832,15 +1759,15 @@ var AdminHandler = function (app, db) {
                             return modelJson
                         });
 
-                        cb(null, count, resultArray);
+                        cb(null, resultArray);
                     });
                 }
-            ], function(err, count, result){
+            ], function(err, result){
             if (err){
                 return next(err);
             }
 
-            res.status(200).send({total: count, data: result});
+            res.status(200).send({total: result[0], data: result[1]});
         });
     };
 

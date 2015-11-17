@@ -40,90 +40,6 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
-    /*function getAppDetailsForSearch (search, status, callback){
-        var APPOINTMENT = CONSTANTS.STATUSES.APPOINTMENT;
-        var searchRegExp = new RegExp('.*' + search + '.*', 'ig');
-        var userCriteria = {};
-        var serviceCriteria = {};
-
-        if (status === APPOINTMENT.PENDING){
-            userCriteria['$and'] = [
-                {role: CONSTANTS.USER_ROLE.CLIENT},
-                {
-                    $or: [
-                        {'personalInfo.firstName': {$regex: searchRegExp}},
-                        {'personalInfo.lastName': {$regex: searchRegExp}}
-                    ]
-                }
-            ];
-
-            serviceCriteria.name = {$regex: searchRegExp};
-        } else if (status === APPOINTMENT.BOOKED) {
-            userCriteria['$and'] = [
-                {
-                    $or: [
-                        {role: CONSTANTS.USER_ROLE.CLIENT},
-                        {role: CONSTANTS.USER_ROLE.STYLIST}
-                    ]
-                },
-                {
-                    $or: [
-                        {'personalInfo.firstName': {$regex: searchRegExp}},
-                        {'personalInfo.lastName': {$regex: searchRegExp}}
-                    ]
-                }
-            ];
-        }
-
-        async
-            .parallel([
-                function(cb){
-                    var usersId;
-                    User
-                        .find(userCriteria, {_id: 1})
-                        .exec(function(err, usersCollection){
-                            if (err){
-                                return cb(err);
-                            }
-
-                            usersId = _.pluck(usersCollection, '_id');
-
-                            cb(null, usersId);
-                        });
-                },
-
-                function(cb){
-                    var servicesId;
-
-                    if (status === APPOINTMENT.BOOKED){
-                        return cb(null, []);
-                    }
-
-                    ServiceType
-                        .find(serviceCriteria, {_id: 1})
-                        .exec(function(err, serviceCollection){
-                            if (err){
-                                return cb(err);
-                            }
-
-                            servicesId = _.pluck(serviceCollection, '_id');
-
-                            cb(null, servicesId);
-                        });
-                }
-            ], function(err, results){
-                if (err){
-                    return callback(err);
-                }
-
-                callback(null, {
-                    usersId: results[0],
-                    serviceId: results[1]
-                });
-            });
-
-    }*/
-
     function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, order, search, callback){
         var findObj = {};
         var projectionObj;
@@ -188,7 +104,6 @@ var UserHandler = function (app, db) {
                         ]
                     };
                 }
-
 
                 if (sortParam === 'Date') {
                     sortObj.requestDate = order;
@@ -1913,7 +1828,7 @@ var UserHandler = function (app, db) {
                         stylistServiceId[i] = stylistServiceModel[i].serviceId._id.toString();
                     }
 
-                    for (var i = 0, n = allServiceModels.length; i < n; i++){
+                    for (i = 0, n = allServiceModels.length; i < n; i++){
                         ind = stylistServiceId.indexOf(allId[i]);
 
                         if (ind !== -1){
