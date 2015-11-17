@@ -46,7 +46,8 @@ module.exports = function (db) {
         },
         bookingDate: Date,
         oneTimeService: {type: Boolean, default: true},
-        price: Number
+        price: Number,
+        tip: Number
 
     }, {
         collection: 'Appointments'
