@@ -1805,7 +1805,7 @@ var AdminHandler = function (app, db) {
         var arrayOfIds = req.body.ids;
 
         if (!arrayOfIds) {
-            return next(badRequests.NotEnParams({reqParams: 'packagesArray'}));
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
         arrayOfIds = arrayOfIds.toObjectId();
 
