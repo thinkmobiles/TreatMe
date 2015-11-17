@@ -31,101 +31,6 @@ var ClientsHandler = function (app, db) {
     var ObjectId = mongoose.Types.ObjectId;
     var schedulerHelper = new SchedulerHelper(app, db);
 
-    /*  this.updateProfile = function (req, res, next) {
-     var clientId = req.session.uId;
-     var options = req.body;
-
-     if (!options.firstName && !options.lastName && !options.phone && !options.email) {
-     return next(badRequests.NotEnParams({reqParams: 'firstName or lastName or phone or email'}));
-     }
-
-     async.waterfall([
-
-     //find user
-     function (cb) {
-     Client.findOne({_id: clientId}, function (err, clientModel) {
-     if (err) {
-     return cb(err, null);
-     }
-
-     if (!clientModel) {
-     return cb(badRequests.DatabaseError(), null);
-     }
-
-     if (options.firstName) {
-     clientModel.clientDetails.firstName = options.firstName;
-     }
-
-     if (options.lastName) {
-     clientModel.clientDetails.lastName = options.lastName;
-     }
-
-     if (options.phone) {
-     clientModel.clientDetails.phone = options.phone;
-     }
-
-     cb(null, clientModel);
-     });
-     },
-
-     //check email in use or not
-     function (clientModel, cb) {
-     var email;
-
-     if (!options.email) {
-     return cb(null, clientModel);
-     }
-
-     if (!validator.isEmail(options.email)) {
-     return cb(badRequests.InvalidEmail(), null);
-     }
-
-     email = validator.escape(options.email);
-
-     Client.findOne({email: email}, function (err, someClientModel) {
-     var someClientId;
-
-     if (err) {
-     return cb(err, null);
-     }
-
-     if (!someClientModel) {
-     clientModel.email = email;
-     return cb(null, clientModel);
-     }
-
-     someClientId = someClientModel.get('_id').toString();
-
-     if (someClientId !== clientId) {
-     return cb(badRequests.EmailInUse(), null);
-     } else {
-     return cb(null, clientModel);
-     }
-
-     });
-     },
-
-     function (clientModel, cb) {
-     clientModel
-     .save(function (err) {
-     if (err) {
-     return cb(err);
-     }
-
-     cb();
-     });
-     }
-
-     ], function (err) {
-     if (err) {
-     return next(err);
-     }
-
-     res.status(200).send({success: 'Client\'s profile updated successfully'});
-     });
-     };
-     */
-
     this.getActiveSubscriptionsOnServices = function (req, res, next) {
 
         /**
@@ -168,7 +73,7 @@ var ClientsHandler = function (app, db) {
         var clientId = req.session.uId;
 
         Subscription
-            .find({client: clientId, expirationDate: {$gte: new Date()}})
+            .find({'client.id': ObjectId(clientId), expirationDate: {$gte: new Date()}})
             .populate({path: 'subscriptionType', select: 'name price logo'})
             .exec(function (err, subscriptionModelsArray) {
                 if (err) {
@@ -193,13 +98,18 @@ var ClientsHandler = function (app, db) {
                         resultArray = serviceTypeModels.map(function (model) {
                             var modelJSON = model.toJSON();
                             var typeId = modelJSON._id.toString();
+
                             modelJSON.havePackage = false;
 
                             if (allowServicesArray.indexOf(typeId) !== -1) {
                                 modelJSON.havePackage = true;
                             }
 
-                            modelJSON.logo = imageHandler.computeUrl(modelJSON.logo, CONSTANTS.BUCKET.IMAGES);
+                            if (modelJSON.logo){
+                                modelJSON.logo = imageHandler.computeUrl(modelJSON.logo, CONSTANTS.BUCKET.IMAGES);
+                            } else {
+                                modelJSON.logo = '';
+                            }
 
                             return modelJSON;
                         });
@@ -274,8 +184,8 @@ var ClientsHandler = function (app, db) {
         }
 
         Subscription
-            .find({client: clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
-            .populate({path: 'subscriptionType', select: 'name price logo'})
+            .find({'client.id': clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
+            .populate({path: 'subscriptionType.id', select: 'name price logo'})
             .exec(function (err, subscriptionModelsArray) {
                 var currentSubscriptions;
 
@@ -294,8 +204,8 @@ var ClientsHandler = function (app, db) {
                             }
 
                             subscriptionIds = subscriptionModelsArray.map(function(model){
-                                if (model.subscriptionType){
-                                    return (model.get('subscriptionType._id')).toString();
+                                if (model.subscriptionType && model.subscriptionType.id){
+                                    return (model.get('subscriptionType.id._id')).toString();
                                 }
                             });
 
@@ -303,11 +213,7 @@ var ClientsHandler = function (app, db) {
                                 var modelJSON = model.toJSON();
                                 var typeId = modelJSON._id.toString();
 
-                                if (subscriptionIds.indexOf(typeId) !== -1) {
-                                    modelJSON.purchased = true;
-                                } else {
-                                    modelJSON.purchased = false;
-                                }
+                                modelJSON.purchased = (subscriptionIds.indexOf(typeId) !== -1);
 
                                 if (modelJSON.logo){
                                     modelJSON.logo = imageHandler.computeUrl(modelJSON.logo, CONSTANTS.BUCKET.IMAGES);
@@ -324,9 +230,9 @@ var ClientsHandler = function (app, db) {
                     currentSubscriptions = subscriptionModelsArray.map(function(model){
                         var modelJSON = model.toJSON();
 
-                        if (modelJSON.subscriptionType){
-                            modelJSON.package = modelJSON.subscriptionType.name;
-                            modelJSON.price = modelJSON.subscriptionType.price;
+                        if (modelJSON.subscriptionType && modelJSON.subscriptionType.id){
+                            modelJSON.package = modelJSON.subscriptionType.id.name;
+                            modelJSON.price = modelJSON.subscriptionType.id.price;
                         } else {
                             modelJSON.package = 'Package was removed';
                             modelJSON.price = '-';
@@ -340,8 +246,6 @@ var ClientsHandler = function (app, db) {
 
                     res.status(200).send(currentSubscriptions);
                 }
-
-
             });
     };
 
@@ -445,7 +349,7 @@ var ClientsHandler = function (app, db) {
 
         if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
             if (!req.params.clientId){
-                return next(badRequests.NotEnParams({reqParams: 'clientId'}))
+                return next(badRequests.NotEnParams({reqParams: 'clientId'}));
             }
 
             clientId = req.params.clientId;
@@ -466,9 +370,7 @@ var ClientsHandler = function (app, db) {
                 }
 
                 if (!userModel){
-                    err = new Error('Client not found');
-                    err.status = 404;
-                    return next(err);
+                    return next(badRequests.NotFound({target: 'Client'}));
                 }
 
                 clientName = {
@@ -613,7 +515,7 @@ var ClientsHandler = function (app, db) {
 
             function (cb) {
                 Appointment
-                    .findOne({client: clientId, bookingDate: body.bookingDate}, function (err, model) {
+                    .findOne({'client.id': clientId, bookingDate: body.bookingDate}, function (err, model) {
                         var error;
 
                         if (err) {
@@ -634,8 +536,8 @@ var ClientsHandler = function (app, db) {
             //onetime service or not
             function(cb){
                 Subscription
-                    .find({client: clientId, expirationDate: {$gte: body.bookingDate}})
-                    .populate({path: 'subscriptionType', select: 'allowServices'})
+                    .find({'client.id': ObjectId(clientId), expirationDate: {$gte: body.bookingDate}})
+                    .populate({path: 'subscriptionType.id', select: 'allowServices'})
                     .exec(function(err, subscriptionModelsArray){
                         var allowedServices = [];
 
@@ -646,9 +548,9 @@ var ClientsHandler = function (app, db) {
                         subscriptionModelsArray.map(function(model){
                             var servicesIds;
 
-                            if (model.subscriptionType){
+                            if (model.subscriptionType && model.subscriptionType.id){
 
-                                servicesIds = model.get('subscriptionType.allowServices');
+                                servicesIds = model.get('subscriptionType.id.allowServices');
                                 servicesIds = servicesIds.toStringObjectIds();
 
                                 allowedServices = allowedServices.concat(servicesIds);
@@ -790,7 +692,7 @@ var ClientsHandler = function (app, db) {
         }
 
         Appointment
-            .findOneAndUpdate({_id: appointmentId, client: ObjectId(clientId)}, {
+            .findOneAndUpdate({_id: appointmentId, 'client.id': ObjectId(clientId)}, {
                 $set: {
                     rate: body.rate,
                     rateComment: rateComment
@@ -846,12 +748,13 @@ var ClientsHandler = function (app, db) {
          * @instance
          */
 
+        var body = req.body;
         var clientId = req.session.uId;
-        var appointmentId = req.body.appointmentId;
-        var imageString = req.body.image;
+        var appointmentId = body.appointmentId;
+        var imageString = body.image;
 
-        if (!appointmentId || !imageString /*|| !stylistId*/) {
-            return next(badRequests.NotEnParams({reqParams: 'appointmentId and image and stylistId'}));
+        if (!appointmentId || !imageString) {
+            return next(badRequests.NotEnParams({reqParams: 'appointmentId and image'}));
         }
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)) {
@@ -859,7 +762,7 @@ var ClientsHandler = function (app, db) {
         }
 
         Appointment
-            .findOne({_id: appointmentId, client: clientId}, function (err, appointmentModel) {
+            .findOne({_id: appointmentId, 'client.id': ObjectId(clientId)}, function (err, appointmentModel) {
                 var galleryModel;
                 var saveObj;
                 var stylistId;
@@ -870,12 +773,12 @@ var ClientsHandler = function (app, db) {
                     return next(err);
                 }
 
-                if (!appointmentModel || !appointmentModel.stylist || !appointmentModel.serviceType) {
+                if (!appointmentModel || !appointmentModel.stylist || !appointmentModel.stylist.id || !appointmentModel.serviceType || !appointmentModel.serviceType.id) {
                     return next(badRequests.NotFound({target: 'Appointment'}));
                 }
 
-                stylistId = appointmentModel.get('stylist');
-                serviceType = appointmentModel.get('serviceType');
+                stylistId = appointmentModel.get('stylist.id');
+                serviceType = appointmentModel.get('serviceType.id');
                 bookingDate = appointmentModel.get('bookingDate');
 
                 saveObj = {

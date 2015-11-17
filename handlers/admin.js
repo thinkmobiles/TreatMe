@@ -223,13 +223,14 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var page = (req.query.page >= 1) ? req.query.page : 1;
-        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
+        var query = req.query;
+        var page = (query.page >= 1) ? query.page : 1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var statusRegExp = /^requested$|^all$/;
-        var sort = req.query.sort ? (req.query.sort).toLowerCase() : 'date';
-        var order = (req.query.order === '1') ? 1 : -1;
-        var status = req.query.status;
-        var search = req.query.search || '';
+        var sort = query.sort ? (query.sort).toLowerCase() : 'date';
+        var order = (query.order === '1') ? 1 : -1;
+        var status = query.status;
+        var search = query.search || '';
         var searchRegExp;
         var sortObj = {};
         var searchObj = {};
@@ -886,8 +887,9 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var page = (req.query.page >= 1) ? req.query.page : 1;
-        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_SERVICES;
+        var query = req.query;
+        var page = (query.page >= 1) ? query.page : 1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_SERVICES;
 
         Services
             .find({approved: false}, {__v: 0})
@@ -1239,7 +1241,7 @@ var AdminHandler = function (app, db) {
          *
          * @example Body example:
          *  {
-         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *      "ids": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
          *  }
          *
          * @example Response example:
@@ -1252,10 +1254,10 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var arrayOfId = req.body.appointments;
+        var arrayOfId = req.body.ids;
 
         if (!arrayOfId || !arrayOfId.length) {
-            return next(badRequests.NotEnParams({reqParams: 'arrayOfId'}))
+            return next(badRequests.NotEnParams({reqParams: 'ids'}))
         }
 
         arrayOfId = arrayOfId.toObjectId();
@@ -1288,7 +1290,7 @@ var AdminHandler = function (app, db) {
          *
          * @example Body example:
          *  {
-         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *      "ids": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
          *  }
          *
          * @example Response example:
@@ -1301,10 +1303,10 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var arrayOfId = req.body.appointments;
+        var arrayOfId = req.body.ids;
 
         if (!arrayOfId || !arrayOfId.length) {
-            return next(badRequests.NotEnParams({reqParams: 'arrayOfId'}))
+            return next(badRequests.NotEnParams({reqParams: 'ids'}))
         }
 
         arrayOfId = arrayOfId.toObjectId();
@@ -1463,7 +1465,7 @@ var AdminHandler = function (app, db) {
             //onetime service or not
             function(cb){
                 Subscription
-                    .find({client: clientId, expirationDate: {$gte: bookingDate}})
+                    .find({'client.id': clientId, expirationDate: {$gte: bookingDate}})
                     .populate({path: 'subscriptionType', select: 'allowServices'})
                     .exec(function(err, subscriptionModelsArray){
                         var allowedServices = [];
@@ -1676,12 +1678,13 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var sortParam = (req.query.sort) ? (req.query.sort).toLowerCase(): null;
-        var order = (req.query.order === '1') ? 1 : -1;
-        var page = (req.query.page >= 1) ? req.query.page : 1;
-        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
+        var query = req.query;
+        var sortParam = (query.sort) ? (query.sort).toLowerCase(): null;
+        var order = (query.order === '1') ? 1 : -1;
+        var page = (query.page >= 1) ? query.page : 1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
-        var search = req.query.search;
+        var search = query.search;
         var searchCriteria = {};
         var searchRegExp;
 
@@ -1805,7 +1808,7 @@ var AdminHandler = function (app, db) {
         var arrayOfIds = req.body.ids;
 
         if (!arrayOfIds) {
-            return next(badRequests.NotEnParams({reqParams: 'packagesArray'}));
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
         arrayOfIds = arrayOfIds.toObjectId();
 
@@ -2105,11 +2108,12 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var sortParam = req.query.sort;
-        var order = (req.query.order === '1') ? 1 : -1;
-        var page = (req.query.page >= 1) ? req.query.page : 1;
-        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
-        var search = req.query.search;
+        var query = req.query;
+        var sortParam = query.sort;
+        var order = (query.order === '1') ? 1 : -1;
+        var page = (query.page >= 1) ? query.page : 1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
+        var search = query.search;
         var searchRegExp;
         var sortObj = {};
         var criteria;
@@ -2253,7 +2257,7 @@ var AdminHandler = function (app, db) {
 
                 function(cb){
                     Subscription
-                        .find({client: clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
+                        .find({'client.id': clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
                         .populate({path: 'subscriptionType.id', select: 'name price'})
                         .exec(function (err, subscriptionModelsArray) {
                             var currentSubscriptions;
@@ -2312,7 +2316,7 @@ var AdminHandler = function (app, db) {
             status: 1
         };
         var criteria = {
-            'client.id': clientId,
+            'client.id': ObjectId(clientId),
             status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
         };
 
@@ -2421,7 +2425,7 @@ var AdminHandler = function (app, db) {
             client: 1
         };
         var criteria = {
-            'stylist.id': stylistId,
+            'stylist.id': ObjectId(stylistId),
             status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
         };
 
