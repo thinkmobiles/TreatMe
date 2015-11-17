@@ -30,6 +30,7 @@ var UserHandler = function (app, db) {
     var Appointment = db.model('Appointment');
     var ServiceType = db.model('ServiceType');
     var Services = db.model('Service');
+    var Subscription = db.model('Subscription');
 
     var session = new SessionHandler(db);
     var image = new ImageHandler();
@@ -1189,10 +1190,21 @@ var UserHandler = function (app, db) {
 
                         function(cb){
 
-                            // TODO update subscripytion when update client profile
+                            // TODO update subscription when update client profile
                             if (userObj !== CONSTANTS.USER_ROLE.CLIENT){
                                 return cb(null);
                             }
+
+                            if (body.personalInfo.firstName){
+                                update['client.firstName'] = body.personalInfo.firstName;
+                            }
+
+                            if (body.personalInfo.lastName){
+                                update['client.lastName'] = body.personalInfo.lastName;
+                            }
+
+                            Subscription
+                                .update({'client.id': uId}, {$set: update}, {multi: true}, cb)
 
                             cb(null)
                         }
