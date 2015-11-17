@@ -1,7 +1,7 @@
 <% _.forEach(items, function (item, index) {%>
 <tr data-id="<%= item._id%>">
     <td><input type="checkbox" class="checkItem"></td>
-    <td><%= item.bookingDate %></td>
+    <td><%= new Date(item.bookingDate).toLocaleDateString()%></td>
     <td><%= item.stylist %></td>
     <td><%= item.serviceType %></td>
     <td><%= item.price %></td>
