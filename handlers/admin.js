@@ -1676,7 +1676,7 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var sortParam = req.query.sort;
+        var sortParam = (req.query.sort) ? (req.query.sort).toLowerCase(): null;
         var order = (req.query.order === '1') ? 1 : -1;
         var page = (req.query.page >= 1) ? req.query.page : 1;
         var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
@@ -1689,20 +1689,20 @@ var AdminHandler = function (app, db) {
             $and:[{expirationDate: {$gte: new Date()}}]
         };
 
-        if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Package') {
+        if (sortParam && sortParam !== 'date' && sortParam !== 'client' && sortParam !== 'package') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'Date' || !sortParam) {
+        if (sortParam === 'date' || !sortParam) {
             sortObj.purchaseDate = order;
         }
 
-        if (sortParam === 'Name') {
-            sortObj['client.personalInfo.firstName'] = order;
-            sortObj['client.personalInfo.lastName'] = order;
+        if (sortParam === 'client') {
+            sortObj['client.firstName'] = order;
+            sortObj['client.lastName'] = order;
         }
 
-        if (sortParam === 'Package') {
+        if (sortParam === 'package') {
             sortObj['subscriptionType.name'] = order;
         }
 
