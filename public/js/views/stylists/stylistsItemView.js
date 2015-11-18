@@ -60,7 +60,7 @@ define([
             var data = {
                 email: 'test_' + new Date().valueOf() + '@mail.com',
                 personalInfo: {
-                    
+
                 }
             };
             this.model = new StylistModel();
