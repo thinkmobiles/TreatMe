@@ -60,10 +60,15 @@ define([
             var data = {
                 email: 'test_' + new Date().valueOf() + '@mail.com',
                 personalInfo: {
-
+                    firstName: 'nazarovits',
+                    lastName: 'istvan'
+                },
+                salonInfo: {
+                    salonName: 'mySalon',
+                    role: 'Stylist'
                 }
             };
-            this.model = new StylistModel();
+            this.model = new StylistModel(/*data*/);
             this.model.on('invalid', this.handleModelValidationError);
 
             this.render();
