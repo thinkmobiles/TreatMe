@@ -439,8 +439,8 @@ var AdminHandler = function (app, db) {
         var services;
 
 
-        if (!body.email || !personal.firstName || !personal.lastName || !personal.profession || !personal.phoneNumber
-            || !salon.salonName || !salon.businessRole || !salon.phoneNumber
+        if (!body.email || !personal.firstName || !personal.lastName || !personal.profession || !personal.phone
+            || !salon.salonName || !salon.businessRole || !salon.phone
             || !salon.address || !salon.licenseNumber
             || !salon.city || !salon.zipCode || !salon.country) {
 
@@ -2570,7 +2570,6 @@ var AdminHandler = function (app, db) {
         if (sortParam === 'tip') {
             sortObj.tip = order;
         }
-
 
         async.parallel({
 
