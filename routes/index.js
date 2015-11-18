@@ -24,12 +24,12 @@ module.exports = function (app, db) {
     app.use('/admin', adminRouter);
     app.use('/stylist', stylistRouter);
 
-    app.use(function (req, res, next) {
+    /*app.use(function (req, res, next) {
         if (process.env.NODE_ENV === 'development') {
             console.log('user-agent:', req.headers['user-agent']);
         }
         next();
-    });
+    });*/
 
 
     // signUp signIn

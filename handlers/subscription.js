@@ -1,3 +1,9 @@
+/**
+ * @description Subscriptions management module
+ * @module Subscription
+ *
+ */
+
 
 var badRequests = require('../helpers/badRequests');
 var async = require('async');
@@ -141,6 +147,67 @@ var SubscriptionsHandler = function (db) {
     }
 
     this.getSubscriptionTypes = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/subscriptionType/:id?`__
+         *
+         * This __method__ allows get all subscriptions or by id, by _Admin_ or _Client_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/subscriptionType/
+         *
+         *   OR
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/subscriptionType/5638b946f8c11d9c0408133f
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *  [
+         *      {
+         *          "_id": "5638b946f8c11d9c0408133f",
+         *          "name": "Unlimited Pass",
+         *          "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638b946f8c11d9c0408133e.png",
+         *          "allowServices": [
+         *              "5638ccde3624f77b33b6587d",
+         *              "56387644a2e4362617283dce"
+         *          ],
+         *          "price": 135,
+         *          "purchased": false
+         *      },
+         *      {
+         *          "_id": "5638b965f8c11d9c04081341",
+         *          "name": "Unlimited Maniqure",
+         *          "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638b965f8c11d9c04081340.png",
+         *          "allowServices": [
+         *              "5638ccde3624f77b33b6587d"
+         *          ],
+         *          "price": 49,
+         *          "purchased": false
+         *      },
+         *      {
+         *          "_id": "5638b976f8c11d9c04081343",
+         *          "name": "Unlimited Blowout",
+         *          "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638b976f8c11d9c04081342.png",
+         *          "allowServices": [
+         *              "56387644a2e4362617283dce"
+         *          ],
+         *          "price": 99,
+         *          "purchased": true
+         *      }
+         *  ]
+         *
+         * @method getSubscriptionTypes
+         * @instance
+         */
+
         var subscriptionId = req.params.id;
         var clientId = req.session.uId;
 
@@ -375,9 +442,9 @@ var SubscriptionsHandler = function (db) {
          *
          * Response status: 200
          *
-         * {"success": "Subscription type was updated successfully"}
+         * {"success": "Subscription type was removed successfully"}
          *
-         * @method updateSubscriptionType
+         * @method removeSubscriptionType
          * @instance
          */
 
