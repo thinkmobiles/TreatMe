@@ -30,6 +30,7 @@ var UserHandler = function (app, db) {
     var Appointment = db.model('Appointment');
     var ServiceType = db.model('ServiceType');
     var Services = db.model('Service');
+    var Subscription = db.model('Subscription');
 
     var session = new SessionHandler(db);
     var image = new ImageHandler();
@@ -40,90 +41,6 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
-    /*function getAppDetailsForSearch (search, status, callback){
-        var APPOINTMENT = CONSTANTS.STATUSES.APPOINTMENT;
-        var searchRegExp = new RegExp('.*' + search + '.*', 'ig');
-        var userCriteria = {};
-        var serviceCriteria = {};
-
-        if (status === APPOINTMENT.PENDING){
-            userCriteria['$and'] = [
-                {role: CONSTANTS.USER_ROLE.CLIENT},
-                {
-                    $or: [
-                        {'personalInfo.firstName': {$regex: searchRegExp}},
-                        {'personalInfo.lastName': {$regex: searchRegExp}}
-                    ]
-                }
-            ];
-
-            serviceCriteria.name = {$regex: searchRegExp};
-        } else if (status === APPOINTMENT.BOOKED) {
-            userCriteria['$and'] = [
-                {
-                    $or: [
-                        {role: CONSTANTS.USER_ROLE.CLIENT},
-                        {role: CONSTANTS.USER_ROLE.STYLIST}
-                    ]
-                },
-                {
-                    $or: [
-                        {'personalInfo.firstName': {$regex: searchRegExp}},
-                        {'personalInfo.lastName': {$regex: searchRegExp}}
-                    ]
-                }
-            ];
-        }
-
-        async
-            .parallel([
-                function(cb){
-                    var usersId;
-                    User
-                        .find(userCriteria, {_id: 1})
-                        .exec(function(err, usersCollection){
-                            if (err){
-                                return cb(err);
-                            }
-
-                            usersId = _.pluck(usersCollection, '_id');
-
-                            cb(null, usersId);
-                        });
-                },
-
-                function(cb){
-                    var servicesId;
-
-                    if (status === APPOINTMENT.BOOKED){
-                        return cb(null, []);
-                    }
-
-                    ServiceType
-                        .find(serviceCriteria, {_id: 1})
-                        .exec(function(err, serviceCollection){
-                            if (err){
-                                return cb(err);
-                            }
-
-                            servicesId = _.pluck(serviceCollection, '_id');
-
-                            cb(null, servicesId);
-                        });
-                }
-            ], function(err, results){
-                if (err){
-                    return callback(err);
-                }
-
-                callback(null, {
-                    usersId: results[0],
-                    serviceId: results[1]
-                });
-            });
-
-    }*/
-
     function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, order, search, callback){
         var findObj = {};
         var projectionObj;
@@ -133,13 +50,17 @@ var UserHandler = function (app, db) {
         var searchRegExp;
         var searchCriteria = {};
 
+        if (sortParam){
+            sortParam = sortParam.toLowerCase();
+        }
+
         if (!callback && typeof search === 'function'){
             callback = search;
             search = null;
         }
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
-            findObj.client = userId;
+            findObj['client.id'] = userId;
             projectionObj = {
                 __v: 0,
                 client: 0,
@@ -147,11 +68,11 @@ var UserHandler = function (app, db) {
                 requestDate: 0,
                 status: 0
             };
-            populateArray.push({path: 'serviceType.id', select: 'name'}, {path: 'stylist.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
+            populateArray.push({path: 'stylist.id', select: 'personalInfo.avatar salonInfo.salonName'});
         }
 
         if (role === CONSTANTS.USER_ROLE.STYLIST){
-            findObj.stylist = userId;
+            findObj['stylist.id'] = userId;
             projectionObj = {
                 __v: 0,
                 stylist: 0,
@@ -159,15 +80,15 @@ var UserHandler = function (app, db) {
                 requestDate: 0,
                 status: 0
             };
-            populateArray.push({path: 'serviceType.id', select: 'name'}, {path: 'client.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
+            populateArray.push({path: 'client.id', select: 'personalInfo.avatar'});
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
-            if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Service' && sortParam !== 'Stylist') {
+            if (sortParam && sortParam !== 'date' && sortParam !== 'client' && sortParam !== 'service' && sortParam !== 'stylist' && sortParam !== 'status') {
                 return callback(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
             }
 
-            if (sortParam === 'Client' || !sortParam) {
+            if (sortParam === 'client') {
                 sortObj['client.firstName'] = order;
                 sortObj['client.lastName'] = order;
             }
@@ -189,12 +110,11 @@ var UserHandler = function (app, db) {
                     };
                 }
 
-
-                if (sortParam === 'Date') {
+                if (sortParam === 'date' || !sortParam) {
                     sortObj.requestDate = order;
                 }
 
-                if (sortParam === 'Service') {
+                if (sortParam === 'service') {
                     sortObj['serviceType.name'] = order;
                 }
 
@@ -222,13 +142,17 @@ var UserHandler = function (app, db) {
                     };
                 }
 
-                if (sortParam === 'Date') {
+                if (sortParam === 'date' || !sortParam) {
                     sortObj.bookingDate = order;
                 }
 
-                if (sortParam === 'Stylist') {
+                if (sortParam === 'stylist') {
                     sortObj['stylist.firstName'] = order;
                     sortObj['stylist.lastName'] = order;
+                }
+
+                if (sortParam === 'status') {
+                    sortObj.status = order;
                 }
 
                 projectionObj.requestDate = 0;
@@ -280,16 +204,16 @@ var UserHandler = function (app, db) {
                         appointmentModelsArray.map(function(appointmentModel){
 
                             if (role === CONSTANTS.USER_ROLE.CLIENT){
-                                avatarName = appointmentModel.get('stylist.personalInfo.avatar');
+                                avatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
 
                                 if (avatarName){
-                                    appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                                    appointmentModelsArray.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                                 }
                             } else {
-                                avatarName = appointmentModel.get('client.personalInfo.avatar');
+                                avatarName = appointmentModel.get('client.id.personalInfo.avatar');
 
                                 if (avatarName){
-                                    appointmentModel.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                                    appointmentModelsArray.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                                 }
                             }
                         });
@@ -361,7 +285,7 @@ var UserHandler = function (app, db) {
                 stylist: 0
 
             };
-            populateArray.push({path: 'client.id', select: 'personalInfo.firstName personalInfo.lastName personalInfo.avatar personalInfo.phone'});
+            populateArray.push({path: 'client.id', select: 'personalInfo.avatar personalInfo.phone'});
         }
 
         Appointment
@@ -379,16 +303,16 @@ var UserHandler = function (app, db) {
                 }
 
                 if (role === CONSTANTS.USER_ROLE.CLIENT){
-                    avatarName = appointmentModel.get('stylist.personalInfo.avatar');
+                    avatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
 
                     if (avatarName){
                         appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                     }
                 } else {
-                    avatarName = appointmentModel.get('client.personalInfo.avatar');
+                    avatarName = appointmentModel.get('client.id.personalInfo.avatar');
 
                     if (avatarName){
-                        appointmentModel.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                        appointmentModel.client.id.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                     }
                 }
 
@@ -820,8 +744,9 @@ var UserHandler = function (app, db) {
 
     this.confirmForgotPass = function (req, res, next) {
 
-        var forgotToken = req.query.token;
-        var userRole = req.query.role;
+        var query = req.query;
+        var forgotToken = query.token;
+        var userRole = query.role;
         var header = req.headers['user-agent'];
         var url;
 
@@ -859,8 +784,8 @@ var UserHandler = function (app, db) {
             return next(badRequests.NotEnParams({params: 'password'}));
         }
 
-        forgotToken = req.body.token;
-        userRole = req.body.role;
+        forgotToken = body.token;
+        userRole = body.role;
 
         encryptedPassword = getEncryptedPass(body.password);
 
@@ -929,7 +854,7 @@ var UserHandler = function (app, db) {
          * @instance
          */
 
-        var options = req.body;
+        var body = req.body;
 
         var fbId;
         var email;
@@ -938,9 +863,9 @@ var UserHandler = function (app, db) {
         var findObj;
 
 
-        if (options.fbId) {
+        if (body.fbId) {
 
-            fbId = options.fbId;
+            fbId = body.fbId;
 
             User
                 .findOne({fbId: fbId}, function (err, userModel) {
@@ -959,15 +884,15 @@ var UserHandler = function (app, db) {
 
         } else {
 
-            if (!options.email || !options.password) {
+            if (!body.email || !body.password) {
                 return next(badRequests.NotEnParams({reqParams: 'email and password or fbId'}));
             }
 
-            email = options.email;
-            password = getEncryptedPass(options.password);
+            email = body.email;
+            password = getEncryptedPass(body.password);
 
-            if (options.role && options.role === CONSTANTS.USER_ROLE.ADMIN){
-                findObj = {email: email, password: password, role: options.role};
+            if (body.role && body.role === CONSTANTS.USER_ROLE.ADMIN){
+                findObj = {email: email, password: password, role: body.role};
             } else {
                 findObj = {email: email, password: password}
             }
@@ -985,7 +910,7 @@ var UserHandler = function (app, db) {
                     }
 
                     if (!userModel) {
-                        if (!options.role){
+                        if (!body.role){
                             return next(badRequests.SignInError());
                         }
 
@@ -1154,7 +1079,7 @@ var UserHandler = function (app, db) {
          */
 
         var role = req.session.role;
-        var uId;
+        var uId = req.session.uId;;
         var body = req.body;
         var personalInfo;
         var salonInfo = {};
@@ -1171,10 +1096,6 @@ var UserHandler = function (app, db) {
             if (!CONSTANTS.REG_EXP.OBJECT_ID.test(uId)){
                 return next(badRequests.InvalidValue({value: uId, param: 'userId'}));
             }
-
-
-        } else {
-            uId = req.session.uId;
         }
 
         User
@@ -1270,6 +1191,27 @@ var UserHandler = function (app, db) {
 
                             Appointment
                                 .update(criteria, {$set: update}, {multi: true}, cb)
+                        },
+
+                        function(cb){
+
+                            // TODO update subscription when update client profile
+                            if (userObj !== CONSTANTS.USER_ROLE.CLIENT){
+                                return cb(null);
+                            }
+
+                            if (body.personalInfo.firstName){
+                                update['client.firstName'] = body.personalInfo.firstName;
+                            }
+
+                            if (body.personalInfo.lastName){
+                                update['client.lastName'] = body.personalInfo.lastName;
+                            }
+
+                            Subscription
+                                .update({'client.id': uId}, {$set: update}, {multi: true}, cb)
+
+                            cb(null)
                         }
 
                     ], function(err){
@@ -1348,7 +1290,7 @@ var UserHandler = function (app, db) {
         var userId = req.params.userId || req.session.uId;
         var projectionObj;
 
-        if (req.params.id && !CONSTANTS.REG_EXP.OBJECT_ID.test(userId)) {
+        if (req.params.userId && !CONSTANTS.REG_EXP.OBJECT_ID.test(userId)) {
             return next(badRequests.InvalidValue({value: userId, param: 'id'}));
         }
 
@@ -1515,7 +1457,11 @@ var UserHandler = function (app, db) {
 
         var userId = req.session.uId;
 
-        if (req.params.id && req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+            if (!req.params.id){
+                return next(badRequests.NotEnParams({reqParams: 'id'}));
+            }
+
             userId = req.params.id;
 
             if (!CONSTANTS.REG_EXP.OBJECT_ID.test(userId)){
@@ -1640,6 +1586,7 @@ var UserHandler = function (app, db) {
     };
 
     this.getGalleryPhotos = function(req, res, next){
+        var session = req.session;
         var userId = req.params.id;
         var query = req.query;
         var page = (query.page >=1) ? query.page : 1;
@@ -1649,12 +1596,12 @@ var UserHandler = function (app, db) {
             {path: 'serviceType', select: 'name'}
         ];
 
-        if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
-            findObj.client = req.session.uId;
+        if (session.role === CONSTANTS.USER_ROLE.CLIENT){
+            findObj.client = session.uId;
             populateArray.push({path: 'stylist', select: 'salonInfo.salonName personalInfo.firstName personalInfo.lastName personalInfo.avatar'});
         }
 
-        if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+        if (session.role === CONSTANTS.USER_ROLE.STYLIST){
             if (!userId){
                 return next(badRequests.NotEnParams({reqParams: 'id'}));
             }
@@ -1664,11 +1611,11 @@ var UserHandler = function (app, db) {
             }
 
             findObj.client = userId;
-            findObj.stylist = req.session.uId;
+            findObj.stylist = session.uId;
             populateArray.push({path: 'client', select: 'personalInfo.firstName personalInfo.lastName'});
         }
 
-        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
+        if (session.role === CONSTANTS.USER_ROLE.ADMIN){
             populateArray.push(
                 {path: 'client', select: 'personalInfo.firstName personalInfo.lastName'},
                 {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}
@@ -1711,7 +1658,7 @@ var UserHandler = function (app, db) {
                                 modelJSON.serviceType = 'Service was removed';
                             }
 
-                            if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
+                            if (session.role === CONSTANTS.USER_ROLE.CLIENT){
                                 delete modelJSON.client;
 
                                 if (modelJSON.stylist.personalInfo.avatar){
@@ -1721,7 +1668,7 @@ var UserHandler = function (app, db) {
                                 }
                             }
 
-                            if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+                            if (session.role === CONSTANTS.USER_ROLE.STYLIST){
                                 delete modelJSON.stylist;
                             }
 
@@ -1754,7 +1701,8 @@ var UserHandler = function (app, db) {
     };
 
     this.removePhotoFromGallery = function(req, res, next){
-        var userId = req.session.uId;
+        var session = req.session;
+        var userId = session.uId;
         var imageName = req.params.id;
         var findObj = {_id: imageName};
 
@@ -1762,11 +1710,11 @@ var UserHandler = function (app, db) {
             return next(badRequests.InvalidValue({value: imageName, param: 'id'}));
         }
 
-        if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
+        if (session.role === CONSTANTS.USER_ROLE.CLIENT){
             findObj.clientId = userId;
         }
 
-        if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+        if (session.role === CONSTANTS.USER_ROLE.STYLIST){
             findObj.stylistId = userId;
         }
 
@@ -1805,17 +1753,19 @@ var UserHandler = function (app, db) {
     };
 
     this.getAppointments = function(req, res, next){
+        var session = req.session;
+        var query = req.query;
         var appointmentId = req.params.id;
-        var sortParam = req.query.sort;
-        var order = (req.query.order === '1') ? 1 : -1;
-        var page = (req.query.page >= 1) ? req.query.page : 1;
-        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_APPOINTMENTS;
+        var sortParam = query.sort;
+        var order = (query.order === '1') ? 1 : -1;
+        var page = (query.page >= 1) ? query.page : 1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_APPOINTMENTS;
         var appointmentStatus;
-        var userId = req.session.uId;
-        var search = req.query.search;
+        var userId = session.uId;
+        var search = query.search;
 
         if (appointmentId){
-            getUserAppointmentById(userId, appointmentId, req.session.role, function(err, result){
+            getUserAppointmentById(userId, appointmentId, session.role, function(err, result){
                 if (err){
                     return next(err);
                 }
@@ -1823,15 +1773,15 @@ var UserHandler = function (app, db) {
                 res.status(200).send(result);
             });
         } else {
-            if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
-                appointmentStatus = req.query.status;
+            if (session.role === CONSTANTS.USER_ROLE.ADMIN){
+                appointmentStatus = query.status;
 
                 if (!appointmentStatus){
                     return next(badRequests.NotEnParams({reqParams: 'status'}));
                 }
             }
 
-            getAllUserAppointments(userId, req.session.role, appointmentStatus, page, limit, sortParam, order, search, function(err, result){
+            getAllUserAppointments(userId, session.role, appointmentStatus, page, limit, sortParam, order, search, function(err, result){
                 if (err){
                     return next(err);
                 }
@@ -1842,9 +1792,11 @@ var UserHandler = function (app, db) {
     };
 
     this.cancelByUser = function(req, res, next){
-        var userId = req.session.uId;
-        var appointmentId = req.body.appointmentId;
-        var cancellationReason = req.body.cancellationReason;
+        var body = req.body;
+        var session = req.session;
+        var userId = session.uId;
+        var appointmentId = body.appointmentId;
+        var cancellationReason = body.cancellationReason;
         var findObj = {_id: appointmentId};
         var updateObj;
 
@@ -1856,12 +1808,12 @@ var UserHandler = function (app, db) {
             return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
         }
 
-        if (req.session.role === CONSTANTS.USER_ROLE.CLIENT){
+        if (session.role === CONSTANTS.USER_ROLE.CLIENT){
             findObj.client = userId;
             updateObj = {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_CLIENT, cancellationReason: cancellationReason}};
         }
 
-        if (req.session.role === CONSTANTS.USER_ROLE.STYLIST){
+        if (session.role === CONSTANTS.USER_ROLE.STYLIST){
             findObj.stylist = userId;
             updateObj = {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_STYLIST, cancellationReason: cancellationReason}};
         }
@@ -1913,7 +1865,7 @@ var UserHandler = function (app, db) {
                         stylistServiceId[i] = stylistServiceModel[i].serviceId._id.toString();
                     }
 
-                    for (var i = 0, n = allServiceModels.length; i < n; i++){
+                    for (i = 0, n = allServiceModels.length; i < n; i++){
                         ind = stylistServiceId.indexOf(allId[i]);
 
                         if (ind !== -1){
@@ -1969,13 +1921,8 @@ var UserHandler = function (app, db) {
             }
 
             res.status(200).send(resultServices);
-
         });
-
     };
-
-
-
 };
 
 module.exports = UserHandler;

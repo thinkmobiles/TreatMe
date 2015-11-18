@@ -16,10 +16,6 @@ module.exports = function (app, db) {
     var user = new UserHandler(app, db);
     var sessionHandler = new SessionHandler(db);
 
-    /*app.get('/', function (req, res, next) {
-        res.status(200).send('Express start succeed');
-    });*/
-
     app.get('/', function (req, res, next) {
         res.sendfile('index.html');
     });
@@ -58,7 +54,7 @@ module.exports = function (app, db) {
     app.get('/gallery/:id?', sessionHandler.authenticatedUser, user.getGalleryPhotos);
     app.delete('/gallery/:id', sessionHandler.clientOrStylist, user.removePhotoFromGallery);
 
-    app.get('/appointment/:id?', sessionHandler.authenticatedUser, user.getAppointments); //can accept query ?id=123 [&status=Pending //or Booked &page=2&limit=20] status for admin only
+    app.get('/appointment/:id?', sessionHandler.authenticatedUser, user.getAppointments); //can accept query [&status=Pending //or Booked &page=2&limit=20] status for admin only
     app.post('/appointment/cancel',sessionHandler.clientOrStylist, user.cancelByUser);
 
     app.get('/subscriptionTypes/:id?', sessionHandler.clientOrAdmin, subscriptionHandler.getSubscriptionTypes);

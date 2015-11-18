@@ -223,13 +223,14 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var page = (req.query.page >= 1) ? req.query.page : 1;
-        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
+        var query = req.query;
+        var page = (query.page >= 1) ? query.page : 1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_STYLISTS;
         var statusRegExp = /^requested$|^all$/;
-        var sort = req.query.sort ? (req.query.sort).toLowerCase() : 'date';
-        var order = (req.query.order === '1') ? 1 : -1;
-        var status = req.query.status;
-        var search = req.query.search || '';
+        var sort = query.sort ? (query.sort).toLowerCase() : 'date';
+        var order = (query.order === '1') ? 1 : -1;
+        var status = query.status;
+        var search = query.search || '';
         var searchRegExp;
         var sortObj = {};
         var searchObj = {};
@@ -611,7 +612,7 @@ var AdminHandler = function (app, db) {
                         });
                 },
                 function(clientId, cb){
-                    client.buySubscriptions(clientId, subscriptionIds, cb);
+                    client.buySubscriptions(clientId, {firstName: firstName, lastName: lastName}, subscriptionIds, cb);
                 },
 
                 function(cb){
@@ -886,8 +887,9 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var page = (req.query.page >= 1) ? req.query.page : 1;
-        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_SERVICES;
+        var query = req.query;
+        var page = (query.page >= 1) ? query.page : 1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_SERVICES;
 
         Services
             .find({approved: false}, {__v: 0})
@@ -1239,7 +1241,7 @@ var AdminHandler = function (app, db) {
          *
          * @example Body example:
          *  {
-         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *      "ids": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
          *  }
          *
          * @example Response example:
@@ -1252,10 +1254,10 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var arrayOfId = req.body.appointments;
+        var arrayOfId = req.body.ids;
 
         if (!arrayOfId || !arrayOfId.length) {
-            return next(badRequests.NotEnParams({reqParams: 'arrayOfId'}))
+            return next(badRequests.NotEnParams({reqParams: 'ids'}))
         }
 
         arrayOfId = arrayOfId.toObjectId();
@@ -1288,7 +1290,7 @@ var AdminHandler = function (app, db) {
          *
          * @example Body example:
          *  {
-         *      "appointments": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
+         *      "ids": ["562f8a8a91f7274b0daed414", "562f8a8a91f7274b0daed411"]
          *  }
          *
          * @example Response example:
@@ -1301,10 +1303,10 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var arrayOfId = req.body.appointments;
+        var arrayOfId = req.body.ids;
 
         if (!arrayOfId || !arrayOfId.length) {
-            return next(badRequests.NotEnParams({reqParams: 'arrayOfId'}))
+            return next(badRequests.NotEnParams({reqParams: 'ids'}))
         }
 
         arrayOfId = arrayOfId.toObjectId();
@@ -1463,7 +1465,7 @@ var AdminHandler = function (app, db) {
             //onetime service or not
             function(cb){
                 Subscription
-                    .find({client: clientId, expirationDate: {$gte: bookingDate}})
+                    .find({'client.id': clientId, expirationDate: {$gte: bookingDate}})
                     .populate({path: 'subscriptionType', select: 'allowServices'})
                     .exec(function(err, subscriptionModelsArray){
                         var allowedServices = [];
@@ -1629,68 +1631,6 @@ var AdminHandler = function (app, db) {
         });
     };
 
-    function getIdsForSearch(search, callback){
-        var searchRegExp = new RegExp('.*' + search + '.*', 'ig');
-        var userCriteria = {};
-        var packageCriteria = {};
-
-        userCriteria['$and']= [
-            {role: CONSTANTS.USER_ROLE.CLIENT},
-            {
-                $or: [
-                    {'personalInfo.firstName': {$regex: searchRegExp}},
-                    {'personalInfo.lastName': {$regex: searchRegExp}}
-                ]
-            }
-        ];
-
-        packageCriteria.name = {$regex: searchRegExp};
-
-        async
-            .parallel([
-                function(cb){
-                    var usersId;
-                    User
-                        .find(userCriteria, {_id: 1})
-                        .exec(function(err, usersCollection){
-                            if (err){
-                                return cb(err);
-                            }
-
-                            usersId = _.pluck(usersCollection, '_id');
-
-                            cb(null, usersId);
-                        });
-                },
-
-                function(cb){
-                    var packagesId;
-                    SubscriptionType
-                        .find(packageCriteria, {_id: 1})
-                        .exec(function(err, subscriptionCollection){
-
-                            if (err){
-                                return cb(err);
-                            }
-
-                            packagesId = _.pluck(subscriptionCollection, '_id');
-
-                            cb(null, packagesId);
-                        });
-                }
-            ],function(err, result){
-
-                if (err){
-                    return callback(err);
-                }
-
-                callback(null, {
-                    usersId: result[0],
-                    packagesId: result[1]
-                });
-            });
-    }
-
     this.getClientPackages = function (req, res, next) {
 
         /**
@@ -1738,56 +1678,50 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var sortParam = req.query.sort;
-        var order = (req.query.order === '1') ? 1 : -1;
-        var page = (req.query.page >= 1) ? req.query.page : 1;
-        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
+        var query = req.query;
+        var sortParam = (query.sort) ? (query.sort).toLowerCase(): null;
+        var order = (query.order === '1') ? 1 : -1;
+        var page = (query.page >= 1) ? query.page : 1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
         var sortObj = {};
-        var search = req.query.search;
+        var search = query.search;
+        var searchCriteria = {};
+        var searchRegExp;
 
         var criteria = {
             $and:[{expirationDate: {$gte: new Date()}}]
         };
 
-        if (sortParam && sortParam !== 'Date' && sortParam !== 'Name' && sortParam !== 'Package') {
+        if (sortParam && sortParam !== 'date' && sortParam !== 'client' && sortParam !== 'package') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'Date' || !sortParam) {
+        if (sortParam === 'date' || !sortParam) {
             sortObj.purchaseDate = order;
         }
 
-        if (sortParam === 'Name') {
-            sortObj['client.personalInfo.firstName'] = order;
-            sortObj['client.personalInfo.lastName'] = order;
+        if (sortParam === 'client') {
+            sortObj['client.firstName'] = order;
+            sortObj['client.lastName'] = order;
         }
 
-        if (sortParam === 'Package') {
+        if (sortParam === 'package') {
             sortObj['subscriptionType.name'] = order;
         }
 
-        async.waterfall([
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+            searchCriteria['$or'] = [
+                {'client.firstName': {$regex: searchRegExp}},
+                {'client.lastName': {$regex: searchRegExp}},
+                {'subscriptionType.name': {$regex: searchRegExp}}
+            ];
+
+            criteria['$and'].push(searchCriteria);
+        }
+
+        async.parallel([
             function(cb){
-                if (!search){
-                    return cb(null, null);
-                }
-
-                getIdsForSearch(search, cb);
-
-            },
-            function(searchIds, cb){
-                var searchCriteria;
-                if(searchIds){
-                    searchCriteria = {
-                        $or: [
-                            {client: {$in: searchIds.usersId}},
-                            {subscriptionType: {$in: searchIds.packagesId}}
-                        ]
-                    };
-
-                    criteria['$and'].push(searchCriteria);
-                }
-
                 Subscription
                     .count(criteria, function(err, count){
                         if (err){
@@ -1798,13 +1732,9 @@ var AdminHandler = function (app, db) {
                     });
             },
 
-            function(count, cb) {
+            function(cb) {
                 Subscription
                     .find(criteria, {__v: 0, expirationDate: 0})
-                    .populate([{path: 'subscriptionType', select: 'name'}, {
-                        path: 'client',
-                        select: 'personalInfo.firstName personalInfo.lastName'
-                    }])
                     .sort(sortObj)
                     .skip(limit * (page - 1))
                     .limit(limit)
@@ -1819,7 +1749,7 @@ var AdminHandler = function (app, db) {
                             var modelJson = model.toJSON();
 
                             if (model.client) {
-                                modelJson.client = modelJson.client.personalInfo.firstName + ' ' + modelJson.client.personalInfo.lastName;
+                                modelJson.client = modelJson.client.firstName + ' ' + modelJson.client.lastName;
                             } else {
                                 modelJson.client = 'Client was removed'
                             }
@@ -1832,15 +1762,15 @@ var AdminHandler = function (app, db) {
                             return modelJson
                         });
 
-                        cb(null, count, resultArray);
+                        cb(null, resultArray);
                     });
                 }
-            ], function(err, count, result){
+            ], function(err, result){
             if (err){
                 return next(err);
             }
 
-            res.status(200).send({total: count, data: result});
+            res.status(200).send({total: result[0], data: result[1]});
         });
     };
 
@@ -1863,7 +1793,7 @@ var AdminHandler = function (app, db) {
          * @example Body example:
          *
          * {
-         *      "packagesArray": ["5645bec0499bf1d80facd36a", "5645bec0499bf1d80facd36b"]
+         *      "ids": ["5645bec0499bf1d80facd36a", "5645bec0499bf1d80facd36b"]
          * }
          *
          * @example Response example:
@@ -1875,10 +1805,10 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var arrayOfIds = req.body.packagesArray;
+        var arrayOfIds = req.body.ids;
 
         if (!arrayOfIds) {
-            return next(badRequests.NotEnParams({reqParams: 'packagesArray'}));
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
         arrayOfIds = arrayOfIds.toObjectId();
 
@@ -2123,7 +2053,7 @@ var AdminHandler = function (app, db) {
                 }
 
                 Subscription
-                    .remove({subscriptionType: ObjectId(subscriptionTypeId)}, function(err){
+                    .remove({'subscriptionType.id': ObjectId(subscriptionTypeId)}, function(err){
                         if (err){
                             return next(err);
                         }
@@ -2178,11 +2108,12 @@ var AdminHandler = function (app, db) {
          * @instance
          */
 
-        var sortParam = req.query.sort ? (req.query.sort).toLowerCase() : 'date';
-        var order = (req.query.order === '1') ? 1 : -1;
-        var page = (req.query.page >= 1) ? req.query.page : 1;
-        var limit = (req.query.limit >= 1) ? req.query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
-        var search = req.query.search;
+        var query = req.query;
+        var sortParam = query.sort;
+        var order = (query.order === '1') ? 1 : -1;
+        var page = (query.page >= 1) ? query.page : 1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_PACKAGES;
+        var search = query.search;
         var searchRegExp;
         var sortObj = {};
         var criteria;
@@ -2199,7 +2130,11 @@ var AdminHandler = function (app, db) {
             ];
         }
 
-        if (sortParam && sortParam !== 'name' && sortParam !== 'email' && sortParam !== 'date') {
+        if (sortParam){
+            sortParam = sortParam.toLowerCase()
+        }
+
+        if (sortParam && sortParam !== 'name' && sortParam !== 'email') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
@@ -2210,10 +2145,6 @@ var AdminHandler = function (app, db) {
 
         if (sortParam === 'email') {
             sortObj.email = order;
-        }
-
-        if (sortParam === 'date'){
-            sortObj.createdAt = order;
         }
 
         roleObj['role'] = CONSTANTS.USER_ROLE.CLIENT;
@@ -2326,8 +2257,8 @@ var AdminHandler = function (app, db) {
 
                 function(cb){
                     Subscription
-                        .find({client: clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
-                        .populate({path: 'subscriptionType', select: 'name price logo'})
+                        .find({'client.id': clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
+                        .populate({path: 'subscriptionType.id', select: 'name price'})
                         .exec(function (err, subscriptionModelsArray) {
                             var currentSubscriptions;
 
@@ -2381,40 +2312,44 @@ var AdminHandler = function (app, db) {
             bookingDate: 1,
             stylist: 1,
             serviceType: 1,
-            //TODO: payment: 1,
+            price: 1,
             status: 1
         };
         var criteria = {
-            client: clientId,
+            'client.id': ObjectId(clientId),
             status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
         };
+
+        if (sortParam){
+            sortParam = sortParam.toLowerCase();
+        }
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
             return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
         }
 
-        if (sortParam && sortParam !== 'Booking' && sortParam !== 'Stylist' && sortParam !== 'Service' && sortParam !== 'Payment' && sortParam !== 'Status') {
+        if (sortParam && sortParam !== 'date' && sortParam !== 'stylist' && sortParam !== 'service' && sortParam !== 'payment' && sortParam !== 'status') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'Booking' || !sortParam) {
+        if (sortParam === 'date' || !sortParam) {
             sortObj.bookingDate = order;
         }
 
-        if (sortParam === 'Stylist') {
-            sortObj['stylist.personalInfo.firstName'] = order;
-            sortObj['stylist.personalInfo.lastName'] = order;
+        if (sortParam === 'stylist') {
+            sortObj['stylist.firstName'] = order;
+            sortObj['stylist.lastName'] = order;
         }
 
-        if (sortParam === 'Service') {
+        if (sortParam === 'service') {
             sortObj['serviceType.name'] = order;
         }
 
-        if (sortParam === 'Payment') {
-            //TODO: sortObj['payment'] = order;
+        if (sortParam === 'payment') {
+            sortObj.price = order;
         }
 
-        if (sortParam === 'Status') {
+        if (sortParam === 'status') {
             sortObj.status = order;
         }
 
@@ -2434,7 +2369,6 @@ var AdminHandler = function (app, db) {
             appointment: function(cb){
                 Appointment
                     .find(criteria, projection)
-                    .populate([{path: 'serviceType', select: 'name'}, {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}])
                     .sort(sortObj)
                     .skip(limit * (page -1))
                     .limit(limit)
@@ -2448,14 +2382,14 @@ var AdminHandler = function (app, db) {
                         bookedAppointmentsArray = appointmentModelsArray.map(function(model){
                             var modelJSON = model.toJSON();
 
-                            if (modelJSON.serviceType){
+                            if (modelJSON.serviceType && modelJSON.serviceType.name){
                                 modelJSON.serviceType = modelJSON.serviceType.name;
                             } else {
                                 modelJSON.serviceType = 'Service was removed';
                             }
 
-                            if (modelJSON.stylist){
-                                modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
+                            if (modelJSON.stylist ){
+                                modelJSON.stylist = modelJSON.stylist.firstName + ' ' + modelJSON.stylist.lastName;
                             } else {
                                 modelJSON.stylist = 'Stylist was removed'
                             }
@@ -2491,24 +2425,28 @@ var AdminHandler = function (app, db) {
             client: 1
         };
         var criteria = {
-            stylist: stylistId,
+            'stylist.id': ObjectId(stylistId),
             status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
         };
+
+        if (sortParam){
+            sortParam = sortParam.toLowerCase();
+        }
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)){
             return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
         }
 
-        if (sortParam && sortParam !== 'Client' && sortParam !== 'Date') {
+        if (sortParam && sortParam !== 'client' && sortParam !== 'date') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'Client' || !sortParam) {
-            sortObj['client.personalInfo.firstName'] = order;
-            sortObj['client.personalInfo.lastName'] = order;
+        if (sortParam === 'client' || !sortParam) {
+            sortObj['client.firstName'] = order;
+            sortObj['client.lastName'] = order;
         }
 
-        if (sortParam === 'Date') {
+        if (sortParam === 'date') {
             sortObj.bookingDate = order;
         }
 
@@ -2528,7 +2466,6 @@ var AdminHandler = function (app, db) {
             appointment: function(cb){
                 Appointment
                     .find(criteria, projection)
-                    .populate({path: 'client', select: 'personalInfo.firstName personalInfo.lastName'})
                     .sort(sortObj)
                     .skip(limit * (page -1))
                     .limit(limit)
@@ -2542,8 +2479,8 @@ var AdminHandler = function (app, db) {
                         stylistClientsArray = appointmentModelsArray.map(function(model){
                             var modelJSON = model.toJSON();
 
-                            if (modelJSON.client){
-                                modelJSON.client = modelJSON.client.personalInfo.firstName + ' ' + modelJSON.client.personalInfo.lastName;
+                            if (modelJSON.client && modelJSON.client.firstName && modelJSON.client.lastName){
+                                modelJSON.client = modelJSON.client.firstName + ' ' + modelJSON.client.lastName;
                             } else {
                                 modelJSON.client = 'Client was removed'
                             }
@@ -2577,32 +2514,41 @@ var AdminHandler = function (app, db) {
             bookingDate: 1,
             stylist: 1,
             serviceType: 1,
-            price: 1
+            price: 1,
+            tip: 1
 
         };
         var criteria = {
             status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
         };
 
-        if (sortParam && sortParam !== 'Stylist' && sortParam !== 'Date' && sortParam !== 'Service' && sortParam !== 'Payment') {
+        if (sortParam){
+            sortParam = sortParam.toLowerCase();
+        }
+
+        if (sortParam && sortParam !== 'stylist' && sortParam !== 'date' && sortParam !== 'service' && sortParam !== 'payment' && sortParam !== 'tip') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'Date' || !sortParam) {
+        if (sortParam === 'date' || !sortParam) {
             sortObj.bookingDate = order;
         }
 
-        if (sortParam === 'Stylist') {
-            sortObj['stylist.personalInfo.firstName'] = order;
-            sortObj['stylist.personalInfo.lastName'] = order;
+        if (sortParam === 'stylist') {
+            sortObj['stylist.firstName'] = order;
+            sortObj['stylist.lastName'] = order;
         }
 
-        if (sortParam === 'Service') {
+        if (sortParam === 'service') {
             sortObj['serviceType.name'] = order;
         }
 
-        if (sortParam === 'Payment') {
+        if (sortParam === 'payment') {
             sortObj.price = order;
+        }
+
+        if (sortParam === 'tip') {
+            sortObj.tip = order;
         }
 
 
@@ -2622,7 +2568,6 @@ var AdminHandler = function (app, db) {
             appointment: function(cb){
                 Appointment
                     .find(criteria, projection)
-                    .populate([{path: 'serviceType', select: 'name'}, {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}])
                     .sort(sortObj)
                     .skip(limit * (page -1))
                     .limit(limit)
@@ -2636,13 +2581,13 @@ var AdminHandler = function (app, db) {
                         stylistPaymentsArray = appointmentModelsArray.map(function(model){
                             var modelJSON = model.toJSON();
 
-                            if (modelJSON.stylist){
-                                modelJSON.stylist = modelJSON.stylist.personalInfo.firstName + ' ' + modelJSON.stylist.personalInfo.lastName;
+                            if (modelJSON.stylist && modelJSON.stylist.firstName && modelJSON.stylist.lastName){
+                                modelJSON.stylist = modelJSON.stylist.firstName + ' ' + modelJSON.stylist.lastName;
                             } else {
                                 modelJSON.stylist = 'Stylist was removed'
                             }
 
-                            if (modelJSON.serviceType){
+                            if (modelJSON.serviceType && modelJSON.serviceType.name){
                                 modelJSON.serviceType = modelJSON.serviceType.name;
                             } else {
                                 modelJSON.serviceType = 'Service was removed';
@@ -2650,6 +2595,9 @@ var AdminHandler = function (app, db) {
 
                             if (!modelJSON.price){
                                 modelJSON.price = '-';
+                            }
+                            if (!modelJSON.tip){
+                                modelJSON.tip = '-';
                             }
 
                             return modelJSON;
@@ -2684,7 +2632,7 @@ var AdminHandler = function (app, db) {
             subscriptionType: 1
         };
         var criteria = {
-            client: clientId
+            'client.id': ObjectId(clientId)
         };
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
@@ -2718,7 +2666,6 @@ var AdminHandler = function (app, db) {
             subscriptions: function(cb){
                 Subscription
                     .find(criteria, projection)
-                    .populate({path: 'subscriptionType', select: 'name'})
                     .sort(sortObj)
                     .skip(limit * (page - 1))
                     .limit(limit)
@@ -2732,7 +2679,7 @@ var AdminHandler = function (app, db) {
                         subscriptionArray = subscriptionModelsArray.map(function(model){
                             var modelJSON = model.toJSON();
 
-                            if (modelJSON.subscriptionType){
+                            if (modelJSON.subscriptionType && modelJSON.subscriptionType.name){
                                 modelJSON.package = modelJSON.subscriptionType.name;
                             } else {
                                 modelJSON.package = 'Package was removed';
@@ -2826,7 +2773,7 @@ var AdminHandler = function (app, db) {
             },
 
             function(cb){
-                Appointment.remove({$or: [{client: userId}, {stylist: userId}]}, cb);
+                Appointment.remove({$or: [{'client.id': userId}, {'stylist.id': userId}]}, cb);
             },
 
             function(cb){
@@ -2959,6 +2906,103 @@ var AdminHandler = function (app, db) {
 
                 res.status(200).send(stylists);
 
+            });
+    };
+
+    function setZero (d){
+        d.setHours(0);
+        d.setMinutes(0);
+        d.setSeconds(0);
+
+        return d;
+    }
+
+    function getBeginWeek(d) {
+        var day = d.getDay();
+        var diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(d.setDate(diff));
+    }
+
+    function getBeginMonth(d){
+        return new Date(d.getFullYear(), d.getMonth(), 1);
+    }
+
+    this.getOverviewByPeriod = function(req, res, next){
+        var date = new Date();
+        var period = req.query.period || 'd';
+
+        switch (period){
+            case 'd': {
+                date = setZero(date);
+            }
+                break;
+            case 'w': {
+                date = setZero(getBeginWeek(date));
+            }
+                break;
+            case 'm': {
+                date = getBeginMonth(date);
+            }
+                break;
+            default: {
+                date = setZero(date);
+            }
+        }
+
+        async
+            .parallel({
+                requestSent: function (cb) {
+                    Appointment
+                        .count({requestDate: {$gte: date}})
+                        .exec(cb);
+                },
+
+                appointmentBooked: function(cb){
+                    Appointment
+                        .count({requestDate: {$gte: date}, status: {$ne: CONSTANTS.STATUSES.APPOINTMENT.CREATED}})
+                        .exec(cb);
+                },
+
+                packageSold: function(cb){
+                    Subscription
+                        .count({purchaseDate: {$gte: date}})
+                        .exec(cb);
+                }
+            }, function(err, result){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(result);
+            });
+    };
+
+    this.getAppointmentsStatistic = function(req, res, next){
+        var currentDate = new Date();
+        var currentYear = currentDate.getFullYear();
+        var startOfYear = new Date(currentYear, 0, 1);
+
+        Appointment
+            .aggregate([
+                {
+                    $match: {
+                        bookingDate: {$gte: startOfYear},
+                        status: {
+                            $ne: CONSTANTS.STATUSES.APPOINTMENT.CREATED}
+                    }
+                },
+                {
+                    $group: {
+                        _id: {$month: '$bookingDate'},
+                        count: {$sum: 1}
+                    }
+                }
+            ], function (err, resultModels) {
+                if (err) {
+                    return next(err);
+                }
+
+                res.status(200).send(resultModels);
             });
     };
 
