@@ -25,7 +25,7 @@ define([
 
         events: {
             "click .saveBtn": "saveStylist",
-            "click .edit"   : "renderEdit"
+            //"click .edit"   : "edit"
         },
 
         initialize: function (options) {
@@ -57,10 +57,17 @@ define([
 
             App.menu.select('#nav_new_applications');
 
+            var data = {
+                email: 'test_' + new Date().valueOf() + '@mail.com',
+                personalInfo: {
+                    
+                }
+            };
             this.model = new StylistModel();
             this.model.on('invalid', this.handleModelValidationError);
 
             this.render();
+            this.renderUserInfo();
         },
 
         editStylist: function (options) { // load edit for stylists and new applications.
@@ -88,7 +95,15 @@ define([
         },
 
         getUserName: function (user) {
-            return user.personalInfo.firstName + ' ' + user.personalInfo.lastName;
+            var userName;
+
+            if (user && user.personalInfo && user.personalInfo.firstName && user.personalInfo.lastName) {
+                userName = user.personalInfo.firstName + ' ' + user.personalInfo.lastName;
+            } else {
+                userName = '';
+            }
+
+            return userName;
         },
 
         renderUserInfo: function () {
@@ -96,12 +111,50 @@ define([
             //var userName = this.getUserName(user);
             var $el = this.$el;
 
-            $el.find('.info').html(this.itemTemplate({user: user}));
+            $el.find('.info').html(this.itemTemplate(user));
             //$el.find('.userName').html(userName);
 
-            //this.updateNavigation(user);
+            this.updateNavigation(user);
 
             return this;
+        },
+
+        updateNavigation: function (user) {
+            var bradcrumbs;
+
+            if (!user._id) {
+                bradcrumbs = [{
+                    name: 'New Applications',
+                    path: '#newApplications'
+                }, {
+                    name: 'Add',
+                    path: '#newApplications/add'
+                }];
+            } else if (user.approved) {
+                bradcrumbs = [{
+                    name: 'Stylist List',
+                    path: '#stylists'
+                }, {
+                    name: this.getUserName(user),
+                    path: '#stylists/' + user._id
+                }, {
+                    name: 'Edit',
+                    path: '#stylists/' + user._id + '/edit'
+                }];
+            } else {
+                bradcrumbs = [{
+                    name: 'New Applications',
+                    path: '#newApplications'
+                }, {
+                    name: this.getUserName(user),
+                    path: '#newApplications/' + user._id
+                }, {
+                    name: 'Edit',
+                    path: '#newApplications/' + user._id + '/edit'
+                }];
+            }
+
+            App.Breadcrumbs.reset(bradcrumbs);
         },
 
         prepareSaveData: function (callback) {
@@ -186,6 +239,13 @@ define([
 
         renderEdit: function () {
             new EditView(this.model);
+        },
+
+        edit: function (e) {
+            var id = this.model.id;
+            var url = this.path + '/' + id + '/edit';
+
+            Backbone.history.navigate(url, {trigger: true});
         }
 
     });
