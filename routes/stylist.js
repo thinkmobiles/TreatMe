@@ -75,9 +75,9 @@ module.exports = function(app, db){
 
     router.get('/services/request/:serviceId', sessionHandler.isStylist, stylistHandler.sendRequestForService);
 
-    router.get('/appointment/start/:id', sessionHandler.isStylist, stylistHandler.startAppointmentById);
-    router.get('/appointment/finish/:id', sessionHandler.isStylist, stylistHandler.finishAppointmentById);
-    router.get('/appointment/accept/:id', sessionHandler.isStylist, stylistHandler.acceptAppointmentById);
+    router.get('/appointment/start/:id', sessionHandler.isStylist, sessionHandler.isApprovedStylist, stylistHandler.startAppointmentById);
+    router.get('/appointment/finish/:id', sessionHandler.isStylist, sessionHandler.isApprovedStylist, stylistHandler.finishAppointmentById);
+    router.get('/appointment/accept/:id', sessionHandler.isStylist, sessionHandler.isApprovedStylist, stylistHandler.acceptAppointmentById);
 
     router.put('/availability', sessionHandler.isStylist, stylistHandler.updateAvailabilityHours);
 

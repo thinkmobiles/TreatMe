@@ -1,9 +1,5 @@
 
-var validator = require('validator');
-var uuid = require('uuid');
 var badRequests = require('../helpers/badRequests');
-var crypto = require('crypto');
-var SessionHandler = require('./sessions');
 var async = require('async');
 var ImageHandler = require('./image');
 var CONSTANTS = require('../constants');

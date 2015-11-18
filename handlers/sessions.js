@@ -9,7 +9,7 @@ var Session = function (db) {
     function checkApproval(userId, callback) {
 
         User
-            .findOne({_id: userId}, {approved: 1}, function (err, resultModel) {
+            .findOne({_id: userId, role: CONSTANTS.USER_ROLE.STYLIST}, {approved: 1}, function (err, resultModel) {
 
                 if (err) {
                     return callback(err);
@@ -64,18 +64,7 @@ var Session = function (db) {
 
             if (req.session.role === CONSTANTS.USER_ROLE.STYLIST) {
 
-                checkApproval(req.session.uId, function (err, approved) {
-                    if (err) {
-                        return next(err);
-                    }
-
-                    if (!approved) {
-                        err = new Error('Your account must be approved by admin');
-                        err.status = 403;
-                        return next(err);
-                    }
-                    next();
-                });
+              next();
 
             } else {
                 next(badRequests.AccessError({'message': 'Only Stylist does have permissions for do this'}));
@@ -161,22 +150,7 @@ var Session = function (db) {
                 return next(err);
             }
 
-
-            if (req.session.role === CONSTANTS.USER_ROLE.STYLIST) {
-                checkApproval(req.session.uId, function (err, approved) {
-                    if (err) {
-                        return next(err);
-                    }
-
-                    if (!approved) {
-                        err = new Error('Your account must be approved by admin');
-                        err.status = 403;
-                        return next(err);
-                    }
-
-                    next();
-                });
-            } else if (req.session.role === CONSTANTS.USER_ROLE.ADMIN) {
+            if (req.session.role === CONSTANTS.USER_ROLE.STYLIST || req.session.role === CONSTANTS.USER_ROLE.ADMIN) {
                 next()
             } else {
                 next(badRequests.AccessError({'message': 'Only Stylist or Admin does have permissions for do this'}));
@@ -193,6 +167,21 @@ var Session = function (db) {
 
             next();
         })
+    };
+
+    this.isApprovedStylist = function(req, res, next){
+        checkApproval(req.session.uId, function (err, approved) {
+            if (err) {
+                return next(err);
+            }
+
+            if (!approved) {
+                err = new Error('Your account must be approved by admin');
+                err.status = 403;
+                return next(err);
+            }
+            next();
+        });
     }
 };
 

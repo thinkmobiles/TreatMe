@@ -8,12 +8,13 @@ module.exports = function (db) {
 
     var Subscription = new Schema({
         client: {
-            type: ObjectId,
-            ref: 'User'
+            id: { type: ObjectId, ref: 'User'},
+            firstName: String,
+            lastName: String
         },
         subscriptionType: {
-            type: ObjectId,
-            ref: 'SubscriptionType'
+            id: { type: ObjectId, ref: 'SubscriptionType'},
+            name: String
         },
         price: Number, //for current user, maybe with discount
         purchaseDate: {
