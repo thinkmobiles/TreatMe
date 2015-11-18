@@ -26,21 +26,7 @@
         <input type="text" class="state" value=" <%= user.salonInfo.state %> ">
         <input type="text" class="country" value=" <%= user.salonInfo.country %> ">
     </div>
-        <div class="services" >
-            <p>These services and price were agreed with stylist based on negotiations</br>
-                <span>Services available*</span>
-                <span>Service Price*</span>
-            </p>
 
-            <% _.forEach(user.services, function (service) {%>
-            <% var name = service.name %>
-            <input type="checkbox" id="<%= name %>" checked="checked" data-id="<%= service.id %>" >
-            <label for="<%= name %>"><%= name %></label>
-            <input type="text" value="<%= service.price %>"></br>
-            <%});%>
-
-            <p>*To be filled in by TreatMe team based on negotiations with stylist</p>
-        </div>
     <button class="saveBtn">Save</button>
 
 

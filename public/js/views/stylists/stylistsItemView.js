@@ -3,18 +3,21 @@
 define([
     'models/stylistModel',
     'views/services/servicesView',
-    'text!templates/stylists/itemTemplate.html',
+    //'text!templates/stylists/itemTemplate.html',
+    'text!templates/stylists/stylistsItemTemplate.html',
     'text!templates/customElements/servicesTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html',
-    'views/stylists/stylistsEditView',
-    'views/stylists/stylistsClientsView'
-], function (StylistModel, ServicesView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, EditView, StylistsClientsView) {
+    //'views/stylists/stylistsEditView',
+    //'views/stylists/stylistsClientsView',
+    'text!templates/stylists/editStylistTemplate.html'
+], function (StylistModel, ServicesView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
 
     var View = Backbone.View.extend({
 
         el: '#wrapper',
 
-        mainTemplate: _.template(MainTemplate),
+        mainTemplate: _.template(MainTemplate),  //TODO
+        itemTemplate: _.template(EditStylistTemplate),
 
         servicesTemplate: _.template(ServicesTemplate),
 
@@ -26,46 +29,24 @@ define([
         },
 
         initialize: function (options) {
-            var self = this;
-            var userId = (options && options.id) ? options.id : null;
+            var path = options.type;
 
-            if (!userId) {
-                this.addStylist(options);
-                /*self.model = new StylistModel();
-                 App.Breadcrumbs.reset([{name: 'New Applications', path: '#stylists'}, {
-                 name: 'Add Application',
-                 path: '#stylists/add'
-                 }]);
-                 self.model.on('invalid', self.handleModelValidationError);
+            this.path = path;
 
-                 return self.render();*/
+            if (options.id) {
+                this.editStylist(options);
             } else {
-                self.model = new StylistModel({_id: userId});
-                self.model.fetch({
-                    success: function (model, JSONmodel, options) {
-                        App.Breadcrumbs.reset([{
-                            name: 'Stylist List',
-                            path: '#stylists'
-                        }, {
-                            name: JSONmodel.personalInfo.firstName + ' ' + JSONmodel.personalInfo.lastName,
-                            path: '#stylists/' + userId
-                        }]);
-
-                        self.model.on('invalid', self.handleModelValidationError);
-
-                        return self.render(JSONmodel);
-                    },
-                    error  : self.handleModelError
-
-                });
-
+                this.addStylist(options);
             }
 
+            if (path === 'newApplications') {
+                App.menu.select('#nav_new_applications');
+            } else {
+                App.menu.select('#nav_stylists');
+            }
         },
 
         addStylist: function (options) {
-            var self = this;
-
             App.Breadcrumbs.reset([{
                 name: 'New Applications',
                 path: '#newApplications'
@@ -76,46 +57,51 @@ define([
 
             App.menu.select('#nav_new_applications');
 
-            self.model = new StylistModel();
-            self.model.on('invalid', self.handleModelValidationError);
+            this.model = new StylistModel();
+            this.model.on('invalid', this.handleModelValidationError);
 
-            return self.render();
+            this.render();
+        },
+
+        editStylist: function (options) { // load edit for stylists and new applications.
+            var userId = options.id;
+            var model = new StylistModel({_id: userId});
+
+            model.on('sync', this.renderUserInfo, this);
+            model.on('error', this.handleModelError, this);
+            model.on('invalid', this.handleModelValidationError, this);
+
+            model.fetch();
+
+            this.model = model;
+            this.render();
         },
 
         render: function () {
-            var model = this.model.toJSON();
+            var opts = {
+                path: this.path
+            };
 
-            this.$el.html(this.mainTemplate({user: model}));
+            this.$el.html(this.mainTemplate(opts));
 
-            /*
-            user
-                ? $el.html(self.previewStylistTemplate({user: user}))
-                : $el.html(self.mainTemplate({user: {}}));
-            */
-
-            //this.stylistsClientsView = new StylistsClientsView({id: user._id});
-            //self.afterRender(user);
             return this;
         },
 
-        afterRender: function (user) {
-            var self = this;
+        getUserName: function (user) {
+            return user.personalInfo.firstName + ' ' + user.personalInfo.lastName;
+        },
 
-            if (!user) {
-                $.ajax({
-                    type       : 'GET',
-                    dataType   : 'json',
-                    contentType: 'application/json',
-                    url        : '/admin/services',
-                    success    : function (data) {
-                        serviceContainer.html(self.servicesTemplate({services: data}));
-                    },
-                    error      : function (err) {
-                        alert(err);
-                    }
-                })
-            }
+        renderUserInfo: function () {
+            var user = this.model.toJSON();
+            //var userName = this.getUserName(user);
+            var $el = this.$el;
 
+            $el.find('.info').html(this.itemTemplate({user: user}));
+            //$el.find('.userName').html(userName);
+
+            //this.updateNavigation(user);
+
+            return this;
         },
 
         prepareSaveData: function (callback) {

@@ -11,22 +11,24 @@ define([
         topBarView  : null,
 
         routes: {
-            "clients/:id/edit"          :  "clientsEdit",
-            "clients/add"               :  "clientsAddDetails",
-            "clients/:id"               :  "clientsDetails",
-            "login(/:type/*value)"      :  "login",
-            "signup"                    :  "signup",
-            "dashboard"                 :  "dashboard",
-            //"newApplications/:id"       :  "newApplicationDetails",
-            "newApplications/add"       :  'stylistDetails', //"newApplicationDetails",
-            //"newApplications/:id"       :  "stylistDetails",
-            "pendingRequests/add": "addPendingRequest",
-            "pendingRequests/:id": "pendingRequestDetails",
-            "stylists/add"              :  'stylistDetails',//"addStylists",
-            //"stylists/:id"              :  "stylistDetails",
-            "stylists/edit/:id"         :  "editStylistDetails",
-            "gallery"                   :  "gallery",
-            ":type/:id":  "stylistDetails",    //newApplications, stylists
+            "clients/:id/edit"          : "clientsEdit",
+            "clients/add"               : "clientsAddDetails",
+            "clients/:id"               : "clientsDetails",
+            "login(/:type/*value)"      : "login",
+            "signup"                    : "signup",
+            "dashboard"                 : "dashboard",
+            //"newApplications/:id"       : "newApplicationDetails",
+            //"newApplications/add"       : 'stylistDetails', //"newApplicationDetails",
+            //"newApplications/:id"       : "stylistDetails",
+            "pendingRequests/add"       : "addPendingRequest",
+            "pendingRequests/:id"       : "pendingRequestDetails",
+            //"stylists/add"              : 'stylistDetails',//"addStylists",
+            //"stylists/:id"              : "stylistDetails",
+            //"stylists/:id/edit"         : "editStylistDetails",
+            "gallery"                   : "gallery",
+            ":type/add"                 : "showItemView",       //newApplications, stylists
+            ":type/:id/edit"            : "showItemView",       //newApplications, stylists
+            ":type/:id"                 : "showDetailsView",    //newApplications, stylists
             ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/search=:search)":  "list",
             "*any"                      :  "any"
         },
@@ -138,7 +140,7 @@ define([
 
             this.loadWrapperView(type, options, REDIRECT.whenNOTAuthorized);
         },
-        
+
         gallery: function () {
             this.loadWrapperView('gallery', null, REDIRECT.whenNOTAuthorized);
         },
@@ -147,7 +149,7 @@ define([
             this.loadWrapperView('stylists', {}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
-        stylistDetails: function (type, id) {
+        showDetailsView: function (type, id) {
             var options = {
                 type: type,
                 id: id
@@ -158,6 +160,22 @@ define([
 
         editStylistDetails: function (id) {
             this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Edit');
+        },
+
+        showItemView: function (type, id) {
+            var options = {
+                type: type,
+                id: id
+            };
+            var path;
+
+            if (type === 'newApplications') {
+                path = 'stylists'
+            } else {
+                path = type;
+            }
+
+            this.loadWrapperView(path, options, REDIRECT.whenNOTAuthorized, 'Item');
         }
 
     });

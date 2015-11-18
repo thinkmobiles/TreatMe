@@ -2,7 +2,7 @@
 
 define([
     'models/stylistModel',
-    'text!templates/stylists/stylistsItemTemplate.html',
+    'text!templates/stylists/stylistsDetailsTemplate.html',
     'text!templates/newApplications/itemTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html'
 ], function (StylistModel, MainTemplate, ItemTemplate, StylistsItemTemplate) {
@@ -16,16 +16,15 @@ define([
         //itemTemplate: _.template(ItemTemplate),
 
         events: {
-            "click .saveBtn": "saveStylist",
-            //"click #editBtn": "edit",
-            "click #acceptBtn": "saveStylist",
-            "click #removeBtn": "removeStylist"
+            "click .saveBtn"  : 'saveStylist',
+            "click #editBtn"  : 'edit',
+            "click #acceptBtn": 'saveStylist',
+            "click #removeBtn": 'removeStylist'
         },
 
         initialize: function (options) {
             var userId = options.id;
             var path = options.type;
-            var self = this;
             var model;
 
             if (path === 'newApplications') {
@@ -42,39 +41,32 @@ define([
                 App.menu.select('#nav_stylists');
             }
 
+            model = new StylistModel({_id: userId});
+
+            model.on('sync', this.renderUserInfo, this);
+            model.on('error', this.handleModelError, this);
+            model.on('invalid', this.handleModelValidationError, this);
+
+            this.model = model;
             this.path = path;
             this.render();
 
-            model = new StylistModel({_id: userId});
-            model.fetch({
-                success: function (model) {
-                    self.model = model;
-                    self.renderUserInfo();
-                },
-                error: self.handleModelError
-            });
-            model.on('invalid', self.handleModelValidationError);
+            model.fetch();
         },
 
         render: function () {
-            /*var self = this;
-             var $el = self.$el;
-             var user = self.model.toJSON();
-
-             $('.searchBlock').html('');
-             $el.html(self.mainTemplate({user: user}));
-             */
             var opts = {
                 path: this.path
             };
+
             this.$el.html(this.mainTemplate(opts));
 
             return this;
         },
 
-        renderUserInfo: function() {
+        renderUserInfo: function () {
             var user = this.model.toJSON();
-            var userName = user.personalInfo.firstName + ' ' + user.personalInfo.lastName;
+            var userName = this.getUserName(user);
             var createdAt = new Date(user.createdAt).toLocaleDateString();
             var $el = this.$el;
 
@@ -82,14 +74,32 @@ define([
             $el.find('.userName').html(userName);
             $el.find('.calendar').html(createdAt);
 
+            this.updateNavigation(user);
+
             return this;
         },
 
-        afterRender: function () {
-            var navContainer = $('.sidebar-menu');
+        getUserName: function (user) {
+            return user.personalInfo.firstName + ' ' + user.personalInfo.lastName;
+        },
 
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_new_applications').addClass('active')
+        updateNavigation: function (user) {
+            if (user.approved) {
+                App.Breadcrumbs.reset([{
+                    name: 'Stylist List',
+                    path: '#stylists'
+                }, {
+                    name: this.getUserName(user),
+                    path: '#stylists/' + user._id
+                }]);
+            }
+        },
+
+        edit: function (e) {
+            var id = this.model.id;
+            var url = this.path + '/' + id + '/edit';
+
+            Backbone.history.navigate(url, {trigger: true});
         },
 
         prepareSaveData: function (callback) {
@@ -144,7 +154,7 @@ define([
                     country      : country,
                     licenseNumber: license
                 },
-                services: services/*,
+                services    : services/*,
                  approved: true*/
             };
 
@@ -167,7 +177,7 @@ define([
                         console.log('success created');
                         window.location.hash = 'newApplications';
                     },
-                    error: self.handleModelError
+                    error  : self.handleModelError
                     /*error: function (model, response, options) {
                      var errMessage = response.responseJSON.error;
                      self.handleError(errMessage);
