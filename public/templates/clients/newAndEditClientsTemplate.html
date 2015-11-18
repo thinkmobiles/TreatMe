@@ -53,12 +53,12 @@
         <span>Add package that client would like to book</span>
 
         <p>Package*</p>
-
-
-        <input type="checkbox" id="<% %>" data-id="" >
-        <input type="checkbox" id="<% %>" data-id="" >
-        <input type="checkbox" id="<% %>" data-id="" >
-
+        <% item.currentSubscriptions.forEach(function (item) {%>
+        <tr class="item" data-id="<%= item._id%>">
+            <td><input type="checkbox" class="checkItem"></td>
+            <td><%= item.package %></td>
+        </tr>
+        <%});%>
         <p>*To be filled in by TreatMe team based on negotiations with client</p>
 
     </div>

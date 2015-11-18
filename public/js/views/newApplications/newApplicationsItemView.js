@@ -2,15 +2,8 @@
 
 define([
     'models/stylistModel',
-<<<<<<< Updated upstream
-    'text!templates/stylists/stylistsItemTemplate.html',
     'text!templates/newApplications/itemTemplate.html'
-], function (StylistModel, MainTemplate, ItemTemplate) {
-=======
-    'views/newApplications/newApplicationsServiceView',
-    'text!templates/newApplications/itemTemplate.html'
-], function (StylistModel, ApplicationsServiceView, MainTemplate) {
->>>>>>> Stashed changes
+], function (StylistModel, MainTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -50,8 +43,6 @@ define([
                     error: self.handleModelError
                 });
             }
-
-            this.serviceApplications = new ApplicationsServiceView();
 
         },
 

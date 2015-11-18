@@ -2,10 +2,11 @@
 
 define([
     'models/stylistModel',
+    'views/newApplications/newApplicationsServiceView',
     'text!templates/stylists/stylistsDetailsTemplate.html',
     'text!templates/newApplications/itemTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html'
-], function (StylistModel, MainTemplate, ItemTemplate, StylistsItemTemplate) {
+], function (StylistModel, ApplicationsServiceView, MainTemplate, ItemTemplate, StylistsItemTemplate) {
 
     var View = Backbone.View.extend({
 
