@@ -575,7 +575,8 @@ body {
   padding-left: 30px;
   margin-bottom: 7px;
 }
-#acceptSelectedBtn,
+.buttons .accept,
+.buttons .delete,
 #removeSelectedBtn,
 .buttons #suspendSelectedBtn {
   border-radius: 2px;
@@ -584,34 +585,33 @@ body {
   border: none;
   text-indent: -99999px;
 }
-#acceptSelectedBtn {
+.accept {
   background: #e0e0e0 url("../images/check.png") no-repeat;
   background-position: center;
 }
+.buttons .delete,
 #removeSelectedBtn {
   background: #e0e0e0 url("../images/trash.png") no-repeat;
   background-position: center;
 }
-#acceptCurrentBtn {
+.acceptCurrentBtn {
   background: transparent url("../images/check.png") no-repeat;
 }
-#removeCurrentBtn,
-#deleteCurrentBtn,
-.deleteCurrentBtn {
+.deleteCurrentBtn,
+.removeCurrentBtn {
   background: transparent url("../images/trash.png") no-repeat;
 }
 .buttons #suspendSelectedBtn {
   background: #e0e0e0 url("../images/ban.png") no-repeat;
   background-position: center;
 }
-#suspendCurrentBtn,
 .suspendCurrentBtn {
   background: transparent url("../images/ban.png") no-repeat;
 }
-#removeCurrentBtn,
-#acceptCurrentBtn,
-#deleteCurrentBtn,
-#suspendCurrentBtn,
+.delete,
+.acceptCurrentBtn,
+.deleteCurrentBtn,
+.suspendCurrentBtn,
 .suspendCurrentBtn,
 .deleteCurrentBtn {
   width: 50px;
@@ -619,7 +619,7 @@ body {
   text-indent: -99999px;
   background-position: center;
 }
-a.addApp,
+a.add,
 button#addBtn {
   border-radius: 2px;
   background: #2175cc url("../images/plus.png") no-repeat;
@@ -634,8 +634,7 @@ button#addBtn {
   text-transform: uppercase;
 }
 button#editBtn,
-button.edit,
-#editSelectedBtn {
+.editSelectedBtn {
   font-size: 18px;
   color: #fff;
   line-height: 1.111;
@@ -647,7 +646,7 @@ button.edit,
   background-position: 26px 7px;
   text-align: left;
 }
-button#editBtn {
+button.editBtn {
   margin-right: 40px;
 }
 a#addClient {
@@ -682,10 +681,7 @@ a.edit,
   display: inline-block;
 }
 #removeBtn,
-button.delete,
-button.suspend,
-#acceptBtn,
-#suspendSelectedBtn {
+#acceptBtn {
   border-radius: 5px;
   width: 120px;
   height: 40px;
@@ -698,13 +694,11 @@ button.suspend,
   background: #00a651 url("../images/check-white.png") no-repeat;
   background-position: 14px center;
 }
-#removeBtn,
-button.delete {
+#removeBtn {
   background: #ed1c24 url("../images/trash-white.png") no-repeat;
   background-position: 14px center;
 }
-button.suspend,
-#suspendSelectedBtn {
+p#suspendSelectedBtn {
   background: #ed1c24 url("../images/ban-white.png") no-repeat;
   background-position: 14px center;
 }
@@ -879,4 +873,14 @@ table.services th {
 }
 table.services tbody td {
   font-weight: bold;
+}
+input[type=text] {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  height: 58px;
+  font-size: 20px;
+  padding-left: 30px;
+  width: 300px;
+  display: inline-block;
+  margin-right: 20px;
 }

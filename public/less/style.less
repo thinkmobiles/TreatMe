@@ -205,7 +205,8 @@ body{
   padding-left: 30px;
   margin-bottom: 7px;
 }
-#acceptSelectedBtn,
+.buttons .accept,
+.buttons .delete,
 #removeSelectedBtn,
 .buttons #suspendSelectedBtn{
   border-radius: 2px;
@@ -214,34 +215,33 @@ body{
   border: none;
   text-indent: -99999px;
 }
-#acceptSelectedBtn{
+.accept{
  .i("check.png", #E0E0E0);
   background-position: center;
 }
-#removeSelectedBtn{
+.buttons .delete,
+#removeSelectedBtn {
   .i("trash.png", #E0E0E0);
   background-position: center;
 }
-#acceptCurrentBtn{
+.acceptCurrentBtn{
   .i("check.png", transparent);
 }
-#removeCurrentBtn,
-#deleteCurrentBtn,
-.deleteCurrentBtn{
+.deleteCurrentBtn,
+.removeCurrentBtn {
   .i("trash.png", transparent);
 }
 .buttons #suspendSelectedBtn{
   .i("ban.png", #E0E0E0);
   background-position: center;
 }
-#suspendCurrentBtn,
 .suspendCurrentBtn{
   .i("ban.png", transparent);
 }
-#removeCurrentBtn,
-#acceptCurrentBtn,
-#deleteCurrentBtn,
-#suspendCurrentBtn,
+.delete,
+.acceptCurrentBtn,
+.deleteCurrentBtn,
+.suspendCurrentBtn,
 .suspendCurrentBtn,
 .deleteCurrentBtn{
   width: 50px;
@@ -249,7 +249,7 @@ body{
   text-indent: -99999px;
   background-position: center;
 }
-a.addApp, button#addBtn {
+a.add, button#addBtn {
   border-radius: 2px;
   .i('plus.png', @mainColor);
   background-position: 15px center;
@@ -263,8 +263,7 @@ a.addApp, button#addBtn {
   text-transform: uppercase;
 }
 button#editBtn,
-button.edit,
-#editSelectedBtn
+.editSelectedBtn
 {
   font-size: 18px;
   color: #fff;
@@ -277,7 +276,7 @@ button.edit,
   background-position: 26px 7px;
   text-align: left;
 }
-button#editBtn{
+button.editBtn{
   margin-right: 40px;
 }
 a#addClient{
@@ -311,10 +310,7 @@ a.edit, .editBtn{
   display: inline-block;
 }
 #removeBtn,
-button.delete,
-button.suspend,
-#acceptBtn,
-#suspendSelectedBtn{
+#acceptBtn{
   border-radius: 5px;
   width: 120px;
   height: 40px;
@@ -327,13 +323,11 @@ button.suspend,
   .i('check-white.png', #00A651);
   background-position: 14px center;
 }
-#removeBtn,
-button.delete{
+#removeBtn{
   .i('trash-white.png', #ED1C24);
   background-position: 14px center;
 }
-button.suspend,
-#suspendSelectedBtn{
+p#suspendSelectedBtn{
   .i('ban-white.png', #ED1C24);
   background-position: 14px center;
 }
@@ -512,4 +506,15 @@ table.services{
   tbody td{
     font-weight: bold;
   }
+}
+input[type=text]{
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  height: 58px;
+  font-size: 20px;
+  padding-left: 30px;
+  width: 300px;
+  display: inline-block;
+  margin-right: 20px;
+
 }
