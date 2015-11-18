@@ -466,7 +466,7 @@ var AdminHandler = function (app, db) {
 
                 service.serviceId = ObjectId(service.serviceId);
                 service.stylist = uId;
-                service.approved = true;
+                service.approved = false;
 
                 return service;
             });
@@ -1072,25 +1072,45 @@ var AdminHandler = function (app, db) {
             criteria._id = id;
         }
 
-        ServiceType
-            .find(criteria, {__v: 0})
-            .exec(function (err, resultModel) {
+        async
+            .parallel({
+                count: function (cb){
+                    ServiceType
+                        .count(criteria, cb);
+                },
 
-                if (err) {
+                serviceColl: function(cb){
+                    ServiceType
+                        .find(criteria, {__v: 0})
+                        .exec(function (err, resultModel) {
+
+                            if (err) {
+                                return cb(err);
+                            }
+
+                            if (!resultModel.length) {
+                                return cb(null, [])
+                            }
+
+                            for (var i = resultModel.length; i--;) {
+                                (resultModel[i]).logo = image.computeUrl((resultModel[i]).logo, CONSTANTS.BUCKET.IMAGES);
+                            }
+
+                            cb(null, resultModel);
+
+                        });
+                }
+            }, function(err, result){
+
+                if (err){
                     return next(err);
                 }
 
-                if (!resultModel.length) {
-                    return res.status(200).send([]);
-                }
-
-                for (var i = resultModel.length; i--;) {
-                    (resultModel[i]).logo = image.computeUrl((resultModel[i]).logo, CONSTANTS.BUCKET.IMAGES);
-                }
-
-                res.status(200).send(resultModel);
+                res.status(200).send({total: result.count, data: result.serviceColl});
 
             });
+
+
 
     };
 
@@ -2988,7 +3008,8 @@ var AdminHandler = function (app, db) {
                     $match: {
                         bookingDate: {$gte: startOfYear},
                         status: {
-                            $ne: CONSTANTS.STATUSES.APPOINTMENT.CREATED}
+                            $ne: CONSTANTS.STATUSES.APPOINTMENT.CREATED
+                        }
                     }
                 },
                 {
