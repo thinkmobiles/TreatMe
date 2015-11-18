@@ -2154,11 +2154,11 @@ var AdminHandler = function (app, db) {
             sortParam = sortParam.toLowerCase()
         }
 
-        if (sortParam && sortParam !== 'name' && sortParam !== 'email') {
+        if (sortParam && sortParam !== 'client' && sortParam !== 'email') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'name' || !sortParam) {
+        if (sortParam === 'client' || !sortParam) {
             sortObj['personalInfo.firstName'] = order;
             sortObj['personalInfo.lastName'] = order;
         }
@@ -2660,15 +2660,19 @@ var AdminHandler = function (app, db) {
             return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
         }
 
-        if (sortParam && sortParam !== 'Date' && sortParam !== 'Package') {
+        if (sortParam){
+            sortParam = sortParam.toLowerCase();
+        }
+
+        if (sortParam && sortParam !== 'date' && sortParam !== 'package') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'Date' || !sortParam) {
+        if (sortParam === 'date' || !sortParam) {
             sortObj.purchaseDate = order;
         }
 
-        if (sortParam === 'Package') {
+        if (sortParam === 'package') {
             sortObj['subscriptionType.name'] = order;
         }
 
