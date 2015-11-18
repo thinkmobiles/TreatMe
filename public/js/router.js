@@ -17,12 +17,14 @@ define([
             "login(/:type/*value)"      :  "login",
             "signup"                    :  "signup",
             "dashboard"                 :  "dashboard",
+            //"newApplications/:id"       :  "newApplicationDetails",
             "newApplications/add"       :  'stylistDetails', //"newApplicationDetails",
-            "newApplications/:id"       :  "newApplicationDetails",
+            //"newApplications/:id"       :  "stylistDetails",
             "stylists/add"              :  'stylistDetails',//"addStylists",
-            "stylists/:id"              :  "stylistDetails",
+            //"stylists/:id"              :  "stylistDetails",
             "stylists/edit/:id"         :  "editStylistDetails",
             "gallery"                   :  "gallery",
+            ":type/:id":  "stylistDetails",
             ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/search=:search)":  "list",
             "*any"                      :  "any"
         },
@@ -135,12 +137,13 @@ define([
             this.loadWrapperView('stylists', {}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
-        stylistDetails: function (id) {
+        stylistDetails: function (type, id) {
             var options = {
+                type: type,
                 id: id
             };
 
-            this.loadWrapperView('stylists', options, REDIRECT.whenNOTAuthorized, 'Item');
+            this.loadWrapperView('stylists', options, REDIRECT.whenNOTAuthorized, 'Details');
         },
 
         editStylistDetails: function (id) {

@@ -3,59 +3,84 @@
 define([
     'models/stylistModel',
     'text!templates/stylists/stylistsItemTemplate.html',
-    'text!templates/newApplications/itemTemplate.html'
-], function (StylistModel, MainTemplate, ItemTemplate) {
+    'text!templates/newApplications/itemTemplate.html',
+    'text!templates/stylists/previewStylistTemplate.html'
+], function (StylistModel, MainTemplate, ItemTemplate, StylistsItemTemplate) {
 
     var View = Backbone.View.extend({
 
         el: '#wrapper',
 
         mainTemplate: _.template(MainTemplate),
+        itemTemplate: _.template(StylistsItemTemplate),
         //itemTemplate: _.template(ItemTemplate),
 
         events: {
             "click .saveBtn": "saveStylist",
-            "click #editBtn": "edit",
+            //"click #editBtn": "edit",
             "click #acceptBtn": "saveStylist",
             "click #removeBtn": "removeStylist"
         },
 
         initialize: function (options) {
+            var userId = options.id;
+            var path = options.type;
             var self = this;
-            var userId = (options && options.id) ? options.id: null;
             var model;
 
-            if (!userId) {
-                this.model = new StylistModel();
-                App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/add'}]);
-                self.model.on('invalid', self.handleModelValidationError);
-                this.render();
-
+            if (path === 'newApplications') {
+                App.Breadcrumbs.reset([{
+                    name: 'New Applications',
+                    path: '#newApplications'
+                }]);
+                App.menu.select('#nav_new_applications');
             } else {
-                App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/' + userId}]);
-                model = new StylistModel({_id: userId});
-                model.on('invalid', self.handleModelValidationError);
-                model.fetch({
-                    success: function (model) {
-                        self.model = model;
-                        self.render();
-                    },
-                    error: self.handleModelError
-                });
+                App.Breadcrumbs.reset([{
+                    name: 'Stylist List',
+                    path: '#stylists'
+                }]);
+                App.menu.select('#nav_stylists');
             }
 
+            this.path = path;
+            this.render();
+
+            model = new StylistModel({_id: userId});
+            model.fetch({
+                success: function (model) {
+                    self.model = model;
+                    self.renderUserInfo();
+                },
+                error: self.handleModelError
+            });
+            model.on('invalid', self.handleModelValidationError);
         },
 
         render: function () {
             /*var self = this;
-            var $el = self.$el;
-            var user = self.model.toJSON();
+             var $el = self.$el;
+             var user = self.model.toJSON();
 
-            $('.searchBlock').html('');
-            $el.html(self.mainTemplate({user: user}));
-            */
+             $('.searchBlock').html('');
+             $el.html(self.mainTemplate({user: user}));
+             */
+            var opts = {
+                path: this.path
+            };
+            this.$el.html(this.mainTemplate(opts));
 
-            this.$el.html(this.mainTemplate());
+            return this;
+        },
+
+        renderUserInfo: function() {
+            var user = this.model.toJSON();
+            var userName = user.personalInfo.firstName + ' ' + user.personalInfo.lastName;
+            var createdAt = new Date(user.createdAt).toLocaleDateString();
+            var $el = this.$el;
+
+            $el.find('.info').html(this.itemTemplate({user: user}));
+            $el.find('.userName').html(userName);
+            $el.find('.calendar').html(createdAt);
 
             return this;
         },
@@ -120,7 +145,7 @@ define([
                     licenseNumber: license
                 },
                 services: services/*,
-                approved: true*/
+                 approved: true*/
             };
 
             callback(null, data);
@@ -161,11 +186,6 @@ define([
                 console.log('success removed');
                 window.location.hash = 'newApplications';
             });
-        },
-
-        edit : function () {
-            console.log('Fire edit event!');
-            $('input:disabled').prop('disabled', false);
         }
 
     });
