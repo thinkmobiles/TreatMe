@@ -49,7 +49,7 @@ module.exports = function (app, db) {
     app.delete('/avatar/:id?', sessionHandler.authenticatedUser, user.removeAvatar);
     app.put('/coordinates', sessionHandler.authenticatedUser, user.updateLocation);
 
-    app.get('/service/:stylistId?', sessionHandler.stylistOrAdmin, user.getStylistServices);
+    app.get('/service/:stylistId?', sessionHandler.isAdmin, user.getStylistServices);
 
     app.get('/gallery/:id?', sessionHandler.authenticatedUser, user.getGalleryPhotos);
     app.delete('/gallery/:id', sessionHandler.clientOrStylist, user.removePhotoFromGallery);
@@ -57,9 +57,11 @@ module.exports = function (app, db) {
     app.get('/appointment/:id?', sessionHandler.authenticatedUser, user.getAppointments); //can accept query [&status=Pending //or Booked &page=2&limit=20] status for admin only
     app.post('/appointment/cancel',sessionHandler.clientOrStylist, user.cancelByUser);
 
-    app.get('/subscriptionTypes/:id?', sessionHandler.clientOrAdmin, subscriptionHandler.getSubscriptionTypes);
-    //app.post('/subscriptionTypes', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.createSubscriptionType);
-    //app.put('/subscriptionTypes/:id', sessionHandler.authenticatedUser, sessionHandler.isAdmin, subscriptionHandler.updateSubscriptionType);
+    //CRUD SubscriptionTypes
+    app.get('/subscriptionType/:id?', sessionHandler.clientOrAdmin, subscriptionHandler.getSubscriptionTypes);
+    app.post('/subscriptionType/', sessionHandler.isAdmin, subscriptionHandler.addSubscriptionType);
+    app.put('/subscriptionType/:id', sessionHandler.isAdmin, subscriptionHandler.updateSubscriptionType);
+    app.delete('/subscriptionType/:id', sessionHandler.isAdmin, subscriptionHandler.removeSubscriptionType);
 
 
     function notFound(req, res, next) {

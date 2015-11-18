@@ -54,7 +54,8 @@ module.exports = function (db) {
             }
         },
         payments: {
-          customerId: {type: String, default: null}
+            customerId: {type: String, default: null},
+            recipientId: {type: String, default: null}
         },
         loc: {
             type: {
