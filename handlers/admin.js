@@ -2918,13 +2918,12 @@ var AdminHandler = function (app, db) {
     }
 
     function getBeginWeek(d) {
-        d = new Date(d);
-        var day = d.getDay(),
-            diff = d.getDate() - day + (day == 0 ? -6 : 1); // adjust when day is sunday
+        var day = d.getDay();
+        var diff = d.getDate() - day + (day === 0 ? -6 : 1);
         return new Date(d.setDate(diff));
     }
 
-    function getBeginmonth(d){
+    function getBeginMonth(d){
         return new Date(d.getFullYear(), d.getMonth(), 1);
     }
 
@@ -2942,9 +2941,12 @@ var AdminHandler = function (app, db) {
             }
                 break;
             case 'm': {
-                date = getBeginmonth(date);
+                date = getBeginMonth(date);
             }
                 break;
+            default: {
+                date = setZero(date);
+            }
         }
 
         async
@@ -2982,7 +2984,13 @@ var AdminHandler = function (app, db) {
 
         Appointment
             .aggregate([
-                {$match: {bookingDate: {$gte: startOfYear}, status: {$ne: CONSTANTS.STATUSES.APPOINTMENT.CREATED}}},
+                {
+                    $match: {
+                        bookingDate: {$gte: startOfYear},
+                        status: {
+                            $ne: CONSTANTS.STATUSES.APPOINTMENT.CREATED}
+                    }
+                },
                 {
                     $group: {
                         _id: {$month: '$bookingDate'},
