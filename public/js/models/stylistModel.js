@@ -7,14 +7,10 @@ define([
         validator: validator,
         urlRoot : '/admin/stylist',
         idAttribute: "_id",
-        /*defaults: {
-            email: '',
-            personalInfo: {
-                firstName: '',
-                lastName: ''
-            },
+        defaults: {
+            personalInfo: {},
             salonInfo: {}
-        },*/
+        },
         validate: function (attrs, options) {
             var errors = [];
             var personalInfo = attrs.personalInfo;
@@ -228,7 +224,7 @@ define([
                 success: callback,
                 error: this.handleModelError //TODO
             })
-        },
+        }/*,
 
         toJSON: function () {
             var json = Backbone.Model.prototype.toJSON.apply(this, arguments);
@@ -242,7 +238,7 @@ define([
             }
 
             return json;
-        }
+        }*/
     });
 
     return Model;
