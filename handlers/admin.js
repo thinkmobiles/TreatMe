@@ -2959,7 +2959,7 @@ var AdminHandler = function (app, db) {
 
                 appointmentBooked: function(cb){
                     Appointment
-                        .count({requestDate: {$gte: date}, status: CONSTANTS.STATUSES.APPOINTMENT.BOOKED})
+                        .count({requestDate: {$gte: date}, status: {$ne: CONSTANTS.STATUSES.APPOINTMENT.CREATED}})
                         .exec(cb);
                 },
 
