@@ -13,10 +13,13 @@ define([
         },
         validate: function (attrs, options) {
             var errors = [];
-            var personalInfo = attrs.personalInfo;
             var email = attrs.email;
-            var firstName = attrs.firstName;
-            var lastName = attrs.lastName;
+            var personalInfo = attrs.personalInfo;
+            var firstName = personalInfo.firstName;
+            var lastName = personalInfo.lastName;
+            var personalPhone = personalInfo.phone;
+
+            console.log(attrs);
 
             /*  --- email --- */
             if (!email) {
@@ -28,7 +31,19 @@ define([
             }
 
             /* --- first name --- */
-            // ...
+            if (!firstName) {
+                errors.push({name: 'firstName', message: 'First Name is required!'});
+            }
+
+            /* --- last name --- */
+            if (!lastName) {
+                errors.push({name: 'lastName', message: 'Last Name is required!'});
+            }
+
+            /* --- phone number --- */
+            if (!personalPhone) {
+                errors.push({name: 'personalPhone', message: 'Phone Number is required!'});
+            }
 
             return (errors.length) ? errors : false;
         },

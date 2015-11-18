@@ -58,17 +58,19 @@ define([
             App.menu.select('#nav_new_applications');
 
             var data = {
-                email: 'test_' + new Date().valueOf() + '@mail.com',
+                email       : 'test_' + new Date().valueOf() + '@mail.com',
                 personalInfo: {
-                    firstName: 'nazarovits',
-                    lastName: 'istvan'
+                    firstName : 'nazarovits',
+                    lastName  : 'istvan',
+                    phone     : '+38 093 000 0000',
+                    profession: 'profession'
                 },
-                salonInfo: {
+                salonInfo   : {
                     salonName: 'mySalon',
-                    role: 'Stylist'
+                    role     : 'Stylist'
                 }
             };
-            this.model = new StylistModel(/*data*/);
+            this.model = new StylistModel(data);
             this.model.on('invalid', this.handleModelValidationError);
 
             this.render();
@@ -170,10 +172,10 @@ define([
             var firstName = form.find('.firstName').val();
             var lastName = form.find('.lastName').val();
             var role = form.find('.role').val();
-            var phone = form.find('.phone').val();
+            var phone = form.find('.personalPhone').val();
             var salonName = form.find('.salonName').val();
             var businessRole = form.find('.businessRole').val();
-            var salonNumber = form.find('.salonNumber').val();
+            var salonPhone = form.find('.salonPhone').val();
             var salonEmail = form.find('.salonEmail').val();
             var salonAddress = form.find('.salonAddress').val() + ' ' + form.find('.salonAddress2').val();
             var license = form.find('.license').val();
@@ -199,14 +201,14 @@ define([
             data = {
                 email       : email,
                 personalInfo: {
-                    firstName  : firstName,
-                    lastName   : lastName,
-                    profession : role,
-                    phoneNumber: phone
+                    firstName : firstName,
+                    lastName  : lastName,
+                    profession: role,
+                    phone     : phone
                 },
                 salonInfo   : {
                     salonName    : salonName,
-                    phoneNumber  : salonNumber,
+                    phone        : salonPhone,
                     email        : salonEmail,
                     businessRole : businessRole,
                     address      : salonAddress,
