@@ -1579,9 +1579,9 @@ var AdminHandler = function (app, db) {
         });
     };
 
-    this.addSubscriptionType = function (req, res, next) {
+    /*this.addSubscriptionType = function (req, res, next) {
 
-        /**
+        /!**
          * __Type__ __`POST`__
          *
          * __Content-Type__ `application/json`
@@ -1609,7 +1609,7 @@ var AdminHandler = function (app, db) {
          *
          * @method addSubscriptionType
          * @instance
-         */
+         *!/
 
         var body = req.body;
         var subscriptionModel;
@@ -1649,7 +1649,7 @@ var AdminHandler = function (app, db) {
 
                 });
         });
-    };
+    };*/
 
     this.getClientPackages = function (req, res, next) {
 
@@ -1842,9 +1842,9 @@ var AdminHandler = function (app, db) {
             });
     };
 
-    this.getSubscriptionType = function (req, res, next) {
+    /*this.getSubscriptionType = function (req, res, next) {
 
-        /**
+        /!**
          * __Type__ __`GET`__
          *
          * __Content-Type__ `application/json`
@@ -1899,7 +1899,7 @@ var AdminHandler = function (app, db) {
          *
          * @method getListSubscription
          * @instance
-         */
+         *!/
 
         SubscriptionType
             .find({}, function (err, subscriptionModelsArray) {
@@ -1910,10 +1910,10 @@ var AdminHandler = function (app, db) {
                 res.status(200).send(subscriptionModelsArray);
             });
     };
+*/
+    /*this.updateSubscriptionType = function (req, res, next) {
 
-    this.updateSubscriptionType = function (req, res, next) {
-
-        /**
+        /!**
          * __Type__ __`PUT`__
          *
          * __Content-Type__ `application/json`
@@ -1945,7 +1945,7 @@ var AdminHandler = function (app, db) {
          *
          * @method updateSubscriptionType
          * @instance
-         */
+         *!/
 
         var body = req.body;
         var subscriptionTypeId = req.params.id;
@@ -2033,7 +2033,7 @@ var AdminHandler = function (app, db) {
 
     this.removeSubscriptionType = function (req, res, next) {
 
-        /**
+        /!**
          * __Type__ __`DELETE`__
          *
          * __Content-Type__ `application/json`
@@ -2057,7 +2057,7 @@ var AdminHandler = function (app, db) {
          *
          * @method updateSubscriptionType
          * @instance
-         */
+         *!/
 
 
         var subscriptionTypeId = req.params.id;
@@ -2081,7 +2081,7 @@ var AdminHandler = function (app, db) {
                         res.status(200).send({success: 'Subscription type was removed successfully'});
                     });
             });
-    };
+    };*/
 
     this.getClientList = function(req, res, next){
 
@@ -2154,11 +2154,11 @@ var AdminHandler = function (app, db) {
             sortParam = sortParam.toLowerCase()
         }
 
-        if (sortParam && sortParam !== 'name' && sortParam !== 'email') {
+        if (sortParam && sortParam !== 'client' && sortParam !== 'email') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'name' || !sortParam) {
+        if (sortParam === 'client' || !sortParam) {
             sortObj['personalInfo.firstName'] = order;
             sortObj['personalInfo.lastName'] = order;
         }
@@ -2289,9 +2289,10 @@ var AdminHandler = function (app, db) {
                             currentSubscriptions = subscriptionModelsArray.map(function(model){
                                 var modelJSON = model.toJSON();
 
-                                if (modelJSON.subscriptionType){
-                                    modelJSON.package = modelJSON.subscriptionType.name;
-                                    modelJSON.price = modelJSON.subscriptionType.price;
+                                if (modelJSON.subscriptionType && modelJSON.subscriptionType.id){
+                                    modelJSON.package = modelJSON.subscriptionType.id.name;
+                                    modelJSON.price = modelJSON.subscriptionType.id.price;
+                                    modelJSON._id = modelJSON.subscriptionType.id._id.toString();
                                 } else {
                                     modelJSON.package = 'Package was removed';
                                     modelJSON.price = '-';
@@ -2658,15 +2659,19 @@ var AdminHandler = function (app, db) {
             return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
         }
 
-        if (sortParam && sortParam !== 'Date' && sortParam !== 'Package') {
+        if (sortParam){
+            sortParam = sortParam.toLowerCase();
+        }
+
+        if (sortParam && sortParam !== 'date' && sortParam !== 'package') {
             return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
         }
 
-        if (sortParam === 'Date' || !sortParam) {
+        if (sortParam === 'date' || !sortParam) {
             sortObj.purchaseDate = order;
         }
 
-        if (sortParam === 'Package') {
+        if (sortParam === 'package') {
             sortObj['subscriptionType.name'] = order;
         }
 

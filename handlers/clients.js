@@ -74,7 +74,7 @@ var ClientsHandler = function (app, db) {
 
         Subscription
             .find({'client.id': ObjectId(clientId), expirationDate: {$gte: new Date()}})
-            .populate({path: 'subscriptionType', select: 'name price logo'})
+            .populate({path: 'subscriptionType.id'})
             .exec(function (err, subscriptionModelsArray) {
                 if (err) {
                     return next(err);
@@ -90,10 +90,14 @@ var ClientsHandler = function (app, db) {
                         }
 
                         subscriptionModelsArray.map(function (model) {
-                            allowServicesArray = allowServicesArray.concat(model.allowServices);
+                            if (model.subscriptionType && model.subscriptionType.id){
+                                allowServicesArray = allowServicesArray.concat(model.subscriptionType.id.allowServices);
+                            }
 
                             return;
                         });
+
+                        allowServicesArray = allowServicesArray.toStringObjectIds();
 
                         resultArray = serviceTypeModels.map(function (model) {
                             var modelJSON = model.toJSON();
@@ -120,9 +124,9 @@ var ClientsHandler = function (app, db) {
             });
     };
 
-    this.getCurrentSubscriptions = function (req, res, next) {
+    /*this.getCurrentSubscriptions = function (req, res, next) {
 
-        /**
+        /!**
          * __Type__ __`GET`__
          *
          * __Content-Type__ `application/json`
@@ -166,7 +170,7 @@ var ClientsHandler = function (app, db) {
          *
          * @method getCurrentSubscriptions
          * @instance
-         */
+         *!/
 
         var clientId = req.session.uId;
         var role = req.session.role;
@@ -247,7 +251,7 @@ var ClientsHandler = function (app, db) {
                     res.status(200).send(currentSubscriptions);
                 }
             });
-    };
+    };*/
 
     this.buySubscriptions = function(clientId, clientName, subscriptionIds, callback){
 
@@ -653,12 +657,14 @@ var ClientsHandler = function (app, db) {
          *  {
          *      "appointmentId":"5644a3453f00c1f81c25b548",
          *      "rate": 8,
-         *      "rateComment":"Nice maniqure"
+         *      "rateComment":"Nice maniqure",
+         *      "tip": 5
          *  }
          *
          * @param {string} appointmentId - Appointment id
          * @param {number} rate - Booking rate for appointment 0-9
          * @param {string} [rateComment] - rate comment for appointment
+         * @param {number} tip - tip payed to stylist (>=0)
          *
          * @example Response example:
          *
@@ -676,12 +682,14 @@ var ClientsHandler = function (app, db) {
         var body = req.body;
         var rateComment = '';
         var appointmentId;
+        var tip;
 
-        if (!body.appointmentId || isNaN(body.rate)) {
-            return next(badRequests.NotEnParams({reqParams: 'appointmentId and rate'}));
+        if (!body.appointmentId || isNaN(body.rate) || isNaN(body.tip)) {
+            return next(badRequests.NotEnParams({reqParams: 'appointmentId and rate and tip'}));
         }
 
         appointmentId = body.appointmentId;
+        tip = (body.tip > 0) ? body.tip : 0;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)) {
             return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
@@ -695,7 +703,8 @@ var ClientsHandler = function (app, db) {
             .findOneAndUpdate({_id: appointmentId, 'client.id': ObjectId(clientId)}, {
                 $set: {
                     rate: body.rate,
-                    rateComment: rateComment
+                    rateComment: rateComment,
+                    tip: tip
                 }
             }, function (err, appointmentModel) {
                 if (err) {
@@ -705,6 +714,8 @@ var ClientsHandler = function (app, db) {
                 if (!appointmentModel) {
                     return next(badRequests.NotFound({target: 'Appointment'}));
                 }
+
+                //TODO: write off tip from clients card
 
                 res.status(200).send({success: 'Your appointment rated successfully'});
             });
@@ -822,9 +833,7 @@ var ClientsHandler = function (app, db) {
                 }
 
                 if (!user){
-                    err = new Error('User not found');
-                    err.status = 400;
-                    return callback(err);
+                    return callback(badRequests.NotFound({target: 'User'}));
                 }
 
                 callback(null, user.payments.customerId);
