@@ -19,7 +19,7 @@ define([
             "click .saveBtn"  : 'saveStylist',
             "click #editBtn"  : 'edit',
             "click #acceptBtn": 'saveStylist',
-            "click #removeBtn": 'removeStylist'
+            "click #removeBtn": 'remove'
         },
 
         initialize: function (options) {
@@ -172,31 +172,66 @@ define([
                 }
 
                 model = self.model;
-                model.updateCurrent(data, {
+                model.save(data, {
+                    success: function () {
+                        console.log('>>> success saved');
+                    }
+                });
+                /*model.updateCurrent(data, {
                     success: function () {
                         console.log('success created');
                         window.location.hash = 'newApplications';
                     },
                     error  : self.handleModelError
-                    /*error: function (model, response, options) {
+                    /!*error: function (model, response, options) {
                      var errMessage = response.responseJSON.error;
                      self.handleError(errMessage);
-                     }*/
-                });
+                     }*!/
+                });*/
+            });
+        },
+
+        remove: function () {
+            var self = this;
+
+            this.removeConfirm({
+                message: 'Are you sure want to delete this profile?',
+                onConfirm: function () {
+                    $("#dialog").dialog('close');
+                    self.removeStylist();
+                }
             });
         },
 
         removeStylist: function () {
-            var data = {
-                ids: [this.model.id]
-            };
-            data = JSON.stringify(data);
-
-            this.model.deleteRequest(data, function () {
-                console.log('success removed');
-                window.location.hash = 'newApplications';
+            this.model.deleteRequest({
+                success: function () {
+                    console.log('success deleted');
+                }, error: this.handleErrorResponse
             });
-        }
+        },
+
+        removeConfirm: function (options) {
+            var opts = options || {};
+            var message = opts.message;
+            var onConfirm = opts.onConfirm;
+            var onCancel = opts.onCancel || function () {
+                    $("#dialog").dialog('close');
+                };
+            var buttons = {
+                "Delete": onConfirm,
+                "Cancel": onCancel
+            };
+            var dialogOptions = {
+                resizable: false,
+                modal    : true,
+                buttons  : buttons
+            };
+            var dialogContainer = $('#dialog');
+
+            dialogContainer.find('.message').html(message);
+            dialogContainer.dialog(dialogOptions);
+        },
 
     });
 

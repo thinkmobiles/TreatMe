@@ -53,8 +53,10 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
     Backbone.View.prototype.handleModelValidationError = function (model, errors, options) {
         var controlGroup;
 
+        this.$el.find('.prompt').text('');
+
         _.each(errors, function (error) {
-            controlGroup = $('.' + error.name);
+            controlGroup = this.$el.find('.' + error.name);
             controlGroup.addClass('error');
             controlGroup.next('.prompt').text(error.message);
         }, this);

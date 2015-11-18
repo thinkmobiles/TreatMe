@@ -15,9 +15,56 @@ define([
             var errors = [];
             var email = attrs.email;
             var personalInfo = attrs.personalInfo;
+            var salonInfo = attrs.salonInfo;
             var firstName = personalInfo.firstName;
             var lastName = personalInfo.lastName;
             var personalPhone = personalInfo.phone;
+            var salonName = salonInfo.salonName;
+            var salonPhone = salonInfo.salonName;
+            var businessRole = salonInfo.businessRole;
+            var salonEmail = salonInfo.email;
+            var address = salonInfo.address;
+            var licenseNumber = salonInfo.licenseNumber;
+            var city = salonInfo.city;
+            var zipCode = salonInfo.zipCode;
+            var state = salonInfo.state;
+            var country = salonInfo.country;
+            /*var requiredFields = [
+                /!*'firstName',
+                'lastName',
+                'personalPhone',
+                'profession',*!/
+                'address',
+                'businessRole',
+                'city',
+                'country',
+                //'salonEmail',
+                'email',
+                'licenseNumber',
+                //'salonPhone',
+                'phone',
+                'salonName',
+                'state',
+                'zipCode'
+            ];
+
+            var requiredErrorMessages = {
+                /!*'firstName': 'First Name is required',
+                'lastName': 'Last Name is required',
+                'personalPhone': 'Personal Number is required',
+                'profession': 'Profession is required',*!/
+                'address' : 'Address is required',
+                'businessRole': 'Business Role is required',
+                'city': 'City is required',
+                'country': 'Country is required',
+                'salonEmail': 'Salon Email is required',
+                'licenseNumber': 'License Number is required',
+                //'salonPhone': 'Salon Number is required',
+                'phone': 'Salon Number is required',
+                'salonName': 'Salon Name is required',
+                'state': 'State is required',
+                'zipCode': 'Zip Code is required'
+            };*/
 
             console.log(attrs);
 
@@ -40,9 +87,74 @@ define([
                 errors.push({name: 'lastName', message: 'Last Name is required!'});
             }
 
-            /* --- phone number --- */
+            /* --- personal phone number --- */
             if (!personalPhone) {
                 errors.push({name: 'personalPhone', message: 'Phone Number is required!'});
+            }
+
+            /* --- salon name --- */
+            if (!salonName) {
+                errors.push({name: 'salonName', message: 'Salon Name is required!'});
+            }
+
+            /*  --- salon email --- */
+            if (!salonEmail) {
+                errors.push({name: 'salonEmail', message: 'Please fill Email field.'});
+            } else {
+                if (!validator.isEmail(salonEmail)) {
+                    errors.push({name: 'salonEmail', message: 'Incorrect Email.'});
+                }
+            }
+           /* var field;
+
+            for (var i = requiredFields.length-1; i>=0; i-- ) {
+                console.log(requiredFields[i]);
+
+                field = requiredFields[i];
+                if (!salonInfo[field]) {
+                    errors.push({name: field, message: requiredErrorMessages[field]});
+                }
+            }
+*/
+            /* --- salon phone number --- */
+            if (!salonPhone) {
+                errors.push({name: 'salonPhone', message: 'Phone Number is required!'});
+            }
+
+            /* --- business role --- */
+            if (!businessRole) {
+                errors.push({name: 'businessRole', message: 'Phone Number is required!'});
+            }
+
+            /* --- address --- */
+            if (!address) {
+                errors.push({name: 'address', message: 'Address is required!'});
+            }
+
+            /* --- license number --- */
+            if (!licenseNumber) {
+                errors.push({name: 'licenseNumber', message: 'License Number is required!'});
+            }
+
+            /* --- city --- */
+            if (!city) {
+                errors.push({name: 'city', message: 'City is required!'});
+
+            }
+
+            /* --- zip code --- */
+            if (!zipCode) {
+                errors.push({name: 'zipCode', message: 'Zip Code is required!'});
+            }
+
+            /* --- state --- */
+            if (!state) {
+                errors.push({name: 'state', message: 'State is required!'});
+            }
+
+            /* --- country --- */
+            if (!country) {
+                errors.push({name: 'country', message: 'Country is required!'});
             }
 
             return (errors.length) ? errors : false;
@@ -139,15 +251,28 @@ define([
             return Backbone.Model.prototype.save.call(this, options, callbackObj);
         },
 
-        deleteRequest: function (data, callback) {
+        //deleteRequest: function (data, callback) {
+        deleteRequest: function (options) {
+            var opts = options || {};
+            var len = arguments.length;
+            var ids;
+            var data;
+
+            if (opts.data) {
+                data = opts.data;
+            } else {
+                ids = [this.id];
+                data = JSON.stringify({ids: ids});
+            }
+
             $.ajax({
                 type: 'DELETE',
                 dataType: 'json',
                 contentType: 'application/json',
                 url: '/admin/stylist',
                 data: data,
-                success: callback,
-                error: this.handleModelError //TODO
+                success: opts.success,
+                error: opts.error
             })
         }/*,
 
