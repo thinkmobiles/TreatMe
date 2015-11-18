@@ -538,8 +538,8 @@ var UserHandler = function (app, db) {
 
             createObj = {
                 personalInfo: {
-                    firstName: body.firstName,
-                    lastName: body.lastName,
+                    firstName: validator.trim(body.firstName),
+                    lastName: validator.trim(body.lastName),
                     phone: body.phone
                 },
                 email: email,
@@ -935,19 +935,19 @@ var UserHandler = function (app, db) {
 
         if (body.personalInfo){
             if (body.personalInfo.firstName) {
-                personalInfo.firstName = body.personalInfo.firstName;
+                personalInfo.firstName = validator.trim(body.personalInfo.firstName);
             }
 
             if (body.personalInfo.lastName) {
-                personalInfo.lastName = body.personalInfo.lastName;
+                personalInfo.lastName = validator.trim(body.personalInfo.lastName);
             }
 
             if (body.personalInfo.profession && (userObj.role === CONSTANTS.USER_ROLE.STYLIST)) {
-                personalInfo.profession = body.personalInfo.profession;
+                personalInfo.profession = validator.trim(body.personalInfo.profession);
             }
 
             if (body.personalInfo.phone) {
-                personalInfo.phone = body.personalInfo.phone;
+                personalInfo.phone = validator.trim(body.personalInfo.phone);
             }
 
             if (body.personalInfo.facebookURL && (userObj.role === CONSTANTS.USER_ROLE.STYLIST)) {
@@ -961,47 +961,47 @@ var UserHandler = function (app, db) {
 
             if (body.salonInfo){
                 if (body.salonInfo.salonName){
-                    salonInfo.salonName = body.salonInfo.salonName;
+                    salonInfo.salonName = validator.trim(body.salonInfo.salonName);
                 }
 
                 if (body.salonInfo.yourBusinessRole){
-                    salonInfo.yourBusinessRole = body.salonInfo.yourBusinessRole;
+                    salonInfo.yourBusinessRole = validator.trim(body.salonInfo.yourBusinessRole);
                 }
 
                 if (body.salonInfo.phone){
-                    salonInfo.phone = body.salonInfo.phone;
+                    salonInfo.phone = validator.trim(body.salonInfo.phone);
                 }
 
                 if (body.salonInfo.email){
-                    salonInfo.email = body.salonInfo.email;
+                    salonInfo.email = validator.trim(body.salonInfo.email);
                 }
 
                 if (body.salonInfo.address){
-                    salonInfo.address = body.salonInfo.address;
+                    salonInfo.address = validator.trim(body.salonInfo.address);
                 }
 
                 if (body.salonInfo.state){
-                    salonInfo.state = body.salonInfo.state;
+                    salonInfo.state = validator.trim(body.salonInfo.state);
                 }
 
                 if (body.salonInfo.zipCode){
-                    salonInfo.zipCode = body.salonInfo.zipCode;
+                    salonInfo.zipCode = validator.trim(body.salonInfo.zipCode);
                 }
 
                 if (body.salonInfo.phone){
-                    salonInfo.phone = body.salonInfo.phone;
+                    salonInfo.phone = validator.trim(body.salonInfo.phone);
                 }
 
                 if (body.salonInfo.licenseNumber){
-                    salonInfo.licenseNumber = body.salonInfo.licenseNumber;
+                    salonInfo.licenseNumber = validator.trim(body.salonInfo.licenseNumber);
                 }
 
                 if (body.salonInfo.city){
-                    salonInfo.city = body.salonInfo.city;
+                    salonInfo.city = validator.trim(body.salonInfo.city);
                 }
 
                 if (body.salonInfo.country){
-                    salonInfo.country = body.salonInfo.country;
+                    salonInfo.country = validator.trim(body.salonInfo.country);
                 }
             }
 
@@ -1079,7 +1079,7 @@ var UserHandler = function (app, db) {
          */
 
         var role = req.session.role;
-        var uId = req.session.uId;;
+        var uId = req.session.uId;
         var body = req.body;
         var personalInfo;
         var salonInfo = {};
@@ -1228,7 +1228,6 @@ var UserHandler = function (app, db) {
     };
 
     this.getProfile = function (req, res, next) {
-
 
         /**
          * __Type__ __`GET`__
