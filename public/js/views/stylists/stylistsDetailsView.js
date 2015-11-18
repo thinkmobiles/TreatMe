@@ -2,69 +2,104 @@
 
 define([
     'models/stylistModel',
-    'text!templates/stylists/stylistsItemTemplate.html',
-    'text!templates/newApplications/itemTemplate.html'
-], function (StylistModel, MainTemplate, ItemTemplate) {
+    'text!templates/stylists/stylistsDetailsTemplate.html',
+    'text!templates/newApplications/itemTemplate.html',
+    'text!templates/stylists/previewStylistTemplate.html'
+], function (StylistModel, MainTemplate, ItemTemplate, StylistsItemTemplate) {
 
     var View = Backbone.View.extend({
 
         el: '#wrapper',
 
         mainTemplate: _.template(MainTemplate),
+        itemTemplate: _.template(StylistsItemTemplate),
         //itemTemplate: _.template(ItemTemplate),
 
         events: {
-            "click .saveBtn": "saveStylist",
-            "click #editBtn": "edit",
-            "click #acceptBtn": "saveStylist",
-            "click #removeBtn": "removeStylist"
+            "click .saveBtn"  : 'saveStylist',
+            "click #editBtn"  : 'edit',
+            "click #acceptBtn": 'saveStylist',
+            "click #removeBtn": 'removeStylist'
         },
 
         initialize: function (options) {
-            var self = this;
-            var userId = (options && options.id) ? options.id: null;
+            var userId = options.id;
+            var path = options.type;
             var model;
 
-            if (!userId) {
-                this.model = new StylistModel();
-                App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/add'}]);
-                self.model.on('invalid', self.handleModelValidationError);
-                this.render();
-
+            if (path === 'newApplications') {
+                App.Breadcrumbs.reset([{
+                    name: 'New Applications',
+                    path: '#newApplications'
+                }]);
+                App.menu.select('#nav_new_applications');
             } else {
-                App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/' + userId}]);
-                model = new StylistModel({_id: userId});
-                model.on('invalid', self.handleModelValidationError);
-                model.fetch({
-                    success: function (model) {
-                        self.model = model;
-                        self.render();
-                    },
-                    error: self.handleModelError
-                });
+                App.Breadcrumbs.reset([{
+                    name: 'Stylist List',
+                    path: '#stylists'
+                }]);
+                App.menu.select('#nav_stylists');
             }
 
+            model = new StylistModel({_id: userId});
+
+            model.on('sync', this.renderUserInfo, this);
+            model.on('error', this.handleModelError, this);
+            model.on('invalid', this.handleModelValidationError, this);
+
+            this.model = model;
+            this.path = path;
+            this.render();
+
+            model.fetch();
         },
 
         render: function () {
-            /*var self = this;
-            var $el = self.$el;
-            var user = self.model.toJSON();
+            var opts = {
+                path: this.path
+            };
 
-            $('.searchBlock').html('');
-            $el.html(self.mainTemplate({user: user}));
-            */
-
-            this.$el.html(this.mainTemplate());
+            this.$el.html(this.mainTemplate(opts));
 
             return this;
         },
 
-        afterRender: function () {
-            var navContainer = $('.sidebar-menu');
+        renderUserInfo: function () {
+            var user = this.model.toJSON();
+            var userName = this.getUserName(user);
+            var createdAt = new Date(user.createdAt).toLocaleDateString();
+            var $el = this.$el;
 
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_new_applications').addClass('active')
+            $el.find('.info').html(this.itemTemplate({user: user}));
+            $el.find('.userName').html(userName);
+            $el.find('.calendar').html(createdAt);
+
+            this.updateNavigation(user);
+
+            return this;
+        },
+
+        getUserName: function (user) {
+            return user.personalInfo.firstName + ' ' + user.personalInfo.lastName;
+        },
+
+        updateNavigation: function (user) {
+            if (user.approved) {
+                App.Breadcrumbs.reset([{
+                    name: 'Stylist List',
+                    path: '#stylists'
+                }, {
+                    name: this.getUserName(user),
+                    path: '#stylists/' + user._id
+                }]);
+            }
+        },
+
+        edit: function (e) {
+            var id = this.model.id;
+            var url = this.path + '/' + id + '/edit';
+
+            Backbone.history.navigate(url, {trigger: true});
         },
 
         prepareSaveData: function (callback) {
@@ -119,8 +154,8 @@ define([
                     country      : country,
                     licenseNumber: license
                 },
-                services: services/*,
-                approved: true*/
+                services    : services/*,
+                 approved: true*/
             };
 
             callback(null, data);
@@ -142,7 +177,7 @@ define([
                         console.log('success created');
                         window.location.hash = 'newApplications';
                     },
-                    error: self.handleModelError
+                    error  : self.handleModelError
                     /*error: function (model, response, options) {
                      var errMessage = response.responseJSON.error;
                      self.handleError(errMessage);
@@ -161,11 +196,6 @@ define([
                 console.log('success removed');
                 window.location.hash = 'newApplications';
             });
-        },
-
-        edit : function () {
-            console.log('Fire edit event!');
-            $('input:disabled').prop('disabled', false);
         }
 
     });

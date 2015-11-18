@@ -1,4 +1,6 @@
-'use strict';
+/**
+ * Created by andrey on 16.07.15.
+ */
 
 var App = {};
 
@@ -6,9 +8,13 @@ require.config({
     paths: {
         jQuery          : './libs/jquery/dist/jquery',
         jQueryUI        : './libs/jqueryui/jquery-ui',
-        Validator        : './libs/validator-js/validator',
+        Validator       : './libs/validator-js/validator',
         Underscore      : './libs/underscore/underscore',
         Backbone        : './libs/backbone/backbone',
+        Moment          : './libs/moment/moment',
+        async           : './libs/requirejs-plugins/src/async',
+        googlemaps      : './libs/googlemaps-amd/src/googlemaps',
+        gmaps           : './libs/gmaps/gmaps',
         maps            : './libs/googleMapsAPI',
         //less            : './libs/less/dist/less',
         socketio        : '/socket.io/socket.io',
@@ -72,26 +78,6 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
                 }
             }
         }
-    };
-
-    Date.prototype.toLocaleDateString = function () {
-        function padding(x) {
-            if (x.length < 2) {
-                return '0' + x;
-            } else {
-                return x;
-            }
-        }
-
-        var year = this.getFullYear().toString();
-        var month = (this.getMonth() + 1).toString();
-        var date  = this.getDate().toString();
-
-        var yy = year.slice(2, 4);
-        var mm = padding(month);
-        var dd = padding(date);
-
-        return dd + '/' + mm + '/' + yy;
     };
 
     app.initialize(io);

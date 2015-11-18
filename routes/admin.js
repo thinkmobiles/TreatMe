@@ -49,19 +49,16 @@ module.exports = function(app, db){
     router.get('/stylistPayments/', sessionHandler.isAdmin, admin.getStylistPayments);
 
     router.get('/clients/:stylistId', sessionHandler.isAdmin, admin.getStylistClients);
-    router.get('/appointments/:clientId', sessionHandler.isAdmin, admin.getBookedAppointment);
+    router.get('/appointments/:clientId', sessionHandler.isAdmin, admin.getBookedAppointment); //TODO: переробити і видалити, є метод який вертає всі юукед зустрічі
     router.post('/appointments/', sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments/', sessionHandler.isAdmin, admin.suspendAppointments);
     router.delete('/appointments/', sessionHandler.isAdmin, admin.removeAppointments);
 
-    // CRUD SubscriptionType
-    router.get('/subscriptionType/', sessionHandler.isAdmin, admin.getSubscriptionType);
-    router.post('/subscriptionType/', sessionHandler.isAdmin, admin.addSubscriptionType);
-    router.put('/subscriptionType/:id', sessionHandler.isAdmin, admin.updateSubscriptionType);
-    router.delete('/subscriptionType/:id', sessionHandler.isAdmin, admin.removeSubscriptionType);
-
     router.get('/packages/', sessionHandler.isAdmin, admin.getClientPackages);
     router.delete('/packages/', sessionHandler.isAdmin, admin.removePackages);
+
+    router.get('/statistic/overview', sessionHandler.isAdmin, admin.getOverviewByPeriod);
+    router.get('/statistic/appointments', sessionHandler.isAdmin, admin.getAppointmentsStatistic);
 
     return router;
 };

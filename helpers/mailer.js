@@ -62,7 +62,7 @@ module.exports = function(){
         var mailOptions = {
             from: 'Misha <no-replay@misha.com>',
             to: templateOptions.email,
-            subject: 'Stylist created',
+            subject: 'User created',
             generateTextFromHTML: true,
             html: adminCreateUserTemplate(templateOptions)
         };

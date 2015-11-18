@@ -1,11 +1,11 @@
 <% _.forEach(items, function (item, index) {%>
 <tr data-id="<%= item._id%>">
     <td><input type="checkbox" class="checkItem"></td>
-    <td><%= new Date(item.requestDate).toLocaleDateString() %></td>
-    <td><%= item.client.personalInfo.firstName + ' ' + item.client.personalInfo.lastName %></td>
+    <td><%= item.requestDate %></td>
+    <td><%= item.client.firstName + ' ' + item.client.lastName %></td>
     <td><%= item.serviceType.name %></td>
     <td><span class="<%= item.status %>"><%= item.status %></span></td>
-    <td><button class="suspendCurrentBtn">Suspend</button></td>
-    <td><button class="deleteCurrentBtn">Delete</button></td>
+    <td><button class="suspendCurrentBtn suspend">Suspend</button></td>
+    <td><button class="deleteCurrentBtn delete">Delete</button></td>
 </tr>
 <%});%>
