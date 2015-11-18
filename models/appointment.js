@@ -9,8 +9,10 @@ module.exports = function (db) {
 
     var Appointment = new Schema({
         client: {
-            type: ObjectId,
-            ref: 'User'
+            id :{type: ObjectId, ref: 'User'},
+            firstName: String,
+            lastName: String
+
         },
         clientLoc: {
             type: {
@@ -21,8 +23,8 @@ module.exports = function (db) {
             coordinates: [Number]
         },
         serviceType: {
-            type: ObjectId,
-            ref: 'ServiceType'
+            id: {type: ObjectId, ref: 'ServiceType'},
+            name: String
         },
         requestDate: {
             type: Date,
@@ -38,12 +40,14 @@ module.exports = function (db) {
         rate: Number,
         rateComment: String,
         stylist: {
-            type: ObjectId,
-            ref: 'User'
+            id : {type: ObjectId, ref: 'User'},
+            firstName: String,
+            lastName: String
         },
         bookingDate: Date,
         oneTimeService: {type: Boolean, default: true},
-        price: Number
+        price: Number,
+        tip: {type: Number, default: 0}
 
     }, {
         collection: 'Appointments'

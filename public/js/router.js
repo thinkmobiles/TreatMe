@@ -11,18 +11,24 @@ define([
         topBarView  : null,
 
         routes: {
-            "clients/:id/edit"          :  "clientsEdit",
-            "clients/add"               :  "clientsAddDetails",
-            "clients/:id"               :  "clientsDetails",
-            "login(/:type/*value)"      :  "login",
-            "signup"                    :  "signup",
-            "dashboard"                 :  "dashboard",
-            "newApplications/add"       :  'stylistDetails', //"newApplicationDetails",
-            "newApplications/:id"       :  "newApplicationDetails",
-            "stylists/add"              :  'stylistDetails',//"addStylists",
-            "stylists/:id"              :  "stylistDetails",
-            "stylists/edit/:id"         :  "editStylistDetails",
-            "gallery"                   :  "gallery",
+            "clients/:id/edit"          : "clientsEdit",
+            "clients/add"               : "clientsAddDetails",
+            "clients/:id"               : "clientsDetails",
+            "login(/:type/*value)"      : "login",
+            "signup"                    : "signup",
+            "dashboard"                 : "dashboard",
+            //"newApplications/:id"       : "newApplicationDetails",
+            //"newApplications/add"       : 'stylistDetails', //"newApplicationDetails",
+            //"newApplications/:id"       : "stylistDetails",
+            "pendingRequests/add"       : "addPendingRequest",
+            "pendingRequests/:id"       : "pendingRequestDetails",
+            //"stylists/add"              : 'stylistDetails',//"addStylists",
+            //"stylists/:id"              : "stylistDetails",
+            //"stylists/:id/edit"         : "editStylistDetails",
+            "gallery"                   : "gallery",
+            ":type/add"                 : "showItemView",       //newApplications, stylists
+            ":type/:id/edit"            : "showItemView",       //newApplications, stylists
+            ":type/:id"                 : "showDetailsView",    //newApplications, stylists
             ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/search=:search)":  "list",
             "*any"                      :  "any"
         },
@@ -107,6 +113,14 @@ define([
             this.loadWrapperView('newApplications', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
+        pendingRequestDetails: function (id) {
+            this.loadWrapperView('pendingRequests', {id: id}, REDIRECT.whenNOTAuthorized, 'Item');
+        },
+
+        addPendingRequest: function (id) {
+            this.loadWrapperView('pendingRequests', {id: id}, REDIRECT.whenNOTAuthorized, 'Add');
+        },
+
         list: function (type, page, countPerPage, orderBy, order, search) {
             var options = {
                 page: parseInt(page),
@@ -126,7 +140,7 @@ define([
 
             this.loadWrapperView(type, options, REDIRECT.whenNOTAuthorized);
         },
-        
+
         gallery: function () {
             this.loadWrapperView('gallery', null, REDIRECT.whenNOTAuthorized);
         },
@@ -135,16 +149,33 @@ define([
             this.loadWrapperView('stylists', {}, REDIRECT.whenNOTAuthorized, 'Item');
         },
 
-        stylistDetails: function (id) {
+        showDetailsView: function (type, id) {
             var options = {
+                type: type,
                 id: id
             };
 
-            this.loadWrapperView('stylists', options, REDIRECT.whenNOTAuthorized, 'Item');
+            this.loadWrapperView('stylists', options, REDIRECT.whenNOTAuthorized, 'Details');
         },
 
         editStylistDetails: function (id) {
             this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Edit');
+        },
+
+        showItemView: function (type, id) {
+            var options = {
+                type: type,
+                id: id
+            };
+            var path;
+
+            if (type === 'newApplications') {
+                path = 'stylists'
+            } else {
+                path = type;
+            }
+
+            this.loadWrapperView(path, options, REDIRECT.whenNOTAuthorized, 'Item');
         }
 
     });

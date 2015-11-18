@@ -4,7 +4,7 @@
     <td><%= new Date(user.createdAt).getDate() + '/' + new Date(user.createdAt).getMonth() + '/' + String.prototype.slice.call(new Date(user.createdAt).getFullYear(),2,4) %></td>
     <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
     <td><%= user.salonInfo.salonName %></td>
-    <td><button id="acceptCurrentBtn">Accept</button></td>
-    <td><button id="removeCurrentBtn">Delete</button></td>
+    <td><button class="acceptCurrentBtn accept">Accept</button></td>
+    <td><button class="removeCurrentBtn delete">Delete</button></td>
 </tr>
 <%});%>
