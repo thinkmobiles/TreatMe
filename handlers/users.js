@@ -1116,7 +1116,7 @@ var UserHandler = function (app, db) {
                 async
                     .parallel([
                         function(cb){
-                            resultModel.update({$set: {personalInfo: personalInfo, salonInfo: salonInfo}}, cb);
+                            resultModel.update({$set: {personalInfo: update.personalInfo, salonInfo: update.salonInfo}}, cb);
                         },
 
                         function(cb){
@@ -1156,6 +1156,10 @@ var UserHandler = function (app, db) {
                         function(cb){
                             var update = {};
                             var criteria = {};
+
+                            if (!body.personalInfo){
+                                return cb(null);
+                            }
 
                             if (!body.personalInfo.firstName &&  !body.personalInfo.lastName){
                                 return cb(null);
@@ -1200,16 +1204,16 @@ var UserHandler = function (app, db) {
                                 return cb(null);
                             }
 
-                            if (body.personalInfo.firstName){
+                            if (body.personalInfo && body.personalInfo.firstName){
                                 update['client.firstName'] = body.personalInfo.firstName;
                             }
 
-                            if (body.personalInfo.lastName){
+                            if (body.personalInfo && body.personalInfo.lastName){
                                 update['client.lastName'] = body.personalInfo.lastName;
                             }
 
                             Subscription
-                                .update({'client.id': uId}, {$set: update}, {multi: true}, cb)
+                                .update({'client.id': uId}, {$set: update}, {multi: true}, cb);
 
                             cb(null)
                         }
