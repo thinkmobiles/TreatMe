@@ -73,22 +73,7 @@
     <% } %>
     <input type="text"  name="country" id="country" class="country" disabled="<%= inputStatus %>" placeholder="Country" value="<%= (user._id) ? user.salonInfo.country : ''%>"/><span class="prompt"></span><br/>
 
-    <div class="services">
-        <br>Please contact stylist and negotiate services available and prices before approving </br> the application</br>
-        <span>Services available*</span>
-        <span>Service Price*</span>
-        </p>
-
-        <% _.forEach(user.services, function (service) {%>
-        <% var name = service.name %>
-        <% var checked = service.status === 'new' ? "" : "checked" %>
-        <input type="checkbox" id="<%= name %>" data-id="<%=service.id%>" <%= checked %>>
-        <label for="<%= name %>"><%= name %></label>
-        <input type="text" placeholder="<%= service.price%>" value="<%= service.price%>"></br>
-        <%});%>
-
-        <p>*To be filled in by TreatMe team based on negotiations with stylist</p>
-    </div><span class="prompt"></span></br>
+    <div id="serviceApplications">fwertyuiytrewqrtyui</div>
 
     <div class="buttonContainer">
         <%if (user._id) { %>

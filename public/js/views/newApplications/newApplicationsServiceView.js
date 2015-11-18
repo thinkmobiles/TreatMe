@@ -1,82 +1,39 @@
 'use strict';
 
 define([
-    'models/stylistModel',
-<<<<<<< Updated upstream
-    'text!templates/stylists/stylistsItemTemplate.html',
-    'text!templates/newApplications/itemTemplate.html'
-], function (StylistModel, MainTemplate, ItemTemplate) {
-=======
-    'views/newApplications/newApplicationsServiceView',
-    'text!templates/newApplications/itemTemplate.html'
-], function (StylistModel, ApplicationsServiceView, MainTemplate) {
->>>>>>> Stashed changes
+    'collections/applicationsServiceCollection',
+    'models/serviceApplicationsModel',
+    'text!templates/newApplications/serviceTemplate.html'
+], function ( Collection, StylistModel, MainTemplate) {
 
     var View = Backbone.View.extend({
 
-        el: '#wrapper',
+        el: '#serviceApplications',
 
+        Collection: Collection,
         mainTemplate: _.template(MainTemplate),
-        //itemTemplate: _.template(ItemTemplate),
 
         events: {
-            "click .saveBtn": "saveStylist",
-            "click #editBtn": "edit",
-            "click #acceptBtn": "saveStylist",
-            "click #removeBtn": "removeStylist"
         },
 
         initialize: function (options) {
-            console.log(options);
-            var self = this;
-            var userId = (options && options.id) ? options.id: null;
-            var model;
+            var collection = new Collection();
 
-            if (!userId) {
-                this.model = new StylistModel();
-                App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/add'}]);
-                self.model.on('invalid', self.handleModelValidationError);
-                this.render();
+            collection.on('reset', this.render, this);
 
-            } else {
-                App.Breadcrumbs.reset([{name: 'New Applications', path: '#newApplications'}, {name: 'Add Application', path: '#newApplications/' + userId}]);
-                model = new StylistModel({_id: userId});
-                model.on('invalid', self.handleModelValidationError);
-                model.fetch({
-                    success: function (model) {
-                        self.model = model;
-                        self.render();
-                    },
-                    error: self.handleModelError
-                });
-            }
-
-            this.serviceApplications = new ApplicationsServiceView();
+            this.collection = collection;
 
         },
 
         render: function () {
-            /*var self = this;
-            var $el = self.$el;
-            var user = self.model.toJSON();
+            var collection = this.collection.toJSON();
 
-            $('.searchBlock').html('');
-            $el.html(self.mainTemplate({user: user}));
-            */
-
-            this.$el.html(this.mainTemplate());
+            this.$el.html(this.mainTemplate({services: collection}));
 
             return this;
-        },
+        }
 
-        afterRender: function () {
-            var navContainer = $('.sidebar-menu');
-
-            navContainer.find('.active').removeClass('active');
-            navContainer.find('#nav_new_applications').addClass('active')
-        },
-
-        prepareSaveData: function (callback) {
+        /*prepareSaveData: function (callback) {
             var form = this.$el.find('.stylistForm');
             var servicesBlock = form.find('.services');
             var serviceList = servicesBlock.find('input:checkbox:checked');
@@ -128,8 +85,8 @@ define([
                     country      : country,
                     licenseNumber: license
                 },
-                services: services/*,
-                approved: true*/
+                services: services/!*,
+                 approved: true*!/
             };
 
             callback(null, data);
@@ -152,10 +109,10 @@ define([
                         window.location.hash = 'newApplications';
                     },
                     error: self.handleModelError
-                    /*error: function (model, response, options) {
+                    /!*error: function (model, response, options) {
                      var errMessage = response.responseJSON.error;
                      self.handleError(errMessage);
-                     }*/
+                     }*!/
                 });
             });
         },
@@ -175,7 +132,7 @@ define([
         edit : function () {
             console.log('Fire edit event!');
             $('input:disabled').prop('disabled', false);
-        }
+        }*/
 
     });
 
