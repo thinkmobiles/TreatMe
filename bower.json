@@ -22,6 +22,7 @@
     "moment": "~2.10.6",
     "requirejs-plugins": "~1.0.3",
     "gmaps": "~0.4.21",
-    "googlemaps-amd": "googlemaps-amd#~1.0.1"
+    "googlemaps-amd": "googlemaps-amd#~1.0.1",
+    "jt.timepicker": "jquery-timepicker-jt#~1.8.7"
   }
 }
