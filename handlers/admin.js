@@ -764,7 +764,8 @@ var AdminHandler = function (app, db) {
          *         http://projects.thinkmobiles.com:8871/admin/suspend
          *
          * {
-         *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc386]
+         *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc386],
+         *      reason: 'Some suspend reason'
          * }
          *
          * @example Response example:
@@ -779,6 +780,7 @@ var AdminHandler = function (app, db) {
 
         var body = req.body;
         var ids;
+        var reason = body.reason || 'Suspended by admin';
 
         if (!body.ids) {
             return next(badRequests.NotEnParams({reqParams: 'ids'}));
@@ -793,7 +795,7 @@ var AdminHandler = function (app, db) {
                     $push: {
                         'suspend.history': {
                             from: Date.now(),
-                            reason: 'Suspended by admin'
+                            reason: reason
                         }
                     }
 
