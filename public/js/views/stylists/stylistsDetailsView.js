@@ -16,10 +16,11 @@ define([
         //itemTemplate: _.template(ItemTemplate),
 
         events: {
-            "click .saveBtn"  : 'saveStylist',
-            "click #editBtn"  : 'edit',
-            "click #acceptBtn": 'saveStylist',
-            "click #removeBtn": 'remove'
+            "click .saveBtn"   : 'saveStylist',
+            "click #editBtn"   : 'edit',
+            "click #acceptBtn" : 'saveStylist',
+            "click #removeBtn" : 'remove',
+            "click #suspendBtn": 'suspend'
         },
 
         initialize: function (options) {
@@ -178,24 +179,53 @@ define([
                     }
                 });
                 /*model.updateCurrent(data, {
-                    success: function () {
-                        console.log('success created');
-                        window.location.hash = 'newApplications';
-                    },
-                    error  : self.handleModelError
-                    /!*error: function (model, response, options) {
-                     var errMessage = response.responseJSON.error;
-                     self.handleError(errMessage);
-                     }*!/
-                });*/
+                 success: function () {
+                 console.log('success created');
+                 window.location.hash = 'newApplications';
+                 },
+                 error  : self.handleModelError
+                 /!*error: function (model, response, options) {
+                 var errMessage = response.responseJSON.error;
+                 self.handleError(errMessage);
+                 }*!/
+                 });*/
             });
+        },
+
+        suspend: function (options) {
+            var self = this;
+            var opts = options || {};
+            var onConfirm = opts.onConfirm;
+            var buttons = {
+                "Save": onConfirm
+            };
+            var dialogOptions = {
+                resizable: false,
+                modal    : true,
+                width: 500,
+                buttons  : buttons
+            };
+            var dialogContainer = $('#dialog-form').dialog(dialogOptions);
+            var form = dialogContainer.find( "form" ).on( "submit", function( event ) {
+                event.preventDefault();
+                var reason = self.$el.find('#reason').text();
+                console.log(' >>> reason', reason, reason.length);
+
+                if (!reason) {
+                    self.$el.find('.prompt').html('Please input the reason of suspension');
+                } else {
+                    console.log('success');
+                }
+
+            });
+            dialogContainer.dialog('open');
         },
 
         remove: function () {
             var self = this;
 
             this.removeConfirm({
-                message: 'Are you sure want to delete this profile?',
+                message  : 'Are you sure want to delete this profile?',
                 onConfirm: function () {
                     $("#dialog").dialog('close');
                     self.removeStylist();
@@ -205,7 +235,7 @@ define([
 
         removeStylist: function () {
             this.model.deleteRequest({
-                success: function () {
+                success : function () {
                     console.log('success deleted');
                 }, error: this.handleErrorResponse
             });
