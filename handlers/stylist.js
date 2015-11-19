@@ -14,6 +14,7 @@ var StylistHandler = function (app, db) {
     var Appointment = db.model('Appointment');
     var User = db.model('User');
     var imageHandler = new ImageHandler();
+    var io = app.get('io');
 
 
     this.checkStylistAvailability = function(availabilityObj, stylistId, appointmentId, callback) {
@@ -292,7 +293,7 @@ var StylistHandler = function (app, db) {
             },
 
             //TODO: write off money from the clients STRIPE account and then update appointment
-            // clientId = appointmentModel.get('client').toString();
+            // clientId = appointmentModel.get('client.id').toString();
             //if (appointmentModel.oneTimeService){ write off money from client}
 
             function(appointmentModel, cb){
@@ -319,6 +320,12 @@ var StylistHandler = function (app, db) {
         var stylistId = req.session.uId;
         var appointmentId = req.params.id;
         var updateObj;
+        var socketData;
+        var criteria = {
+            _id: appointmentId,
+            'stylist.id': ObjectId(stylistId),
+            status: CONSTANTS.STATUSES.APPOINTMENT.BEGINS
+        };
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)) {
             return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
@@ -331,19 +338,62 @@ var StylistHandler = function (app, db) {
         };
 
         Appointment
-            .findOneAndUpdate({
-                _id: appointmentId,
-                'stylist.id': ObjectId(stylistId)
-            }, {$set: updateObj}, function (err, appointmentModel) {
-                if (err) {
+            .findOne(criteria)
+            .populate([
+                {path: 'serviceType.id', select: 'name logo'},
+                {path: 'stylist.id', select: 'personalInfo.firstName personalInfo.lastName personalInfo.avatar personalInfo.profession salonInfo.salonName'}
+            ])
+            .exec(function(err, appointmentModel){
+                var avatarName;
+                var logo;
+
+                if (err){
                     return next(err);
                 }
 
-                if (!appointmentModel) {
+                if (!appointmentModel){
                     return next(badRequests.NotFound({target: 'Appointment'}));
                 }
 
-                res.status(200).send({success: 'Appointment begins successfully'});
+                avatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
+                logo = appointmentModel.get('serviceType.id.logo');
+
+                if (avatarName){
+                    avatarName = imageHandler.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                }
+
+                if (logo){
+                    logo = imageHandler.computeUrl(logo, CONSTANTS.BUCKET.IMAGES);
+                }
+
+                socketData = {
+                    stylist: {
+                        _id: appointmentModel.get('stylist.id._id').toString(),
+                        avatar: avatarName,
+                        name: appointmentModel.get('stylist.id.personalInfo.firstName') + ' ' + appointmentModel.get('stylist.id.personalInfo.lastName'),
+                        profession: appointmentModel.get('stylist.id.personalInfo.profession')
+                    },
+                    service: {
+                        _id: appointmentModel.get('serviceType.id._id').toString(),
+                        name: appointmentModel.get('serviceType.id.name'),
+                        logo: logo
+                    },
+                    bookingDate: appointmentModel.get('bookingDate'),
+                    salon: appointmentModel.get('stylist.id.salonInfo.salonName')
+                };
+
+                appointmentModel
+                    .update({$set: updateObj}, function(err){
+                        var room = appointmentModel.get('client.id').toString();
+
+                        if (err){
+                            return next(err);
+                        }
+
+                        io.to(room).send('rate stylist', socketData);
+
+                        res.status(200).send({success: 'Appointment finished successfully'});
+                    });
             });
     };
 

@@ -31,7 +31,7 @@ var ClientsHandler = function (app, db) {
     var ObjectId = mongoose.Types.ObjectId;
     var schedulerHelper = new SchedulerHelper(app, db);
 
-    this.getActiveSubscriptionsOnServices = function (req, res, next) {
+    this.getServicesWithActiveSubscriptions = function (req, res, next) {
 
         /**
          * __Type__ __`GET`__
@@ -66,7 +66,7 @@ var ClientsHandler = function (app, db) {
          *      }
          *  ]
          *
-         * @method getActiveSubscriptionsOnServices
+         * @method getServicesWithActiveSubscriptions
          * @instance
          */
 
@@ -103,11 +103,7 @@ var ClientsHandler = function (app, db) {
                             var modelJSON = model.toJSON();
                             var typeId = modelJSON._id.toString();
 
-                            modelJSON.havePackage = false;
-
-                            if (allowServicesArray.indexOf(typeId) !== -1) {
-                                modelJSON.havePackage = true;
-                            }
+                            modelJSON.havePackage = (allowServicesArray.indexOf(typeId) !== -1);
 
                             if (modelJSON.logo){
                                 modelJSON.logo = imageHandler.computeUrl(modelJSON.logo, CONSTANTS.BUCKET.IMAGES);
@@ -120,138 +116,8 @@ var ClientsHandler = function (app, db) {
 
                         res.status(200).send(resultArray);
                     });
-
             });
     };
-
-    /*this.getCurrentSubscriptions = function (req, res, next) {
-
-        /!**
-         * __Type__ __`GET`__
-         *
-         * __Content-Type__ `application/json`
-         *
-         * __HOST: `http://projects.thinkmobiles.com:8871`__
-         *
-         * __URL: `/client/subscriptions/current/`__
-         *
-         * This __method__ allows get current subscriptions by _Client_
-         *
-         * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/client/subscriptions/current
-         *
-         * @example Response example:
-         *
-         *  Response status: 200
-         *
-         *  [
-         *      {
-         *          "_id": "5638b946f8c11d9c0408133f",
-         *          "name": "Unlimited Pass",
-         *          "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638b946f8c11d9c0408133e.png",
-         *          "price": 135,
-         *          "purchased": false
-         *      },
-         *      {
-         *          "_id": "5638b965f8c11d9c04081341",
-         *          "name": "Unlimited Maniqure",
-         *          "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638b965f8c11d9c04081340.png",
-         *          "price": 49,
-         *          "purchased": false
-         *      },
-         *      {
-         *           "_id": "5638b976f8c11d9c04081343",
-         *           "name": "Unlimited Blowout",
-         *           "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638b976f8c11d9c04081342.png",
-         *           "price": 99,
-         *           "purchased": true
-         *      }
-         * ]
-         *
-         * @method getCurrentSubscriptions
-         * @instance
-         *!/
-
-        var clientId = req.session.uId;
-        var role = req.session.role;
-
-        if (role === CONSTANTS.USER_ROLE.ADMIN){
-            clientId = req.params.clientId;
-
-            if (!clientId){
-                return next(badRequests.NotEnParams({reqParams: 'clientId'}));
-            }
-
-            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
-                return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
-            }
-        }
-
-        Subscription
-            .find({'client.id': clientId, expirationDate: {$gte: new Date()}}, {__v: 0, client: 0})
-            .populate({path: 'subscriptionType.id', select: 'name price logo'})
-            .exec(function (err, subscriptionModelsArray) {
-                var currentSubscriptions;
-
-                if (err) {
-                    return next(err);
-                }
-
-                if (role === CONSTANTS.USER_ROLE.CLIENT){
-                    SubscriptionType
-                        .find({}, {__v: 0, allowServices: 0}, function (err, subscriptionTypeModels) {
-                            var resultArray;
-                            var subscriptionIds;
-
-                            if (err) {
-                                return next(err);
-                            }
-
-                            subscriptionIds = subscriptionModelsArray.map(function(model){
-                                if (model.subscriptionType && model.subscriptionType.id){
-                                    return (model.get('subscriptionType.id._id')).toString();
-                                }
-                            });
-
-                            resultArray = subscriptionTypeModels.map(function (model) {
-                                var modelJSON = model.toJSON();
-                                var typeId = modelJSON._id.toString();
-
-                                modelJSON.purchased = (subscriptionIds.indexOf(typeId) !== -1);
-
-                                if (modelJSON.logo){
-                                    modelJSON.logo = imageHandler.computeUrl(modelJSON.logo, CONSTANTS.BUCKET.IMAGES);
-                                } else {
-                                    modelJSON.logo = '';
-                                }
-
-                                return modelJSON;
-                            });
-
-                            res.status(200).send(resultArray);
-                        });
-                } else {
-                    currentSubscriptions = subscriptionModelsArray.map(function(model){
-                        var modelJSON = model.toJSON();
-
-                        if (modelJSON.subscriptionType && modelJSON.subscriptionType.id){
-                            modelJSON.package = modelJSON.subscriptionType.id.name;
-                            modelJSON.price = modelJSON.subscriptionType.id.price;
-                        } else {
-                            modelJSON.package = 'Package was removed';
-                            modelJSON.price = '-';
-                        }
-
-                        delete modelJSON.subscriptionType;
-                        delete modelJSON.expirationDate;
-
-                        return modelJSON;
-                    });
-
-                    res.status(200).send(currentSubscriptions);
-                }
-            });
-    };*/
 
     this.buySubscriptions = function(clientId, clientName, subscriptionIds, callback){
 
@@ -466,6 +332,28 @@ var ClientsHandler = function (app, db) {
         }
 
         async.series([
+
+            function(cb){
+                var statuses = CONSTANTS.STATUSES.APPOINTMENT;
+
+                Appointment
+                    .find({'client.id': clientId, status: {$in: [statuses.CREATED, statuses.CONFIRMED, statuses.BEGINS]}}, function(err, modelsArray){
+                        var error;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (modelsArray.length >=2){
+                            error = new Error('You already have two not finished appointments');
+                            error.status = 400;
+
+                            return cb(error);
+                        }
+
+                        cb();
+                    });
+            },
 
             function (cb) {
                 User
