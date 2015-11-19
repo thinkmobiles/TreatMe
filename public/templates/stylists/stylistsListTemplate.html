@@ -5,7 +5,7 @@
     <td><%= user.salonInfo.salonName %></td>
     <td><span class="<%= (user.approved) ? 'confirmed' : 'pending' %>"></span></td>
     <!--<td><a href="#stylists/<%= user._id%>/edit" class="edit">Edit</a></td>-->
-    <td><button class="edit">Edit</button></td>
+    <td><button class="editBtn edit">Edit</button></td>
     <td><button class="suspendCurrentBtn suspend">Suspend</button></td>
 </tr>
 <%});%>

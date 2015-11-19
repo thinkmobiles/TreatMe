@@ -1,7 +1,7 @@
 <div class="stylistForm" xmlns="http://www.w3.org/1999/html">
     <div class="userNameContainer">
     <span>
-      <%=pendingRequest.client.personalInfo.firstName+ " " +pendingRequest.client.personalInfo.lastName%>
+      <%=pendingRequest.client.firstName+ " " +pendingRequest.client.lastName%>
     </span>
         <button class="edit">Edit</button>
         <button class="suspend">Suspend</button>
@@ -13,16 +13,16 @@
 
     <label for="firstName">Name</label>
     <input type="text" id="firstName" class="firstName" name="firstName" disabled="<%= inputStatus %>"
-           placeholder="First Name" value="<%=pendingRequest.client.personalInfo.firstName+ " "
-    +pendingRequest.client.personalInfo.lastName%>" /><span class="prompt"></span><br/>
+           placeholder="First Name" value="<%=pendingRequest.client.firstName+ " "
+    +pendingRequest.client.lastName%>" /><span class="prompt"></span><br/>
 
     <label for="phoneNumber">Phone Number</label>
     <input type="text" id="phoneNumber" class="lastName" name="phoneNumber" disabled="<%= inputStatus %>"
-           placeholder="Last Name" value="<%= pendingRequest.client.personalInfo.phone %>"/><span class="prompt"></span><br/>
+           placeholder="Last Name" value="<%= pendingRequest.client.phone %>"/><span class="prompt"></span><br/>
 
     <label for="email">Email Address</label>
     <input type="text" id="email" class="email" name="email" disabled="<%= inputStatus %>" placeholder="Email"
-           value="<%= pendingRequest.client.personalInfo.email%>"/><span class="prompt"></span><br/>
+           value="<%= pendingRequest.client.email%>"/><span class="prompt"></span><br/>
 
     <label for="service">Service</label>
     <input type="text" id="service" class="email" name="service" disabled="<%= inputStatus %>" placeholder="Profession"

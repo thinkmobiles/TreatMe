@@ -24,7 +24,7 @@ define([
         previewStylistTemplate: _.template(PreviewStylistTemplate),
 
         events: {
-            "click .saveBtn": "saveStylist",
+            "click .saveBtn": "saveStylist"
             //"click .edit"   : "edit"
         },
 
@@ -57,19 +57,30 @@ define([
 
             App.menu.select('#nav_new_applications');
 
+            var ticks = new Date().valueOf();
             var data = {
-                email: 'test_' + new Date().valueOf() + '@mail.com',
+                email       : 'test_' + ticks + '@mail.com',
                 personalInfo: {
-                    firstName: 'nazarovits',
-                    lastName: 'istvan'
+                    firstName : 'nazarovits',
+                    lastName  : 'istvan',
+                    phone     : '+38 093 000 0000',
+                    profession: 'profession'
                 },
-                salonInfo: {
+                salonInfo   : {
                     salonName: 'mySalon',
-                    role: 'Stylist'
+                    businessRole     : 'Stylist',
+                    phone     : '+38 093 111 1111',
+                    email       : 'test_' + ticks + '@mail.com',
+                    address: 'PS street, ...',
+                    licenseNumber: 'License 123',
+                    zipCode: '88000',
+                    state: 'Закарпаття',
+                    country: 'Ukraine',
+                    city: 'Ужгород'
                 }
             };
-            this.model = new StylistModel(/*data*/);
-            this.model.on('invalid', this.handleModelValidationError);
+            this.model = new StylistModel(data);
+            this.model.on('invalid', this.handleModelValidationError, this);
 
             this.render();
             this.renderUserInfo();
@@ -169,17 +180,17 @@ define([
             var email = form.find('.email').val();
             var firstName = form.find('.firstName').val();
             var lastName = form.find('.lastName').val();
-            var role = form.find('.role').val();
-            var phone = form.find('.phone').val();
+            var profession = form.find('.profession').val();
+            var phone = form.find('.personalPhone').val();
             var salonName = form.find('.salonName').val();
             var businessRole = form.find('.businessRole').val();
-            var salonNumber = form.find('.salonNumber').val();
+            var salonPhone = form.find('.salonPhone').val();
             var salonEmail = form.find('.salonEmail').val();
-            var salonAddress = form.find('.salonAddress').val() + ' ' + form.find('.salonAddress2').val();
-            var license = form.find('.license').val();
+            var salonAddress = form.find('.address').val() + form.find('.address2').val();
+            var licenseNumber = form.find('.licenseNumber').val();
             var city = form.find('.city').val();
-            var region = form.find('.region').val();
-            var zip = form.find('.zip').val();
+            var state = form.find('.state').val();
+            var zipCode = form.find('.zipCode').val();
             var country = form.find('.country').val();
             var services = [];
             var service;
@@ -199,22 +210,22 @@ define([
             data = {
                 email       : email,
                 personalInfo: {
-                    firstName  : firstName,
-                    lastName   : lastName,
-                    profession : role,
-                    phoneNumber: phone
+                    firstName : firstName,
+                    lastName  : lastName,
+                    profession: profession,
+                    phone     : phone
                 },
                 salonInfo   : {
                     salonName    : salonName,
-                    phoneNumber  : salonNumber,
+                    phone        : salonPhone,
                     email        : salonEmail,
                     businessRole : businessRole,
                     address      : salonAddress,
                     city         : city,
-                    state        : region,
-                    zipCode      : zip,
+                    state        : state,
+                    zipCode      : zipCode,
                     country      : country,
-                    licenseNumber: license
+                    licenseNumber: licenseNumber
                 },
                 services    : services
             };
@@ -240,10 +251,6 @@ define([
                     error  : self.handleModelError
                 });
             });
-        },
-
-        renderEdit: function () {
-            new EditView(this.model);
         },
 
         edit: function (e) {

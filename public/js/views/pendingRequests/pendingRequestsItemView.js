@@ -40,9 +40,7 @@ define([
             var $el = self.$el;
             var pendingRequest = self.model.toJSON();
 
-            console.log(pendingRequest);
-
-            var name = pendingRequest.client.personalInfo.firstName + " " + pendingRequest.client.personalInfo.lastName;
+            var name = pendingRequest.client.firstName + " " + pendingRequest.client.lastName;
 
             App.Breadcrumbs.reset([{name: 'Pending Requests', path: '#pendingRequests'}, {
                 name: name,

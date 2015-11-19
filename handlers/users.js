@@ -42,8 +42,8 @@ var UserHandler = function (app, db) {
     }
 
     function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, order, search, callback){
-        var findObj = {};
-        var projectionObj;
+        var criteria = {};
+        var projection;
         var populateArray = [];
         var sortObj = {};
         var APPOINTMENT = CONSTANTS.STATUSES.APPOINTMENT;
@@ -60,8 +60,8 @@ var UserHandler = function (app, db) {
         }
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
-            findObj['client.id'] = userId;
-            projectionObj = {
+            criteria['client.id'] = userId;
+            projection = {
                 __v: 0,
                 client: 0,
                 clientLoc: 0,
@@ -72,8 +72,8 @@ var UserHandler = function (app, db) {
         }
 
         if (role === CONSTANTS.USER_ROLE.STYLIST){
-            findObj['stylist.id'] = userId;
-            projectionObj = {
+            criteria['stylist.id'] = userId;
+            projection = {
                 __v: 0,
                 stylist: 0,
                 clientLoc: 0,
@@ -93,7 +93,7 @@ var UserHandler = function (app, db) {
                 sortObj['client.lastName'] = order;
             }
 
-            projectionObj = {
+            projection = {
                 __v: 0,
                 clientLoc: 0
             };
@@ -118,9 +118,9 @@ var UserHandler = function (app, db) {
                     sortObj['serviceType.name'] = order;
                 }
 
-                projectionObj.bookingDate = 0;
+                projection.bookingDate = 0;
 
-                findObj['$and'] = [
+                criteria['$and'] = [
                     {status: {$in : [APPOINTMENT.CREATED, APPOINTMENT.SUSPENDED]}},
                     searchCriteria
                 ];
@@ -155,10 +155,10 @@ var UserHandler = function (app, db) {
                     sortObj.status = order;
                 }
 
-                projectionObj.requestDate = 0;
-                projectionObj.serviceType = 0;
+                projection.requestDate = 0;
+                projection.serviceType = 0;
 
-                findObj['$and'] = [
+                criteria['$and'] = [
                     {status: {$in : [
                         APPOINTMENT.CONFIRMED,
                         APPOINTMENT.BEGINS,
@@ -178,7 +178,7 @@ var UserHandler = function (app, db) {
             function(cb){
 
                 Appointment
-                    .count(findObj, function(err, count){
+                    .count(criteria, function(err, count){
                        if (err){
                            return cb(err);
                        }
@@ -189,7 +189,7 @@ var UserHandler = function (app, db) {
 
             function(cb){
                 Appointment
-                    .find(findObj, projectionObj)
+                    .find(criteria, projection)
                     .populate(populateArray)
                     .sort(sortObj)
                     .skip(limit * (page - 1))
@@ -233,16 +233,16 @@ var UserHandler = function (app, db) {
 
     function getUserAppointmentById(userId, appointmentId, role, callback){
         var populateArray = [];
-        var projectionObj;
-        var findObj = {_id: appointmentId};
+        var projection;
+        var criteria = {_id: appointmentId};
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)){
             return callback(badRequests.InvalidValue({value: appointmentId, param: 'id'}));
         }
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
-            findObj.client = userId;
-            projectionObj = {
+            criteria['client.id'] = userId;
+            projection = {
                 __v: 0,
                 client: 0,
                 clientLoc: 0,
@@ -253,12 +253,15 @@ var UserHandler = function (app, db) {
                 rate: 0,
                 rateComment: 0
             };
-            populateArray.push({path: 'stylist.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName salonInfo.salonName'});
+            populateArray.push(
+                {path: 'serviceType.id', select: 'name logo'},
+                {path: 'stylist.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName personalInfo.profession salonInfo.salonName salonInfo.address salonInfo.city salonInfo.state salonInfo.country salonInfo.zipCode'}
+            );
         }
 
         if (role === CONSTANTS.USER_ROLE.STYLIST){
-            findObj.stylist = userId;
-            projectionObj = {
+            criteria['stylist.id'] = userId;
+            projection = {
                 __v: 0,
                 stylist: 0,
                 clientLoc: 0,
@@ -273,7 +276,7 @@ var UserHandler = function (app, db) {
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
-            projectionObj = {
+            projection = {
                 __v: 0,
                 clientLoc: 0,
                 status: 0,
@@ -289,10 +292,11 @@ var UserHandler = function (app, db) {
         }
 
         Appointment
-            .findOne(findObj, projectionObj)
+            .findOne(criteria, projection)
             .populate(populateArray)
             .exec(function(err, appointmentModel){
                 var avatarName;
+                var logo;
 
                 if (err){
                     return callback(err);
@@ -304,9 +308,14 @@ var UserHandler = function (app, db) {
 
                 if (role === CONSTANTS.USER_ROLE.CLIENT){
                     avatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
+                    logo = appointmentModel.get('serviceType.id.logo');
 
                     if (avatarName){
                         appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                    }
+
+                    if (logo){
+                        appointmentModel.serviceType.id.logo = image.computeUrl(logo, CONSTANTS.BUCKET.IMAGES);
                     }
                 } else {
                     avatarName = appointmentModel.get('client.id.personalInfo.avatar');
@@ -1116,7 +1125,7 @@ var UserHandler = function (app, db) {
                 async
                     .parallel([
                         function(cb){
-                            resultModel.update({$set: {personalInfo: personalInfo, salonInfo: salonInfo}}, cb);
+                            resultModel.update({$set: {personalInfo: update.personalInfo, salonInfo: update.salonInfo}}, cb);
                         },
 
                         function(cb){
@@ -1156,6 +1165,10 @@ var UserHandler = function (app, db) {
                         function(cb){
                             var update = {};
                             var criteria = {};
+
+                            if (!body.personalInfo){
+                                return cb(null);
+                            }
 
                             if (!body.personalInfo.firstName &&  !body.personalInfo.lastName){
                                 return cb(null);
@@ -1200,16 +1213,16 @@ var UserHandler = function (app, db) {
                                 return cb(null);
                             }
 
-                            if (body.personalInfo.firstName){
+                            if (body.personalInfo && body.personalInfo.firstName){
                                 update['client.firstName'] = body.personalInfo.firstName;
                             }
 
-                            if (body.personalInfo.lastName){
+                            if (body.personalInfo && body.personalInfo.lastName){
                                 update['client.lastName'] = body.personalInfo.lastName;
                             }
 
                             Subscription
-                                .update({'client.id': uId}, {$set: update}, {multi: true}, cb)
+                                .update({'client.id': uId}, {$set: update}, {multi: true}, cb);
 
                             cb(null)
                         }

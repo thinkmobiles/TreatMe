@@ -380,6 +380,8 @@ define([
         checkItemClick: function (e) {
             var state = $(e.target).prop('checked');
 
+            e.stopPropagation();
+
             if (!state) {
                 this.$el.find('.checkAll').prop('checked', false);
             }
