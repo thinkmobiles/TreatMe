@@ -14,6 +14,7 @@ require.config({
         Moment          : './libs/moment/moment',
         async           : './libs/requirejs-plugins/src/async',
         googlemaps      : './libs/googlemaps-amd/src/googlemaps',
+        timepicker      : './libs/jt.timepicker/jquery.timepicker.min',
         gmaps           : './libs/gmaps/gmaps',
         maps            : './libs/googleMapsAPI',
         //less            : './libs/less/dist/less',
