@@ -18,8 +18,8 @@ var ImageHandler = require('./image');
 var _ = require('lodash');
 var ObjectId = mongoose.Types.ObjectId;
 var fs = require('fs');
-var geocoder = require('geocoder');
 var StripeModule = require('../helpers/stripe');
+var ClientHandler = require('./clients');
 
 var UserHandler = function (app, db) {
 
@@ -34,6 +34,7 @@ var UserHandler = function (app, db) {
 
     var session = new SessionHandler(db);
     var image = new ImageHandler();
+    var clientHandler = new ClientHandler(app, db);
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
@@ -342,7 +343,7 @@ var UserHandler = function (app, db) {
 
         User
             .findOne({email: email, role: CONSTANTS.USER_ROLE.STYLIST}, {_id: 1}, function(err, resultModel){
-                var addressString;
+                var locationAddress;
                 var userModel;
 
                 if (err){
@@ -353,26 +354,21 @@ var UserHandler = function (app, db) {
                     return callback(badRequests.EmailInUse());
                 }
 
-                addressString = createObj.salonInfo.address + ' ' + createObj.salonInfo.city + ' ' + createObj.salonInfo.country;
+                locationAddress = createObj.salonInfo.address + ' ' + createObj.salonInfo.city + ' ' + createObj.salonInfo.country;
 
-                geocoder.geocode(addressString, function(err, data){
-
+                clientHandler.getCoordinatesByLocation(locationAddress, function(err, coordinates){
                     if (err){
                         return callback(err);
                     }
 
-                    if (!data || !data.results.length || !data.results[0].geometry || !data.results[0].geometry.location || data.status !== 'OK'){
-                        return callback(badRequests.UnknownGeoLocation());
-                    }
                     createObj.loc = {
-                        coordinates : [data.results[0].geometry.location.lng, data.results[0].geometry.location.lat]
+                        coordinates : coordinates
                     };
 
                     userModel = new User(createObj);
 
                     userModel
                         .save(function(err){
-
                             if (err){
                                 return callback(err);
                             }
@@ -1090,8 +1086,6 @@ var UserHandler = function (app, db) {
         var role = req.session.role;
         var uId = req.session.uId;
         var body = req.body;
-        var personalInfo;
-        var salonInfo = {};
         var userObj;
         var update;
 
@@ -1125,7 +1119,29 @@ var UserHandler = function (app, db) {
                 async
                     .parallel([
                         function(cb){
-                            resultModel.update({$set: {personalInfo: update.personalInfo, salonInfo: update.salonInfo}}, cb);
+                            var locationAddress;
+                            var updateObj = {
+                                $set: {
+                                    personalInfo: update.personalInfo,
+                                    salonInfo: update.salonInfo
+                                }
+                            };
+
+                            if (body.salonInfo && (body.salonInfo.address || body.salonInfo.city || body.salonInfo.state || body.salonInfo.country || body.salonInfo.zipCode)){
+                                locationAddress = update.salonInfo.address + ' ' + update.salonInfo.city + ' ' + update.salonInfo.country;
+
+                                clientHandler.getCoordinatesByLocation(locationAddress, function(err, coordinates){
+                                    if (err){
+                                        return cb(err);
+                                    }
+
+                                    updateObj.$set['loc.coordinates'] = coordinates;
+
+                                    resultModel.update(updateObj, cb);
+                                });
+                            } else {
+                                resultModel.update(updateObj, cb);
+                            }
                         },
 
                         function(cb){

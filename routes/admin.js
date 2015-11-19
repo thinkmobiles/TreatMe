@@ -10,7 +10,7 @@ module.exports = function(app, db){
 
     var admin = new AdminHandler(app, db);
     var sessionHandler = new SessionHandler(db);
-    var user = new UserHandler(null, db);
+    var user = new UserHandler(app, db);
 
     router.get('/services/requested/', sessionHandler.isAdmin, admin.getRequestedService);
     router.post('/services/approve/', sessionHandler.isAdmin, admin.approveService);

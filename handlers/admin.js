@@ -1412,6 +1412,28 @@ var AdminHandler = function (app, db) {
         async.parallel([
 
             function(cb){
+                var statuses = CONSTANTS.STATUSES.APPOINTMENT;
+
+                Appointment
+                    .find({'client.id': clientId, status: {$in: [statuses.CREATED, statuses.CONFIRMED, statuses.BEGINS]}}, function(err, modelsArray){
+                        var error;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (modelsArray.length >=2){
+                            error = new Error('Client already have two not finished appointments');
+                            error.status = 400;
+
+                            return cb(error);
+                        }
+
+                        cb();
+                    });
+            },
+
+            function(cb){
                 User
                     .findOne({_id: clientId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1}, function(err, clientModel){
                         if (err){

@@ -31,6 +31,38 @@ var ClientsHandler = function (app, db) {
     var ObjectId = mongoose.Types.ObjectId;
     var schedulerHelper = new SchedulerHelper(app, db);
 
+    this.getCoordinatesByLocation = function(locationAddress, callback){
+        geocoder.geocode(locationAddress, function(err, data){
+            var coordinates = [];
+            var longitude;
+            var latitude;
+
+            if (err){
+                return callback(err);
+            }
+
+            if (!data || !data.results.length || !data.results[0].geometry || !data.results[0].geometry.location || data.status !== 'OK'){
+                return callback(badRequests.UnknownGeoLocation());
+            }
+
+            coordinates[0] = data.results[0].geometry.location.lng;
+            coordinates[1] = data.results[0].geometry.location.lat;
+
+            if (!Array.isArray(coordinates) || coordinates.length !== 2 || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
+                return callback(badRequests.UnknownGeoLocation());
+            }
+
+            longitude = coordinates[0];
+            latitude = coordinates[1];
+
+            if (longitude < -180 || longitude > 180 || latitude < -90 || latitude > 90) {
+                return callback(badRequests.UnknownGeoLocation());
+            }
+
+            callback(null, coordinates);
+        });
+    };
+
     this.getServicesWithActiveSubscriptions = function (req, res, next) {
 
         /**
@@ -377,21 +409,12 @@ var ClientsHandler = function (app, db) {
                         }
 
                         if (locationAddress) {
-                            geocoder.geocode(locationAddress, function(err, data){
+                            self.getCoordinatesByLocation(locationAddress, function(err, coordinates){
                                 if (err){
                                     return cb(err);
                                 }
 
-                                if (!data || !data.results.length || !data.results[0].geometry || !data.results[0].geometry.location || data.status !== 'OK'){
-                                    return cb(badRequests.UnknownGeoLocation());
-                                }
-
-                                clientLoc.coordinates[0] = data.results[0].geometry.location.lng;
-                                clientLoc.coordinates[1] = data.results[0].geometry.location.lat;
-
-                                if (!clientLoc || !clientLoc.coordinates.length) {
-                                    return cb(badRequests.UnknownGeoLocation());
-                                }
+                                clientLoc.coordinates = coordinates;
 
                                 cb(null, clientLoc.coordinates);
                             });
