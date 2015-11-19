@@ -7,9 +7,11 @@
     <% _.forEach(services, function (service) {%>
     <% var name = service.name %>
     <% var checked = service.status === 'new' ? "" : "checked" %>
-    <input type="checkbox" id="<%= name %>" data-id="<%=service.id%>">
-    <label for="<%= name %>"><%= name %></label>
-    <input type="text" placeholder="<%= service.price%>" value="<%= service.price%>"></br>
+    <div class="checkbox">
+        <input type="checkbox"  id="<%= name %>" data-id="<%=service.id%>" <%= checked%>>
+        <label for="<%= name %>"><%= name %></label>
+        <input type="text" id="price" placeholder="<%= service.price%>" value="<%= service.price%>"></br>
+    </div>
     <%});%>
 
     <p>*To be filled in by TreatMe team based on negotiations with stylist</p>

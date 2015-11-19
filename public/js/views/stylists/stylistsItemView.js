@@ -184,19 +184,11 @@ define([
             var region = form.find('.region').val();
             var zip = form.find('.zip').val();
             var country = form.find('.country').val();
-            var services = [];
             var service;
             var data;
 
-            serviceList.each(function (index, element) {
-                service = {};
-                service.price = $(element).siblings('input:text')[index].value || 0;
-                service.id = $(element).data('id');
+            var dataService = this.serviceApplications.getServiceData();
 
-                services.push(service);
-
-                console.log(5);
-            });
             //validation ...
 
             data = {
@@ -219,7 +211,7 @@ define([
                     country      : country,
                     licenseNumber: license
                 },
-                services    : services
+                services    : dataService
             };
 
             callback(null, data);

@@ -26,10 +26,20 @@ define([
 
         render: function () {
             var collection = this.collection.toJSON();
+            console.log(collection);
 
             this.$el.html(this.mainTemplate({services: collection}));
 
             return this;
+        },
+
+        getServiceData: function () {
+            var thisEl = this.$el.find('.checkbox:checked');
+            var dataService = _.map(thisEl, function (checkbox) {
+                return $(checkbox).closest('').data({})
+            });
+
+            return dataService;
         }
     });
 
