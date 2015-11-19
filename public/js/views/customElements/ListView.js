@@ -278,13 +278,15 @@ define([
             var paginationContent;
 
             if (totalCount) {
-
                 currentPage = currentPage || 1;
                 totalPages = Math.ceil(totalCount / count);
                 this.totalPages = totalPages;
 
-                if (totalPages >= 1) {
+                if (totalPages > 1) {
                     paginationContent = this.getPaginationContent(1, totalPages + 1);
+                    this.$el.find('#pageList .showFirst').after(paginationContent);
+                } else {
+                    this.$el.find('#pageList').hide();
                 }
 
                 /*if (totalPages <= itemsOnPage) {
@@ -297,7 +299,6 @@ define([
                  paginationContent = this.getPaginationContent(totalPages - 6, totalPages);
                  }*/
 
-                this.$el.find('#pageList .showFirst').after(paginationContent);
 
                 /*if (totalPages <= 1) {
                  $("#nextPage").prop("disabled", true);
@@ -306,6 +307,7 @@ define([
                  this.$el.find('#pageList .showFirst').after(paginationContent);
                  }*/
             } else {
+                this.$el.find('#pageList').hide();
 
             }
         },

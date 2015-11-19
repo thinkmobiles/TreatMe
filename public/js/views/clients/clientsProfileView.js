@@ -31,7 +31,7 @@ define([
                     success: function (userModel) {
                         self.model = userModel;
                         App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {
-                            name: userModel.toJSON().name,
+                            name: userModel.toJSON().firstName + ' '  + userModel.toJSON().lastName,
                             path: '#clients/:id'
                         }]);
                         self.renderClient();
@@ -76,7 +76,7 @@ define([
                 this.$el.find('#currentPackage .price').html(item.currentSubscriptions[0].price);
             }
 
-            container.find('.name').html(item.name);
+            container.find('.name').html(item.firstName +  ' ' + item.lastName);
             container.find('.phone').html(item.phone);
             container.find('.email').html(item.email);
         }

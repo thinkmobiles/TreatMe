@@ -3,6 +3,7 @@
 define([
     'models/stylistModel',
     'views/services/servicesView',
+    'views/newApplications/newApplicationsServiceView',
     //'text!templates/stylists/itemTemplate.html',
     'text!templates/stylists/stylistsItemTemplate.html',
     'text!templates/customElements/servicesTemplate.html',
@@ -10,7 +11,7 @@ define([
     //'views/stylists/stylistsEditView',
     //'views/stylists/stylistsClientsView',
     'text!templates/stylists/editStylistTemplate.html'
-], function (StylistModel, ServicesView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
+], function (StylistModel, ServicesView, ApplicationsServiceView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -44,6 +45,8 @@ define([
             } else {
                 App.menu.select('#nav_stylists');
             }
+
+            this.serviceApplications = new ApplicationsServiceView();
         },
 
         addStylist: function (options) {
@@ -192,19 +195,11 @@ define([
             var state = form.find('.state').val();
             var zipCode = form.find('.zipCode').val();
             var country = form.find('.country').val();
-            var services = [];
             var service;
             var data;
 
-            serviceList.each(function (index, element) {
-                service = {};
-                service.price = $(element).siblings('input:text')[index].value || 0;
-                service.id = $(element).data('id');
+            var dataService = this.serviceApplications.getServiceData();
 
-                services.push(service);
-
-                console.log(5);
-            });
             //validation ...
 
             data = {
@@ -227,7 +222,7 @@ define([
                     country      : country,
                     licenseNumber: licenseNumber
                 },
-                services    : services
+                services    : dataService
             };
 
             callback(null, data);

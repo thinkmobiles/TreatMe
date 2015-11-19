@@ -1,7 +1,7 @@
 <% _.forEach(items, function (item) {%>
 <tr data-id="<%= item._id%>">
     <td><input type="checkbox" class="checkItem"></td>
-    <td><%= item.purchaseDate %></td>
+    <td><%= new Date(item.purchaseDate).toLocaleDateString()%></td>
     <td><%= item.client %></td>
     <td><%= item.subscriptionType%></td>
     <td><button class="deleteCurrentBtn delete">Delete</button></td>
