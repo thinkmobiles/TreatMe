@@ -1,10 +1,33 @@
-<div class="stylistForm" xmlns="http://www.w3.org/1999/html">
-    <div class="userNameContainer">
-        <span> <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%> </span>
-        <button class="edit">Edit</button>
-        <button class="suspend">Suspend</button>
-        <button class="delete">Delete</button>
+<div class="stylistDetails">
+
+    <% if (user.approved) {%>
+    <div class="stylistInfo">
+        <table class="services" >
+            <thead>
+            <tr>
+                <th>Agreed Services</th>
+            </tr>
+            </thead>
+            <tbody>
+            <% _.forEach(user.services, function (service) {%>
+                <%if (service.status === 'approved') { %>
+                <tr data-id="<%= service._id %>">
+                    <td><%= service.name %></td>
+                    <td>$<%= service.price %></td>
+                </tr>
+                <% } %>
+            <%});%>
+            </tbody>
+        </table>
+        <div class="suspendStatus">
+            <p>
+                <%if (user.suspend.isSuspend) { %>
+                SUSPENDED FROM <%= new Date(user.suspend.history[0].from).getDate() + '/' + new Date(user.suspend.history[0].from).getMonth()  + '/' + String.prototype.slice.call(new Date(user.suspend.history[0].from).getFullYear(),2,4) %>
+                <% } %>
+            </p>
+        </div>
     </div>
+    <% } %>
 
     <div class="accountInfo">
         <div class="avatar"></div>
@@ -23,46 +46,19 @@
         <span class="title">State</span><span class="infoField"> <%= user.salonInfo.state%> </span></br>
         <span class="title">Country</span><span class="infoField"> <%= user.salonInfo.country%> </span></br>
 
-        <table class="services" >
-            <thead>
-            <tr><th>Agreed Services</th></tr>
-            </thead>
-            <tbody>
-            <% _.forEach(user.services, function (service) {%>
-            <%if (service.status === 'approved') { %>
-            <tr data-id="<%= service._id %>">
-                <td>
-                    <%= service.name %>
-                </td>
-                <td>
-                    $<%= service.price %>
-                </td>
-            </tr>
-            <% } %>
-            <%});%>
+        <div class="stylistsClients"></div>
 
-            </tbody>
-        </table>
-        <div class="suspendStatus">
-            <p>
-                <%if (user.suspend.isSuspend) { %>
-                SUSPENDED FROM <%= new Date(user.suspend.history[0].from).getDate() + '/' + new Date(user.suspend.history[0].from).getMonth()  + '/' + String.prototype.slice.call(new Date(user.suspend.history[0].from).getFullYear(),2,4) %>
-                <% } %>
-            </p>
-        </div>
-
-        <div class="stylistsClients">
-
-        </div>
+        <% if (user.approved) {%>
         <div class="suspendHistory">
             <span>HISTORY</span>
             <% _.forEach(user.suspend.history, function (suspend) {%>
             <span>
-            <%= new Date(suspend.from).getDate() + '/' + new Date(suspend.from).getMonth() + '/' + String.prototype.slice.call(new Date(suspend.from).getFullYear(),2,4) %> - Suspension
+            <%= new Date(suspend.from).toLocaleDateString()%> - Suspension
             </span>
             <span><%= suspend.reason %></span>
             <% }) %>
         </div>
+        <% } %>
 
     </div>
 
