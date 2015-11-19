@@ -554,7 +554,7 @@ var UserHandler = function (app, db) {
             };
 
             User
-                .findOne({email: createObj.email, role: body.role}, function (err, resultModel) {
+                .findOne({email: email, role: body.role}, function (err, resultModel) {
 
                     if (err) {
                         return next(err);
@@ -573,7 +573,7 @@ var UserHandler = function (app, db) {
 
                                 stripe
                                     .createCustomer({
-                                        email: body.email
+                                        email: email
                                     }, function(err, customer){
 
                                         if (err){
@@ -603,8 +603,8 @@ var UserHandler = function (app, db) {
 
                             function(cb){
                                 mailer.confirmRegistration({
-                                    name: body.firstName + ' ' + body.lastName,
-                                    email: body.email,
+                                    name: createObj.firstName + ' ' + createObj.lastName,
+                                    email: email,
                                     password: password,
                                     token: token
                                 });

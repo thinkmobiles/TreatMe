@@ -157,7 +157,7 @@ var SchedulerHelper = function(app, db){
                                     }
 
                                     if (!tenStylistsModelArray.length) {
-                                        return distance += 1609.344;
+                                        return distance += CONSTANTS.SEARCH_DISTANCE.STEP;
                                     }
 
                                 })
