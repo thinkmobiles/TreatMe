@@ -2,14 +2,16 @@
 
 define([
     'models/stylistModel',
+    'text!templates/stylists/stylistsItemTemplate.html',
     'text!templates/newApplications/itemTemplate.html'
-], function (StylistModel, MainTemplate) {
+], function (StylistModel, MainTemplate, ItemTemplate) {
 
     var View = Backbone.View.extend({
 
         el: '#wrapper',
 
         mainTemplate: _.template(MainTemplate),
+        //itemTemplate: _.template(ItemTemplate),
 
         events: {
             "click .saveBtn": "saveStylist",
@@ -45,13 +47,15 @@ define([
         },
 
         render: function () {
-            var self = this;
+            /*var self = this;
             var $el = self.$el;
             var user = self.model.toJSON();
 
-            console.log(user);
             $('.searchBlock').html('');
             $el.html(self.mainTemplate({user: user}));
+            */
+
+            this.$el.html(this.mainTemplate());
 
             return this;
         },

@@ -17,6 +17,7 @@ define([
 
         events: _.extend({
             //put events here ...
+            'click .edit': 'gotoEdit'
         }, ListView.prototype.events),
 
         initialize: function (options) {
@@ -24,6 +25,16 @@ define([
             App.menu.select('#nav_stylists');
 
             ListView.prototype.initialize.call(this, options);
+        },
+
+        gotoEdit: function (e) {
+            var target = $(e.target);
+            var itemId = target.closest('tr').data('id');
+            var url = this.url + '/' + itemId + '/edit';
+
+            e.stopPropagation();
+
+            Backbone.history.navigate(url, {trigger: true});
         }
     });
 
