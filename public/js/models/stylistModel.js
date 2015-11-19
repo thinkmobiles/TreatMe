@@ -251,10 +251,32 @@ define([
             return Backbone.Model.prototype.save.call(this, options, callbackObj);
         },
 
+        suspendRequest: function (options) {
+            var opts = options || {};
+            var ids;
+            var data;
+
+            if (opts.data) {
+                data = opts.data;
+            } else {
+                ids = [this.id];
+                data = JSON.stringify({ids: ids, reason: opts.reason});
+            }
+
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                contentType: 'application/json',
+                url: '/admin/suspend',
+                data: data,
+                success: opts.success,
+                error: opts.error
+            })
+        },
+
         //deleteRequest: function (data, callback) {
         deleteRequest: function (options) {
             var opts = options || {};
-            var len = arguments.length;
             var ids;
             var data;
 
