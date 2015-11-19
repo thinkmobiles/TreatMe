@@ -205,7 +205,7 @@ define([
                     prompt.html('Please input the reason of suspension');
                 } else {
                     params = {
-                        reason: reason
+                        reason: reasonString
                     };
                     onConfirm(params);
                 }
