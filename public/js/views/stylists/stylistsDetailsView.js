@@ -3,10 +3,11 @@
 define([
     'models/stylistModel',
     'views/newApplications/newApplicationsServiceView',
+    'views/stylists/stylistsClientsView',
     'text!templates/stylists/stylistsDetailsTemplate.html',
     'text!templates/newApplications/itemTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html'
-], function (StylistModel, ApplicationsServiceView, MainTemplate, ItemTemplate, StylistsItemTemplate) {
+], function (StylistModel, ApplicationsServiceView, StylistsClientsView, MainTemplate, ItemTemplate, StylistsItemTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -53,6 +54,7 @@ define([
             this.path = path;
             this.render();
 
+            this.clientsView = new StylistsClientsView({id: userId});
             model.fetch();
         },
 

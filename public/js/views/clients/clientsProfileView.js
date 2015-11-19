@@ -13,7 +13,7 @@ define([
         template: _.template(ClientProfile),
 
         events: {
-            'click #editSelectedBtn': 'editProfile'
+            'click #editBtn': 'editProfile'
         },
 
         initialize: function (options) {
