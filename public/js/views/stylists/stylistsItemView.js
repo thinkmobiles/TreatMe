@@ -197,10 +197,12 @@ define([
             var state = form.find('.state').val();
             var zipCode = form.find('.zipCode').val();
             var country = form.find('.country').val();
-            var service;
             var data;
+            var dataService = this.serviceApplications.getData();
 
-            var dataService = this.serviceApplications.getServiceData();
+            if (dataService === false) {
+                return callback('Please fill Price field or Incorrect format price');
+            }
 
             //validation ...
 
@@ -237,7 +239,7 @@ define([
                 var model;
 
                 if (err) {
-                    self.handleError(err)
+                    return self.handleError(err);
                 }
 
                 model = self.model;

@@ -1,10 +1,11 @@
 'use strict';
 
 define([
+    '/js/validator.js',
     'collections/applicationsServiceCollection',
     'models/serviceApplicationsModel',
     'text!templates/newApplications/serviceTemplate.html'
-], function ( Collection, StylistModel, MainTemplate) {
+], function (validator, Collection, StylistModel, MainTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -34,10 +35,19 @@ define([
 
         getData: function () {
             var checkboxes = this.$el.find('.checkbox:checked');
+            var isValid = true;
+
             var dataService = _.map(checkboxes, function (checkbox) {
                 var serviceContainer = $(checkbox).closest('.service');
                 var id = serviceContainer.data('id');
                 var price = serviceContainer.find('#price').val() || 0;
+                serviceContainer.find('.prompt').html('');
+
+                if (price == 0 || !price || !validator.isNumeric(price))  {
+                    serviceContainer.find('.prompt').html('Please fill Price field or Incorrect format price');
+                    isValid = false;
+                }
+
                 var obj = {
                     id: id,
                     price: price
@@ -45,6 +55,10 @@ define([
 
                 return 'obj';
             });
+
+            if (isValid === false) {
+                return isValid;
+            }
 
             return dataService;
         }
