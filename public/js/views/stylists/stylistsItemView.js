@@ -4,12 +4,12 @@ define([
     'models/stylistModel',
     'views/services/servicesView',
     'views/newApplications/newApplicationsServiceView',
-    'text!templates/stylists/itemTemplate.html',
+    //'text!templates/stylists/itemTemplate.html',
     'text!templates/stylists/stylistsItemTemplate.html',
     'text!templates/customElements/servicesTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html',
-    'views/stylists/stylistsEditView',
-    'views/stylists/stylistsClientsView',
+    //'views/stylists/stylistsEditView',
+    //'views/stylists/stylistsClientsView',
     'text!templates/stylists/editStylistTemplate.html'
 ], function (StylistModel, ServicesView, ApplicationsServiceView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
 
@@ -198,11 +198,11 @@ define([
             var zipCode = form.find('.zipCode').val();
             var country = form.find('.country').val();
             var data;
+
             var dataService = this.serviceApplications.getData();
 
-
             if (dataService === false) {
-                return callback('Please fill Price field or Incorrect format price');
+                return callback('Please fill Price field or Incorrect format Price');
             }
 
             //validation ...
@@ -227,7 +227,7 @@ define([
                     country      : country,
                     licenseNumber: licenseNumber
                 },
-                services    : dataService
+                 services    : dataService
             };
 
             callback(null, data);
@@ -240,7 +240,7 @@ define([
                 var model;
 
                 if (err) {
-                    return self.handleError(err);
+                    return self.handleError(err)
                 }
 
                 model = self.model;
@@ -253,7 +253,7 @@ define([
             });
 
             /*var services = this.servicesView.getData();
-            console.log(services);*/
+             console.log(services);*/
         },
 
         edit: function (e) {
