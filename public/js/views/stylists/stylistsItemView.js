@@ -46,7 +46,7 @@ define([
                 App.menu.select('#nav_stylists');
             }
 
-            this.serviceApplications = new ApplicationsServiceView();
+            //this.serviceApplications = new ApplicationsServiceView();
         },
 
         addStylist: function (options) {
@@ -87,6 +87,7 @@ define([
 
             this.render();
             this.renderUserInfo();
+            this.serviceApplications = new ApplicationsServiceView();
         },
 
         editStylist: function (options) { // load edit for stylists and new applications.
@@ -101,6 +102,7 @@ define([
 
             this.model = model;
             this.render();
+            this.servicesView = new ApplicationsServiceView();
         },
 
         render: function () {
@@ -246,6 +248,9 @@ define([
                     error  : self.handleModelError
                 });
             });
+
+            /*var services = this.servicesView.getData();
+            console.log(services);*/
         },
 
         edit: function (e) {
