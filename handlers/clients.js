@@ -754,6 +754,40 @@ var ClientsHandler = function (app, db) {
 
     this.addCardInfo = function (req, res, next) {
 
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/card`__
+         *
+         * This __method__ allows to add credit card to _Client_ profile
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/card
+         *
+         * @example Body example:
+         *
+         *  {
+         *      "stripeToken": "tok_arjfi12938esa"
+         *  }
+         *
+         * @param {string} stripeToken - Obtained from Stripe
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *   {
+         *      success: 'Card added successfully'
+         *   }
+         *
+         * @method addCardInfo
+         * @instance
+         */
+
         var userId = req.session.uId;
         var body = req.body;
 

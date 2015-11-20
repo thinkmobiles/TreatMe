@@ -224,29 +224,69 @@ var AdminHandler = function (app, db) {
          *
          *  Response status: 200
          *
-         * [
-         *      {
-         *          "_id": "563b4e0e1886cc5c16c95375",
-         *          "personalInfo": {
-         *              "firstName": "Banana 9 ",
-         *              "lastName": "Orange"
+         *   {
+         *       total: 77,
+         *       data: [
+         *       {
+         *          _id: "564f1a0777b6580f221a8761",
+         *          personalInfo: {
+         *              lastName: "istvan",
+         *              firstName: "nazarovits test2"
          *          },
-         *          "salonInfo": {},
-         *          "createdAt": "2015-11-05T12:39:42.779Z",
-         *          "approved": false
+         *          salonInfo: {
+         *          availability: {
+         *              0: [ ],
+         *              1: [ ],
+         *              2: [ ],
+         *              3: [ ],
+         *              4: [ ],
+         *              5: [ ],
+         *              6: [ ]
+         *          },
+         *          licenseNumber: "License 123",
+         *          country: "Ukraine",
+         *          city: "Ужгород",
+         *          zipCode: "88000",
+         *          state: "Закарпаття",
+         *          address: "PS street, ...",
+         *          businessRole: "Stylist",
+         *          email: "test_1448024558225@mail.com",
+         *          phone: "+38 093 111 1111",
+         *          salonName: "mySalon"
+         *        },
+         *          createdAt: "2015-11-20T13:03:03.004Z",
+         *          approved: true
          *      },
          *      {
-         *          "_id": "563b4e091886cc5c16c95374",
-         *          "personalInfo": {
-         *              "firstName": "Banana 8 ",
-         *              "lastName": "Orange"
+         *          _id: "564f19d1acfd4b7821da3f19",
+         *          personalInfo: {
+         *              lastName: "istvan",
+         *              firstName: "nazarovits"
          *          },
-         *          "salonInfo": {},
-         *          "createdAt": "2015-11-05T12:39:37.030Z",
-         *          "approved": false
-         *      }
-         * ]
-         *
+         *          salonInfo: {
+         *          availability: {
+         *              0: [ ],
+         *              1: [ ],
+         *              2: [ ],
+         *              3: [ ],
+         *              4: [ ],
+         *              5: [ ],
+         *              6: [ ]
+         *          },
+         *          licenseNumber: "License 123",
+         *          country: "Ukraine",
+         *          city: "Ужгород",
+         *          zipCode: "88000",
+         *          state: "Закарпаття",
+         *          address: "PS street, ...",
+         *          businessRole: "Stylist",
+         *          email: "test_1448024519597@mail.com",
+         *          phone: "+38 093 111 1111",
+         *          salonName: "mySalon"
+         *          },
+         *          createdAt: "2015-11-20T13:02:09.857Z",
+         *          approved: true
+         *       }
          *
          * @method getStylistList
          * @instance
@@ -365,6 +405,10 @@ var AdminHandler = function (app, db) {
          *          "lastName": "Vashkeba",
          *          "firstName": "Misha"
          *      },
+         *      payments: {
+         *           recipientId: "rp_178vAwBmJOuEPWhp98m6GGCv",
+         *           customerId: null
+         *       },
          *      "suspend": {
          *          "history": [
          *              {
@@ -378,14 +422,22 @@ var AdminHandler = function (app, db) {
          *      "approved": true,
          *      "email": "vashm@mail.ua",
          *      "coordinates": [],
-         *      "approvedServices": [
-         *          {
-         *              "serviceId": {
-         *                  "name": "Blowout"
-         *              },
-         *              "price": 15
-         *          }
-         *      ]
+         *      services: [
+         *           {
+         *               id: "5638ccde3624f77b33b6587d",
+         *               name: "Manicure",
+         *               logo: "http://localhost:8871/uploads/development/images/5638ccde3624f77b33b6587c.png",
+         *               status: "new",
+         *               price: 0
+         *           },
+         *           {
+         *               id: "56408f8281c43c3a24a332fa",
+         *               name: "Pedicure",
+         *               logo: "http://localhost:8871/uploads/development/images/56408f8281c43c3a24a332f9.png",
+         *               status: "new",
+         *               price: 0
+         *           }
+         *          ]
          *  }
          *
          *
@@ -434,7 +486,7 @@ var AdminHandler = function (app, db) {
          *    },
          *    "salonInfo": {
          *      "salonName": "Name",
-         *      "businessRole": "Dybil",
+         *      "businessRole": "Employee",
          *      "phoneNumber": "02",
          *      "email": "test@test.com",
          *      "address": "fdsghjkl;jhgf",
@@ -667,8 +719,6 @@ var AdminHandler = function (app, db) {
 
             });
 
-
-
     };
 
     this.approveStylist = function (req, res, next) {
@@ -682,7 +732,7 @@ var AdminHandler = function (app, db) {
          *
          * __URL: `/admin/stylist/approve/`__
          *
-         * This __method__ allows approve stylist by _Admin_
+         * This __method__ allows approve stylists by _Admin_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/admin/stylist/approve/
@@ -755,7 +805,6 @@ var AdminHandler = function (app, db) {
          * @method removeStylist
          * @instance
          */
-
 
         var body = req.body;
         var ids;
@@ -836,7 +885,6 @@ var AdminHandler = function (app, db) {
                     return next(err);
                 }
 
-
                 res.status(200).send({success: 'Users suspended successfully'});
             });
     };
@@ -855,7 +903,7 @@ var AdminHandler = function (app, db) {
          * This __method__ allows activate users by _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/stylist/suspend
+         *         http://projects.thinkmobiles.com:8871/admin/activate
          *
          * {
          *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc385]
@@ -904,16 +952,43 @@ var AdminHandler = function (app, db) {
          *
          * __URL: `/admin/services/requested`__
          *
-         * __Query params: page, limit__
-         *
-         * This __method__ allows get requested services for _Admin_
+         * This __method__ allows get list requested services to _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/services/requested?page=1&limit=20
+         *         http://projects.thinkmobiles.com:8871/admin/services/requested
          *
          * @example Response example:
          *
          *  Response status: 200
+         *
+         * [
+         *    {
+         *        _id: "564ef61c59ebc4ec03f41c03",
+         *        stylist: {
+         *            _id: "5644b65026f889ac0328441f",
+         *            personalInfo: {
+         *            lastName: " Petrovich ",
+         *            firstName: "Stylist"
+         *               }
+         *         },
+         *        serviceId: "5638ccde3624f77b33b6587d",
+         *        approved: false,
+         *        price: 0
+         *    },
+         *    {
+         *        _id: "564ef62759ebc4ec03f41c04",
+         *        stylist: {
+         *           _id: "5644b65026f889ac0328441f",
+         *           personalInfo: {
+         *           lastName: " Petrovich ",
+         *           firstName: "Stylist"
+         *              }
+         *          },
+         *       serviceId: "56408f8281c43c3a24a332fa",
+         *       approved: false,
+         *       price: 0
+         *   }
+         *   ]
          *
          * @method getRequestedService
          * @instance
@@ -1335,7 +1410,7 @@ var AdminHandler = function (app, db) {
          *
          * __URL: `/admin/appointments/`__
          *
-         * This __method__ allows remove suspend appointment by _Admin_
+         * This __method__ allows suspend appointment by _Admin_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/admin/appointment/
@@ -1871,24 +1946,26 @@ var AdminHandler = function (app, db) {
          *
          *  Response status: 200
          *
-         * [
-         *     {
-         *         "_id": "5633451985201c7409caa2e2",
-         *         "personalInfo": {
-         *             "lastName": "Petrovich",
-         *             "firstName": "Petya"
-         *         },
-         *         "email": "Killer57575@gmail.com"
-         *     },
-         *     {
-         *         "_id": "5633451985201c7509caa7e9",
-         *         "personalInfo": {
-         *             "lastName": "Oetrovich",
-         *             "firstName": "Petya"
-         *         },
-         *         "email": "Killer@gmail.com"
-         *     }
-         * ]
+         * {
+         *       total: 14,
+         *       data: [
+         *       {
+         *       _id: "5644b666543c82ea1b153aed",
+         *       personalInfo: {
+         *       lastName: "йцукйцук",
+         *       firstName: "йкцйук"
+         *       },
+         *       email: "sdf@sdf.comm"
+         *       },
+         *       {
+         *       _id: "56444d272ee1465b107f0c69",
+         *       personalInfo: {
+         *       lastName: "m",
+         *       firstName: "m"
+         *       },
+         *       email: "misha2g@icloud.com"
+         *       }
+         *  }
          *
          * @method getClientList
          * @instance
@@ -2089,6 +2166,42 @@ var AdminHandler = function (app, db) {
     };
 
     this.getBookedAppointment = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/appointments/:clientId`__
+         *
+         * This __method__ allows get client appointments by clientId for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/appointments/563342cf1480ea7c109dc385
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *      "total": 1,
+         *      "data": [
+         *          {
+         *              "_id": "5649f4cbd50515f80a652526",
+         *              "bookingDate": "2015-11-09T11:17:50.060Z",
+         *              "price": 20,
+         *              "stylist": "Stylist  Petrovich ",
+         *              "status": "Succeeded",
+         *              "serviceType": "Manicure"
+         *          }
+         *      ]
+         * }
+         * @method getBookedAppointment
+         * @instance
+         */
+
         var clientId = req.params.clientId;
         var query = req.query;
         var sortParam = query.sort;
@@ -2201,6 +2314,45 @@ var AdminHandler = function (app, db) {
     };
 
     this.getStylistClients = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/clients/:stylistId`__
+         *
+         * This __method__ allows get stylist clients for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/clients/563342cf1480ea7c109dc385
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *   total: 2,
+         *   data: [
+         *      {
+         *          _id: "5649f4cbd50515f80a652526",
+         *          bookingDate: "2015-11-09T11:17:50.060Z",
+         *          client: "Petya Petrovich"
+         *      },
+         *      {
+         *          _id: "564ef768122888ec1ee6f87b",
+         *          bookingDate: "2015-11-08T10:17:50.060Z",
+         *          client: "Petya Lyashenko"
+         *      }
+         *      ]
+         *  }
+         *
+         * @method getStylistClients
+         * @instance
+         */
+
         var stylistId = req.params.stylistId;
         var query = req.query;
         var sortParam = query.sort;
@@ -2292,6 +2444,55 @@ var AdminHandler = function (app, db) {
     };
 
     this.getStylistPayments = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/stylistPayments/`__
+         *
+         * This __method__ allows get stylist payments for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/stylistPayments/
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *   total: 2,
+         *   data: [
+         *      {
+         *          _id: "5649f4cbd50515f80a652526",
+         *          bookingDate: "2015-11-09T11:17:50.060Z",
+         *          status: "Succeeded",
+         *          serviceType: "Manicure",
+         *          stylist: "Stylist Petrovich ",
+         *          price: 20,
+         *          stylistFullName: "Stylist Petrovich ",
+         *          tip: "-"
+         *      },
+         *      {
+         *          _id: "564ef768122888ec1ee6f87b",
+         *          bookingDate: "2015-11-08T10:17:50.060Z",
+         *          tip: 5,
+         *          status: "Succeeded",
+         *          serviceType: "Manicure",
+         *          stylist: "Stylist Petrovich ",
+         *          price: 20,
+         *          stylistFullName: "Stylist Petrovich "
+         *      }
+         *      ]
+         *   }
+         *
+         * @method getStylistPayments
+         * @instance
+         */
+
         var query = req.query;
         var sortParam = query.sort;
         var search = query.search;
@@ -2442,6 +2643,39 @@ var AdminHandler = function (app, db) {
     };
 
     this.getClientSubscriptions = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/subscriptions/:clientId`__
+         *
+         * This __method__ allows get client subscriptions for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/subscriptions/5649f4cbd50515f80a652526
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *      total: 1,
+         *      data: [
+         *          {
+         *          purchaseDate: "2015-11-20T10:20:43.275Z",
+         *          package: "Unlimited Pass"
+         *          }
+         *      ]
+         *  }
+         *
+         * @method getClientSubscriptions
+         * @instance
+         */
+
         var clientId = req.params.clientId;
         var query = req.query;
         var sortParam = query.sort;
@@ -2659,6 +2893,9 @@ var AdminHandler = function (app, db) {
     };
 
     this.getStylistsLocation = function(req, res, next){
+
+
+
         var criteria = {
             role: CONSTANTS.USER_ROLE.STYLIST,
             online: true,
@@ -2755,6 +2992,38 @@ var AdminHandler = function (app, db) {
     }
 
     this.getOverviewByPeriod = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/statistic/overview`__
+         *
+         * This __method__ allows get statistic overview for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/statistic/overview?period=w
+         *
+         * @example Query parameter _period_ possible values (d, w, m)
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *       requestSent: 9,
+         *       appointmentBooked: 2,
+         *       packageSold: 7
+         *  }
+         *
+         * @method getOverviewByPeriod
+         * @instance
+         */
+
+
         var date = new Date();
         var period = req.query.period || 'd';
 
@@ -2805,6 +3074,37 @@ var AdminHandler = function (app, db) {
     };
 
     this.getAppointmentsStatistic = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/statistic/appointments`__
+         *
+         * This __method__ allows get statistic for booked appointments for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/statistic/appointments
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *    [
+         *        {
+         *            _id: 11,
+         *            count: 2
+         *        }
+         *    ]
+         *
+         * @method getAppointmentsStatistic
+         * @instance
+         */
+
+
         var currentDate = new Date();
         var currentYear = currentDate.getFullYear();
         var startOfYear = new Date(currentYear, 0, 1);

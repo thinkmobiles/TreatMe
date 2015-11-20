@@ -27,8 +27,7 @@ module.exports = function(app, db){
     router.get('/stylist/:id', sessionHandler.isAdmin, admin.getStylistById);
     router.post('/stylist/', sessionHandler.isAdmin, admin.createStylist);
     router.put('/stylist/:userId', sessionHandler.isAdmin, user.updateUserProfile);
-
-    router.delete('/stylist/', sessionHandler.isAdmin, admin.removeStylist);
+    router.delete('/stylist/', sessionHandler.isAdmin, admin.removeStylist); // delete not approved stylist (new application)
 
     router.post('/stylist/approve/', sessionHandler.isAdmin, admin.approveStylist);
 
@@ -42,7 +41,7 @@ module.exports = function(app, db){
     router.put('/client/', sessionHandler.isAdmin, admin.updateClient);
     router.post('/client/', sessionHandler.isAdmin, admin.createClient);
 
-    router.delete('/user/:id', sessionHandler.isAdmin, admin.removeUserById);
+    router.delete('/user/:id', sessionHandler.isAdmin, admin.removeUserById); // need to clear logic
 
     router.get('/subscriptions/:clientId', sessionHandler.isAdmin, admin.getClientSubscriptions);
 
@@ -50,7 +49,7 @@ module.exports = function(app, db){
 
     router.get('/clients/:stylistId', sessionHandler.isAdmin, admin.getStylistClients);
 
-    router.get('/appointments/:clientId', sessionHandler.isAdmin, admin.getBookedAppointment); //TODO: переробити і видалити, є метод який вертає всі юукед зустрічі
+    router.get('/appointments/:clientId', sessionHandler.isAdmin, admin.getBookedAppointment); //TODO: переробити і видалити, є метод який вертає всі букед зустрічі
     router.post('/appointments/', sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments/', sessionHandler.isAdmin, admin.suspendAppointments);
     router.delete('/appointments/', sessionHandler.isAdmin, admin.removeAppointments);

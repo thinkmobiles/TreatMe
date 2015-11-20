@@ -137,7 +137,7 @@ var StripeModule = function(){
             callback(null, recipient);
         })
 
-    }
+    };
 
 };
 
