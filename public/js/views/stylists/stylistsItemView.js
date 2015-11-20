@@ -200,7 +200,7 @@ define([
             var service;
             var data;
 
-            var dataService = this.serviceApplications.getServiceData();
+            //var dataService = this.serviceApplications.getServiceData();
 
             //validation ...
 
@@ -223,8 +223,8 @@ define([
                     zipCode      : zipCode,
                     country      : country,
                     licenseNumber: licenseNumber
-                },
-                services    : dataService
+                }/*,
+                services    : dataService*/
             };
 
             callback(null, data);

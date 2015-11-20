@@ -41,14 +41,17 @@ define([], function () {
         totalRecords: null,
         pageSize: 25,
 
-        initialize: function (options) {
+        initialize: function (options, params) {
+            var _opts   = options || {};
+            var _params = params  || {};
             var page;
 
-            options = options || {};
-            page = options.page;
-            options.reset = true;
+            page = _opts.page;
+            _opts.reset = true;
 
-            this.getPage(page, options);
+            if (_params.fetch !== false) {
+                this.getPage(page, _opts);
+            }
         },
 
         offset: function () {

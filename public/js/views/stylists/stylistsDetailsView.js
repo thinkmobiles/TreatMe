@@ -2,12 +2,13 @@
 
 define([
     'models/stylistModel',
+    'collections/stylistCollection',
     'views/newApplications/newApplicationsServiceView',
     'views/stylists/stylistsClientsView',
     'text!templates/stylists/stylistsDetailsTemplate.html',
     'text!templates/newApplications/itemTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html'
-], function (StylistModel, ApplicationsServiceView, StylistsClientsView, MainTemplate, ItemTemplate, StylistsItemTemplate) {
+], function (StylistModel, StylistCollection, ApplicationsServiceView, StylistsClientsView, MainTemplate, ItemTemplate, StylistsItemTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -20,7 +21,7 @@ define([
         events: {
             "click .saveBtn"   : 'saveStylist',
             "click #editBtn"   : 'edit',
-            "click #acceptBtn" : 'saveStylist',
+            "click #acceptBtn" : 'acceptStylist',
             "click #removeBtn" : 'remove',
             "click #suspendBtn": 'suspend'
         },
@@ -54,7 +55,10 @@ define([
             this.path = path;
             this.render();
 
-            this.clientsView = new StylistsClientsView({id: userId});
+            if (path === 'stylists') {
+                this.clientsView = new StylistsClientsView({id: userId});
+            }
+
             model.fetch();
         },
 
@@ -192,6 +196,26 @@ define([
                  self.handleError(errMessage);
                  }*!/
                  });*/
+            });
+        },
+
+        acceptStylist: function () {
+            var collection = new StylistCollection(this.model, {fetch: false});
+            var self = this;
+
+            collection.acceptRequest({
+                success : function () {
+                    console.log('success accepted');
+                    var html = '';
+
+                    html += '<p class="successAccepted">';
+                    html +=   '<span class="accept"></span>';
+                    html +=   'Thank you! Application is accepted, stylist account will be activated immediately.';
+                    html += '</p>';
+
+                    self.$el.html(html);
+
+                }, error: this.handleErrorResponse
             });
         },
 

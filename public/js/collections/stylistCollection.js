@@ -35,6 +35,28 @@ define([
 
             this.fetch(params);
         },*/
+        acceptRequest: function (options) {
+            var opts = options || {};
+            var ids;
+            var data;
+
+            if (opts.data) {
+                data = opts.data;
+            } else {
+                ids = _.pluck(this.models, 'id');
+                data = JSON.stringify({ids: ids});
+            }
+
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                contentType: 'application/json',
+                url: '/admin/stylist/approve',
+                data: data,
+                success: opts.success,
+                error: opts.error
+            });
+        },
 
         approve: function (data, callback) {
             $.ajax({
