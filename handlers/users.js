@@ -106,6 +106,7 @@ var UserHandler = function (app, db) {
                         $or: [
                             {'client.firstName': {$regex: searchRegExp}},
                             {'client.lastName': {$regex: searchRegExp}},
+                            {'clientFullName': {$regex: searchRegExp}},
                             {'serviceType.name': {$regex: searchRegExp}}
                         ]
                     };
@@ -137,8 +138,10 @@ var UserHandler = function (app, db) {
                         $or: [
                             {'client.firstName': {$regex: searchRegExp}},
                             {'client.lastName': {$regex: searchRegExp}},
+                            {'clientFullName': {$regex: searchRegExp}},
                             {'stylist.firstName': {$regex: searchRegExp}},
-                            {'stylist.lastName': {$regex: searchRegExp}}
+                            {'stylist.lastName': {$regex: searchRegExp}},
+                            {'stylistFullName': {$regex: searchRegExp}}
                         ]
                     };
                 }

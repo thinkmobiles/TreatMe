@@ -5,6 +5,7 @@ var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
 var _ = require('lodash');
 var ImageHandler = require('./image');
+var StripeModule = require('../helpers/stripe');
 
 
 var StylistHandler = function (app, db) {
@@ -14,6 +15,7 @@ var StylistHandler = function (app, db) {
     var Appointment = db.model('Appointment');
     var User = db.model('User');
     var imageHandler = new ImageHandler();
+    var stripe = new StripeModule();
     var io = app.get('io');
 
 
@@ -464,6 +466,74 @@ var StylistHandler = function (app, db) {
                         });
                     });
             });
+    };
+
+    this.addRecipient = function(req, res, next){
+        var body = req.body;
+        var uId = req.session.uId;
+        var data;
+        var token = body.stripeToken;
+
+        async
+            .waterfall([
+                function(cb){
+                    User
+                        .findOne({_id: uId}, function(err, userModel){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!userModel){
+                                err = new Error('User not found');
+                                err.status = 400;
+                                return cb(err);
+                            }
+
+
+                            cb(null, userModel);
+                        });
+                },
+
+                function (userModel, cb){
+                    data = {
+                        name: userModel.personalInfo.firstName + ' ' + userModel.personalInfo.lastName,
+                        type: 'individual',
+                        bank_account: token,
+                        email: userModel.email
+                    };
+
+                    stripe
+                        .createRecipient(data, function(err, recipient){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!recipient){
+                                err = new Error('Stripe error');
+                                err.status = 400;
+                                return cb(err);
+                            }
+
+                            userModel.payments.recipientId = recipient.id;
+
+                            cb(null, userModel);
+                        });
+                },
+
+                function(userModel, cb){
+                    userModel
+                        .save(cb);
+                }
+            ], function(err){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Bank account added successfully'});
+
+            });
+
     };
 };
 

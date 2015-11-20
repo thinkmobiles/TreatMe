@@ -127,6 +127,18 @@ var StripeModule = function(){
 
     };
 
+    this.createRecipient = function(data, callback){
+
+        stripe.recipients.create(data, function(err, recipient){
+            if (err){
+                return callback(err);
+            }
+
+            callback(null, recipient);
+        })
+
+    }
+
 };
 
 module.exports = StripeModule;
