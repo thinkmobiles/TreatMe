@@ -701,6 +701,34 @@ var UserHandler = function (app, db) {
 
     this.forgotPassword = function (req, res, next) {
 
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/forgot/`__
+         *
+         * This __method__ allows recover password by _User_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/forgot/
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Check your email"
+         *  }
+         *
+         * @param {string} email - `User` email
+         *
+         * @method forgotPassword
+         * @instance
+         */
+
         var body = req.body;
         var email;
         var forgotToken = uuid.v4();
@@ -783,13 +811,51 @@ var UserHandler = function (app, db) {
 
     this.changePassword = function (req, res, next) {
 
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/passwordChange/`__
+         *
+         * This __method__ allows change password by _User_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/passwordChange/
+         *
+         * @example Body example:
+         *
+         * {
+         *      "password": "qwerty",
+         *      "token": "1231gs1f3s21sf54s654s",
+         *      "role": "Stylist"
+         * }
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Password changed successfully"
+         *  }
+         *
+         * @param {string} password - `User` password
+         * @param {string} token - `User` forgot token
+         * @param {string} role - `User` role
+         *
+         * @method changePassword
+         * @instance
+         */
+
         var forgotToken;
         var userRole;
         var body = req.body;
         var encryptedPassword;
 
         if (!body.password || !body.token || !body.role) {
-            return next(badRequests.NotEnParams({params: 'password'}));
+            return next(badRequests.NotEnParams({params: 'password or token or role'}));
         }
 
         forgotToken = body.token;
@@ -1030,14 +1096,13 @@ var UserHandler = function (app, db) {
          *
          * __HOST: `http://projects.thinkmobiles.com:8871`__
          *
-         * __URL: `/profile/:userId?`__
+         * __URL: `/profile/`__
          *
-         * Param userId must be when admin use method
          *
          * This __method__ allows update _User_ profile
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/proflie/563c53d1bd76bceb104a8900
+         *         http://projects.thinkmobiles.com:8871/proflie
          *
          * @example Body example:
          *
@@ -1112,7 +1177,7 @@ var UserHandler = function (app, db) {
                 }
 
                 if (!resultModel) {
-                    return next(badRequests.DatabaseError());
+                    return next(badRequests.NotFound({target: 'User'}));
                 }
 
                 userObj = resultModel.toJSON();
@@ -1286,17 +1351,38 @@ var UserHandler = function (app, db) {
          *       "role": "Stylist",
          *       "createdAt": "2015-11-06T07:16:33.766Z",
          *       "activeSubscriptions": [],
+         *       "payments": {
+         *          "recipientId": kjghkjhh;l123154746,
+         *          "customerId": null
+         *       },
          *       "salonInfo": {
+         *          "availability": {
+         *                          "0": [
+         *                                    {
+         *                                        "_id": "5644b765cfd3b4580b1f3faf",
+         *                                        "to": "18:00",
+         *                                        "from": "09:00"
+         *                                    }
+         *                                ],
+         *                                ...
+         *                          "6": [
+         *                                    {
+         *                                        "_id": "5644b765cfd3b4580b1f3fa9",
+         *                                        "to": "19:30",
+         *                                        "from": "09:00"
+         *                                    }
+         *                               ]
+         *           },
          *           "licenseNumber": "",
-         *           "country": "",
-         *           "city": "",
-         *           "zipCode": "",
-         *           "state": "",
-         *           "address": "",
+         *           "country": "USA",
+         *           "city": "New York",
+         *           "zipCode": "11000",
+         *           "state": "Some state",
+         *           "address": "Brooklyn 65",
          *           "businessRole": "Employee",
          *           "email": "",
          *           "phone": "",
-         *           "salonName": ""
+         *           "salonName": "Hair salon"
          *       },
          *       "personalInfo": {
          *           "avatar": "",
@@ -1311,7 +1397,7 @@ var UserHandler = function (app, db) {
          *           "isSuspend": false
          *       },
          *       "email": "vashm@mail.ua",
-         *       "coordinates": []
+         *       "coordinates": [22, 48]
          *   }
          *
          * @method getProfile
@@ -1383,7 +1469,7 @@ var UserHandler = function (app, db) {
          *  Response status: 200
          *
          *  {
-         *      "success": "User updated successfully"
+         *      "success": "Avatar upload successful"
          *  }
          *
          * @param {string} avatar - avatar string(Base64)
@@ -1554,7 +1640,7 @@ var UserHandler = function (app, db) {
          * @example Body example:
          *
          * {
-         *      "coordinates": [150, -78]
+         *      "coordinates": [150, -89]
          * }
          *
          * @example Response example:
@@ -1617,6 +1703,44 @@ var UserHandler = function (app, db) {
     };
 
     this.getGalleryPhotos = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/gallery/:clientId?`_
+         * _
+         * clientId parameter needed for Stylist only
+         *
+         * This __method__ allows get _User_ gallery photos
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/gallery/56405477f2d8c978068b12b3
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *     "total": 1,
+         *     "data": [
+         *         {
+         *             "_id": "564f0abd122888ec1ee6f87d",
+         *             "client": "Petya Lyashenko",
+         *             "serviceType": "Manicure",
+         *             "bookingDate": "2015-11-08T10:17:50.060Z",
+         *             "photoUrl": "http://projects.thinkmobiles.com:8871/uploads/development/images/564f0abd122888ec1ee6f87d.png"
+         *         }
+         *     ]
+         * }
+         *
+         * @method getGalleryPhotos
+         * @instance
+         */
+
         var session = req.session;
         var userId = req.params.id;
         var query = req.query;
@@ -1732,6 +1856,33 @@ var UserHandler = function (app, db) {
     };
 
     this.removePhotoFromGallery = function(req, res, next){
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/gallery/:id`__
+         *
+         * This __method__ allows delete _User_ photo from gallery
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/gallery/564f0abd122888ec1ee6f87d
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Photo was removed from gallery"
+         *  }
+         *
+         * @method removePhotoFromGallery
+         * @instance
+         */
+
         var session = req.session;
         var userId = session.uId;
         var imageName = req.params.id;
@@ -1742,11 +1893,11 @@ var UserHandler = function (app, db) {
         }
 
         if (session.role === CONSTANTS.USER_ROLE.CLIENT){
-            findObj.clientId = userId;
+            findObj.client = ObjectId(userId);
         }
 
         if (session.role === CONSTANTS.USER_ROLE.STYLIST){
-            findObj.stylistId = userId;
+            findObj.stylist = ObjectId(userId);
         }
 
         async.waterfall([
@@ -1767,7 +1918,13 @@ var UserHandler = function (app, db) {
             },
 
             function(imageModel, cb){
-                imageModel.remove(cb);
+                imageModel.remove(function(err){
+                    if (err){
+                        return cb(err);
+                    }
+
+                    cb();
+                });
             },
 
             function(cb){

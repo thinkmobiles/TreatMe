@@ -109,6 +109,7 @@ var AdminHandler = function (app, db) {
                 'salonInfo': 1,
                 'createdAt': 1,
                 'approved': 1,
+                'suspend.isSuspend': 1,
                 'role': 1,
                 'fullName': {
                     $concat: ['$personalInfo.firstName', ' ', '$personalInfo.lastName']
@@ -119,6 +120,7 @@ var AdminHandler = function (app, db) {
                 'personalInfo.firstName': 1,
                 'personalInfo.lastName': 1,
                 'email': 1,
+                'suspend.isSuspend': 1,
                 'createdAt': 1,
                 'role': 1,
                 'fullName': {
@@ -159,14 +161,16 @@ var AdminHandler = function (app, db) {
                             personalInfo: resultModel[i].personalInfo,
                             salonInfo: resultModel[i].salonInfo || {},
                             createdAt: resultModel[i].createdAt,
-                            approved:  resultModel[i].approved
+                            approved:  resultModel[i].approved,
+                            suspend: resultModel[i].suspend.isSuspend
                         };
                     } else {
 
                         obj = {
                             _id: resultModel[i]._id,
                             personalInfo: resultModel[i].personalInfo,
-                            email: resultModel[i].email
+                            email: resultModel[i].email,
+                            suspend: resultModel[i].suspend.isSuspend
                         }
                     }
 
