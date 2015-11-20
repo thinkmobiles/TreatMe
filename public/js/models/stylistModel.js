@@ -16,6 +16,7 @@ define([
             var email = attrs.email;
             var personalInfo = attrs.personalInfo;
             var salonInfo = attrs.salonInfo;
+            var services = attrs.services;
             var firstName = personalInfo.firstName;
             var lastName = personalInfo.lastName;
             var personalPhone = personalInfo.phone;
@@ -29,6 +30,7 @@ define([
             var zipCode = salonInfo.zipCode;
             var state = salonInfo.state;
             var country = salonInfo.country;
+
             /*var requiredFields = [
                 /!*'firstName',
                 'lastName',

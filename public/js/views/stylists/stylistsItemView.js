@@ -46,7 +46,7 @@ define([
                 App.menu.select('#nav_stylists');
             }
 
-            //this.serviceApplications = new ApplicationsServiceView();
+            this.serviceApplications = new ApplicationsServiceView();
         },
 
         addStylist: function (options) {
@@ -197,10 +197,13 @@ define([
             var state = form.find('.state').val();
             var zipCode = form.find('.zipCode').val();
             var country = form.find('.country').val();
-            var service;
             var data;
 
-            //var dataService = this.serviceApplications.getServiceData();
+            var dataService = this.serviceApplications.getData();
+
+            if (dataService === false) {
+                return callback('Please fill Price field or Incorrect format Price');
+            }
 
             //validation ...
 
@@ -223,8 +226,8 @@ define([
                     zipCode      : zipCode,
                     country      : country,
                     licenseNumber: licenseNumber
-                }/*,
-                services    : dataService*/
+                },
+                 services    : dataService
             };
 
             callback(null, data);
@@ -237,7 +240,7 @@ define([
                 var model;
 
                 if (err) {
-                    self.handleError(err)
+                    return self.handleError(err)
                 }
 
                 model = self.model;
@@ -250,7 +253,7 @@ define([
             });
 
             /*var services = this.servicesView.getData();
-            console.log(services);*/
+             console.log(services);*/
         },
 
         edit: function (e) {
