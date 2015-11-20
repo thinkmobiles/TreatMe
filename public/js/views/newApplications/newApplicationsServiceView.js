@@ -26,17 +26,24 @@ define([
 
         render: function () {
             var collection = this.collection.toJSON();
-            console.log(collection);
 
             this.$el.html(this.mainTemplate({services: collection}));
 
             return this;
         },
 
-        getServiceData: function () {
-            var thisEl = this.$el.find('.checkbox:checked');
-            var dataService = _.map(thisEl, function (checkbox) {
-                return $(checkbox).closest('').data({})
+        getData: function () {
+            var checkboxes = this.$el.find('.checkbox:checked');
+            var dataService = _.map(checkboxes, function (checkbox) {
+                var serviceContainer = $(checkbox).closest('.service');
+                var id = serviceContainer.data('id');
+                var price = serviceContainer.find('#price').val() || 0;
+                var obj = {
+                    id: id,
+                    price: price
+                };
+
+                return 'obj';
             });
 
             return dataService;

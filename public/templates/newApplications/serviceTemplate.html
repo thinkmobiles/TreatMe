@@ -1,18 +1,29 @@
 <div class="services">
-    <br>Please contact stylist and negotiate services available and prices before approving </br> the application</br>
-    <span>Services available*</span>
-    <span>Service Price*</span>
-    </p>
-
-    <% _.forEach(services, function (service) {%>
-    <% var name = service.name %>
-    <% var checked = service.status === 'new' ? "" : "checked" %>
-    <div class="checkbox">
-        <input type="checkbox"  id="<%= name %>" data-id="<%=service.id%>" <%= checked%>>
-        <label for="<%= name %>"><%= name %></label>
-        <input type="text" id="price" placeholder="<%= service.price%>" value="<%= service.price%>"></br>
-    </div>
-    <%});%>
+    <p>Please contact stylist and negotiate services available and prices before approving the application</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Services available*</th>
+                <th>Service Price*</th>
+            </tr>
+        </thead>
+        <tbody>
+        <% _.forEach(services, function (service) {%>
+            <% var checked = service.status === 'new' ? "" : "checked" %>
+            <% var name = service.name; %>
+            <tr class="service" data-id="<%=service._id%>">
+                <td>
+                    <input id="<%= name %>" type="checkbox" class="checkbox" <%= checked%>>
+                    <label for="<%= name %>"><%= name %></label>
+                </td>
+                <td>
+                    <span class="currency">$</span>
+                    <input type="text" id="price" placeholder="<%= service.price%>" value="<%= (service.price) ? service.price : 0%>">
+                </td>
+            </tr>
+        <%});%>
+        </tbody>
+    </table>
 
     <p>*To be filled in by TreatMe team based on negotiations with stylist</p>
-</div><span class="prompt"></span></br>
+</div>
