@@ -19,11 +19,13 @@ define([
         query       : {
             status: 'requested'
         },
+        removeConfirmMessage: 'Are You sure want to delete this profile(s)?',
 
         events: _.extend({
-            "click .acceptCurrentBtn"                    : "acceptStylist",
-            "click #acceptSelectedBtn"                   : "acceptStylists",
-            "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest"
+            "click .acceptCurrentBtn" : "acceptStylist",
+            "click #acceptSelectedBtn": "acceptStylists",
+            "click .removeCurrentBtn" : "deleteStylist",
+            "click #removeSelectedBtn": "deleteStylists"
         }, ListView.prototype.events),
 
         initialize: function (options) {
@@ -64,7 +66,27 @@ define([
             });
         },
 
-        deleteRequest: function (e) {
+        deleteStylist: function (e) {
+            var target = $(e.target);
+            var id = target.closest('tr').data('id');
+            var ids = [id];
+
+            e.stopPropagation();
+
+            this.deleteRequest(ids);
+        },
+
+        deleteStylists: function () {
+            var ids = this.getSelectedIds();
+
+            this.deleteRequest(ids);
+        },
+
+        deleteRequest: function (ids) {
+            console.log('>>> delete request');
+        },
+
+        deleteRequest__: function (e) {
             var el = e.target;
             var self = this;
             var checkboxes;

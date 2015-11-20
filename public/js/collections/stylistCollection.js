@@ -70,7 +70,7 @@ define([
             })
         },
 
-        deleteRequest: function (data, callback) {
+        deleteRequest__: function (data, callback) {
             $.ajax({
                 type: 'DELETE',
                 dataType: 'json',
@@ -80,6 +80,29 @@ define([
                 success: callback,
                 error: this.handleErrorResponse //TODO
             })
+        },
+
+        deleteRequest: function (options) {
+            var opts = options || {};
+            var ids;
+            var data;
+
+            if (opts.data) {
+                data = opts.data;
+            } else {
+                ids = this.pluck('id');
+                data = JSON.stringify({ids: ids});
+            }
+
+            $.ajax({
+                type: 'DELETE',
+                dataType: 'json',
+                contentType: 'application/json',
+                url: '/admin/stylist',
+                data: data,
+                success: opts.success,
+                error: opts.error
+            });
         }
     });
 

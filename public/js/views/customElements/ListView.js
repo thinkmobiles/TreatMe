@@ -29,11 +29,11 @@ define([
             search: '',
             status: '' //TODO: ???
         },
-        removeParams      : {
+/*        removeParams      : {
             url           : null,
             confirmMessage: 'Are You sure want to delete?'
-        },
-
+        },*/
+        removeConfirmMessage: 'Are You sure want to delete this profile(s)?',
         events: {
             'click .item'             : 'showItem',
             'click .showPage'         : 'gotoPage',
@@ -45,7 +45,7 @@ define([
             'click .checkAll'         : 'checkAllClick',
             'click .checkItem'        : 'checkItemClick',
             'click #removeSelectedBtn': 'removeSelectedItems',
-            'click .deleteCurrentBtn' : 'deleteCurrentItem'
+            'click .removeCurrentBtn' : 'deleteCurrentItem'
         },
 
         initialize: function (options) {
@@ -81,6 +81,7 @@ define([
             this.collection.on('reset remove', function () {
                 self.renderList();
             });
+            this.collection.on('error', this.handleModelError, this);
 
             if (opts.search) {
                 this.$el.find('.search').val(opts.search);
@@ -414,7 +415,7 @@ define([
                 buttons  : buttons
             };
             var dialogContainer = $('#dialog');
-            var message = this.removeParams.confirmMessage;
+            var message = this.removeConfirmMessage;
 
             dialogContainer.find('.message').html(message);
             dialogContainer.dialog(dialogOptions);
@@ -436,6 +437,8 @@ define([
         deleteCurrentItem: function (e) {
             var self = this;
 
+            e.stopPropagation();
+
             this.removeConfirm({
                 onConfirm: function () {
                     var target = $(e.target);
@@ -449,7 +452,16 @@ define([
         },
 
         remove: function (ids) {
-            var data = {
+            var self = this;
+
+            self.collection.deleteRequest({
+                data: JSON.stringify({ids: ids}),
+                success: function () {
+                    self.collection.remove(ids);
+                }
+            });
+
+            /*var data = {
                 packagesArray: ids
             };
             var dataStr = JSON.stringify(data);
@@ -474,7 +486,7 @@ define([
                     self.collection.getPage(page, fetchParams); //fetch and re-render
                 },
                 error      : self.handleErrorResponse //TODO
-            });
+            });*/
         },
 
         showItem: function (e) {
