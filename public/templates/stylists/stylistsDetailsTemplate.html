@@ -21,5 +21,12 @@
     <div class="info">
         <div class="userInfo"></div>
     </div>
-    <div class="stylistsClients"></div>
+    <% if ( path === 'newApplications') { %>
+        <div class="buttons">
+            <button id="acceptBtn" class="accept">Accept</button>
+            <button id="removeBtn" class="delete">Delete</button>
+        </div>
+    <% } else { %>
+        <div class="stylistsClients"></div>
+    <% } %>
 </div>

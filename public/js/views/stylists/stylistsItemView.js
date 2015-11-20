@@ -4,12 +4,12 @@ define([
     'models/stylistModel',
     'views/services/servicesView',
     'views/newApplications/newApplicationsServiceView',
-    //'text!templates/stylists/itemTemplate.html',
+    'text!templates/stylists/itemTemplate.html',
     'text!templates/stylists/stylistsItemTemplate.html',
     'text!templates/customElements/servicesTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html',
-    //'views/stylists/stylistsEditView',
-    //'views/stylists/stylistsClientsView',
+    'views/stylists/stylistsEditView',
+    'views/stylists/stylistsClientsView',
     'text!templates/stylists/editStylistTemplate.html'
 ], function (StylistModel, ServicesView, ApplicationsServiceView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
 
@@ -46,7 +46,7 @@ define([
                 App.menu.select('#nav_stylists');
             }
 
-            //this.serviceApplications = new ApplicationsServiceView();
+            this.serviceApplications = new ApplicationsServiceView();
         },
 
         addStylist: function (options) {
@@ -199,6 +199,7 @@ define([
             var country = form.find('.country').val();
             var data;
             var dataService = this.serviceApplications.getData();
+
 
             if (dataService === false) {
                 return callback('Please fill Price field or Incorrect format price');
