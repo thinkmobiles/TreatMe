@@ -108,23 +108,43 @@ var AdminHandler = function (app, db) {
                 'personalInfo.lastName': 1,
                 'salonInfo': 1,
                 'createdAt': 1,
-                'approved': 1
+                'approved': 1,
+                'role': 1,
+                'fullName': {
+                    $concat: ['$personalInfo.firstName', ' ', '$personalInfo.lastName']
+                }
             };
         } else {
             projection = {
                 'personalInfo.firstName': 1,
                 'personalInfo.lastName': 1,
                 'email': 1,
-                'createdAt': 1
+                'createdAt': 1,
+                'role': 1,
+                'fullName': {
+                    $concat: ['$personalInfo.firstName', ' ', '$personalInfo.lastName']
+                }
             };
         }
 
         User
-            .find(criteria, projection)
-            .sort(sortObj)
-            .skip(limit * (page - 1))
-            .limit(limit)
-            .exec(function(err, resultModel){
+            .aggregate([
+                {
+                    $project: projection
+                },
+                {
+                    $match: criteria
+                },
+                {
+                    $sort: sortObj
+                },
+                {
+                    $skip: limit * (page - 1)
+                },
+                {
+                    $limit: +limit
+                }
+            ], function(err, resultModel){
                 if (err){
                     return callback(err);
                 }
@@ -157,6 +177,15 @@ var AdminHandler = function (app, db) {
                 callback(null, resultArray.reverse());
 
             });
+
+       /* User
+            .find(criteria, projection)
+            .sort(sortObj)
+            .skip(limit * (page - 1))
+            .limit(limit)
+            .exec(function(err, resultModel){
+
+            });*/
     };
 
     function getCountByCriterion(findObj, callback){
@@ -243,6 +272,7 @@ var AdminHandler = function (app, db) {
             searchObj['$or'] = [
                     {'personalInfo.firstName': {$regex: searchRegExp}},
                     {'personalInfo.lastName': {$regex: searchRegExp}},
+                    {'fullName': {$regex: searchRegExp}},
                     {'salonInfo.salonName': {$regex: searchRegExp}}
                 ];
         }
@@ -1659,6 +1689,7 @@ var AdminHandler = function (app, db) {
         var search = query.search;
         var searchCriteria = {};
         var searchRegExp;
+        var projection;
 
         var criteria = {
             $and:[{expirationDate: {$gte: new Date()}}]
@@ -1681,11 +1712,23 @@ var AdminHandler = function (app, db) {
             sortObj['subscriptionType.name'] = order;
         }
 
+        projection = {
+            client: 1,
+            subscriptionType: 1,
+            price: 1,
+            purchaseDate: 1,
+            expirationDate: 1,
+            'clientFullName': {
+                $concat: ['$client.firstName', ' ', '$client.lastName']
+            }
+        };
+
         if (search){
             searchRegExp = new RegExp('.*' + search + '.*', 'ig');
             searchCriteria['$or'] = [
                 {'client.firstName': {$regex: searchRegExp}},
                 {'client.lastName': {$regex: searchRegExp}},
+                {'clientFullName': {$regex: searchRegExp}},
                 {'subscriptionType.name': {$regex: searchRegExp}}
             ];
 
@@ -1706,11 +1749,23 @@ var AdminHandler = function (app, db) {
 
             function(cb) {
                 Subscription
-                    .find(criteria, {__v: 0, expirationDate: 0})
-                    .sort(sortObj)
-                    .skip(limit * (page - 1))
-                    .limit(limit)
-                    .exec(function (err, subscriptionModelsArray) {
+                    .aggregate([
+                        {
+                            $project: projection
+                        },
+                        {
+                            $match: criteria
+                        },
+                        {
+                            $sort: sortObj
+                        },
+                        {
+                            $skip: limit * (page - 1)
+                        },
+                        {
+                            $limit: +limit
+                        }
+                    ], function (err, subscriptionModelsArray) {
                         var resultArray;
 
                         if (err) {
@@ -1718,20 +1773,20 @@ var AdminHandler = function (app, db) {
                         }
 
                         resultArray = subscriptionModelsArray.map(function (model) {
-                            var modelJson = model.toJSON();
+                            //var modelJson = model.toJSON();
 
                             if (model.client) {
-                                modelJson.client = modelJson.client.firstName + ' ' + modelJson.client.lastName;
+                                model.client = model.client.firstName + ' ' + model.client.lastName;
                             } else {
-                                modelJson.client = 'Client was removed'
+                                model.client = 'Client was removed'
                             }
                             if (model.subscriptionType) {
-                                modelJson.subscriptionType = modelJson.subscriptionType.name;
+                                model.subscriptionType = model.subscriptionType.name;
                             } else {
-                                modelJson.subscriptionType = 'Subscription was removed';
+                                model.subscriptionType = 'Subscription was removed';
                             }
 
-                            return modelJson
+                            return model
                         });
 
                         cb(null, resultArray);
@@ -1857,6 +1912,7 @@ var AdminHandler = function (app, db) {
             searchObj['$or'] = [
                 {'personalInfo.firstName': {$regex: searchRegExp}},
                 {'personalInfo.lastName': {$regex: searchRegExp}},
+                {'fullName': {$regex: searchRegExp}},
                 {'email': {$regex: searchRegExp}}
             ];
         }
@@ -2238,20 +2294,45 @@ var AdminHandler = function (app, db) {
     this.getStylistPayments = function(req, res, next){
         var query = req.query;
         var sortParam = query.sort;
+        var search = query.search;
         var page = (query.page >=1) ? query.page : 1;
         var order = (query.order === '1') ? 1 : -1;
         var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_CLIENTS;
         var sortObj = {};
+        var searchRegExp;
+        var searchObj = {};
+
         var projection = {
             bookingDate: 1,
             stylist: 1,
             serviceType: 1,
             price: 1,
-            tip: 1
+            tip: 1,
+            status: 1,
+            'stylistFullName': {
+                $concat: ['$stylist.firstName', ' ', '$stylist.lastName']
 
+            }
         };
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                {'stylist.firstName': {$regex: searchRegExp}},
+                {'stylist.lastName': {$regex: searchRegExp}},
+                {'stylistFullName': {$regex: searchRegExp}},
+                {'serviceType.name': {$regex: searchRegExp}}
+            ];
+        }
+
         var criteria = {
-            status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
+            $and: [
+                {
+                    status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
+                },
+                searchObj
+            ]
         };
 
         if (sortParam){
@@ -2298,11 +2379,23 @@ var AdminHandler = function (app, db) {
 
             appointment: function(cb){
                 Appointment
-                    .find(criteria, projection)
-                    .sort(sortObj)
-                    .skip(limit * (page -1))
-                    .limit(limit)
-                    .exec(function(err, appointmentModelsArray){
+                    .aggregate([
+                        {
+                            $project: projection
+                        },
+                        {
+                            $match: criteria
+                        },
+                        {
+                            $sort: sortObj
+                        },
+                        {
+                            $skip: limit * (page -1)
+                        },
+                        {
+                            $limit: +limit
+                        }
+                    ], function(err, appointmentModelsArray){
                         var stylistPaymentsArray;
 
                         if (err){
@@ -2310,28 +2403,27 @@ var AdminHandler = function (app, db) {
                         }
 
                         stylistPaymentsArray = appointmentModelsArray.map(function(model){
-                            var modelJSON = model.toJSON();
 
-                            if (modelJSON.stylist && modelJSON.stylist.firstName && modelJSON.stylist.lastName){
-                                modelJSON.stylist = modelJSON.stylist.firstName + ' ' + modelJSON.stylist.lastName;
+                            if (model.stylist && model.stylist.firstName && model.stylist.lastName){
+                                model.stylist = model.stylist.firstName + ' ' + model.stylist.lastName;
                             } else {
-                                modelJSON.stylist = 'Stylist was removed'
+                                model.stylist = 'Stylist was removed'
                             }
 
-                            if (modelJSON.serviceType && modelJSON.serviceType.name){
-                                modelJSON.serviceType = modelJSON.serviceType.name;
+                            if (model.serviceType && model.serviceType.name){
+                                model.serviceType = model.serviceType.name;
                             } else {
-                                modelJSON.serviceType = 'Service was removed';
+                                model.serviceType = 'Service was removed';
                             }
 
-                            if (!modelJSON.price){
-                                modelJSON.price = '-';
+                            if (!model.price){
+                                model.price = '-';
                             }
-                            if (!modelJSON.tip){
-                                modelJSON.tip = '-';
+                            if (!model.tip){
+                                model.tip = '-';
                             }
 
-                            return modelJSON;
+                            return model;
                         });
 
                         cb(null, stylistPaymentsArray);
