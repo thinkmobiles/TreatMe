@@ -139,6 +139,12 @@ var StripeModule = function(){
 
     };
 
+    this.createTransfer = function(data, callback){
+
+        stripe.transfers.create(data, callback);
+
+    }
+
 };
 
 module.exports = StripeModule;

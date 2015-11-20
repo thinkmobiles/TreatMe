@@ -3135,6 +3135,62 @@ var AdminHandler = function (app, db) {
     };
 
 
+    //payments
+
+    this.createTransfer = function(req, res, next){
+        var body = req.body;
+        var stylistId = body.stylistId;
+        var amount = body.amount;
+        var currency = body.currency;
+        var statement_descriptor = body.statementDescriptor;
+
+        if (!stylistId || !amount || !currency || !statement_descriptor){
+            return next(badRequests.NotEnParams());
+        }
+
+        async
+            .waterfall([
+                function(cb){
+                   User
+                       .findOne({_id: stylistId}, {'payments.recipientId': 1})
+                       .exec(function(err, resultModel){
+
+                           if (err){
+                               return cb(err);
+                           }
+
+                           if (!resultModel){
+                               err = new Error('User not found');
+                               err.status = 400;
+                               return cb(err);
+                           }
+
+
+                           cb(null, resultModel.payments.recipientId);
+                       });
+                },
+
+                function(recipientId, cb){
+                    var data = {
+                        amount: amount,
+                        currency: currency,
+                        recipient: recipientId,
+                        statement_descriptor: statement_descriptor
+                    };
+
+                    stripe.createTransfer(data, cb);
+
+                }
+            ], function(err, transfer){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Transfer succeed', transfer: transfer});
+            });
+    }
+
+
 };
 
 module.exports = AdminHandler;
