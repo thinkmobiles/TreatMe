@@ -43,7 +43,7 @@ define([
             if (opts.data) {
                 data = opts.data;
             } else {
-                ids = _.pluck(this.models, 'id');
+                ids = this.pluck('id');
                 data = JSON.stringify({ids: ids});
             }
 

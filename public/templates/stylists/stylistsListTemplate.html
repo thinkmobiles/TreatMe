@@ -1,4 +1,4 @@
-<% _.forEach(items, function (user, index) {%>
+<% _.forEach(items, function (user) {%>
 <tr class="item" data-id="<%= user._id%>">
     <td><input type="checkbox" class="checkItem"></td>
     <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>

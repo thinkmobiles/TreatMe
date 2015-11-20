@@ -1,6 +1,6 @@
 <% _.forEach(items, function (user) {%>
 <tr class="item" data-id="<%= user._id%>">
-    <td><input type="checkbox" class="check"></td>
+    <td><input type="checkbox" class="checkItem"></td>
     <td><%= new Date(user.createdAt).toLocaleDateString()%></td>
     <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
     <td><%= user.salonInfo.salonName %></td>
