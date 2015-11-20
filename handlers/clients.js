@@ -234,7 +234,7 @@ var ClientsHandler = function (app, db) {
          *  Response status: 200
          *
          *  {
-         *      "success": "Subscriptions purchased successfully"
+         *      "success": "Subscriptions bought successfully"
          *  }
          *
          * @method buySubscriptions
@@ -304,7 +304,7 @@ var ClientsHandler = function (app, db) {
          *
          * __URL: `/client/appointment`__
          *
-         * This __method__ allows create appointment by _Client_
+         * This __method__ allows book appointment by _Client_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/client/appointment
@@ -376,7 +376,7 @@ var ClientsHandler = function (app, db) {
                             return cb(err);
                         }
 
-                        if (modelsArray.length >=2){
+                        if (modelsArray.length >= CONSTANTS.LIMIT.NOT_FINISHED_APPOINTMENTS){
                             error = new Error('You already have two not finished appointments');
                             error.status = 400;
 
@@ -538,8 +538,8 @@ var ClientsHandler = function (app, db) {
                 return next(err);
             }
 
-            userCoordinates = result[0];
-            appointmentId = result[4];
+            userCoordinates = result[1];
+            appointmentId = result[5];
 
             schedulerHelper.startLookStylistForAppointment(appointmentId, userCoordinates, body.serviceType);
 
