@@ -1681,7 +1681,7 @@ var AdminHandler = function (app, db) {
                     firstName: clientFirstName,
                     lastName: clientLastName
                 },
-                clientLoc: {type: 'Point', coordinates: [0, 0]},
+                clientLoc: {type: 'Point', coordinates: [0, 0], address: ''},
                 serviceType: {
                     id: ObjectId(serviceType),
                     name: serviceTypeName
