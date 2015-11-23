@@ -1262,7 +1262,7 @@ var UserHandler = function (app, db) {
                                 service.approved = true;
 
                                 if (!CONSTANTS.REG_EXP.OBJECT_ID.test(service.id)){
-                                    return next(badRequests.InvalidValue({value: service.id, param: 'service.id'}));
+                                    return cb(badRequests.InvalidValue({value: service.id, param: 'service.id'}));
                                 }
 
                                 service.serviceId = ObjectId(service.id);
@@ -1344,8 +1344,6 @@ var UserHandler = function (app, db) {
 
                             Subscription
                                 .update({'client.id': uId}, {$set: update}, {multi: true}, cb);
-
-                            cb(null)
                         }
 
                     ], function(err){
