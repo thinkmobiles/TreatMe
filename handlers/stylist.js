@@ -468,7 +468,7 @@ var StylistHandler = function (app, db) {
             });
     };
 
-    this.addRecipient = function(req, res, next){
+    /*this.addRecipient = function(req, res, next){
         var body = req.body;
         var uId = req.session.uId;
         var data;
@@ -499,7 +499,6 @@ var StylistHandler = function (app, db) {
                     data = {
                         name: userModel.personalInfo.firstName + ' ' + userModel.personalInfo.lastName,
                         type: 'individual',
-                        bank_account: token,
                         email: userModel.email
                     };
 
@@ -534,7 +533,7 @@ var StylistHandler = function (app, db) {
 
             });
 
-    };
+    };*/
 };
 
 module.exports = StylistHandler;
