@@ -607,28 +607,49 @@ var UserHandler = function (app, db) {
                     async
                         .waterfall([
                             function(cb){
-                                if (body.role !== CONSTANTS.USER_ROLE.CLIENT){
-                                    return cb(null, null);
+                                if (body.role === CONSTANTS.USER_ROLE.STYLIST){
+                                    stripe
+                                        .createRecipient({
+                                            email: email,
+                                            name: createObj.personalInfo.firstName + ' ' + createObj.personalInfo.lastName,
+                                            type: 'individual'
+                                        }, function(err, recipient){
+
+                                            if (err){
+                                                return cb(err);
+                                            }
+
+                                            cb(null, recipient.id);
+
+                                        });
+                                } else if (body.role === CONSTANTS.USER_ROLE.CLIENT){
+                                    stripe
+                                        .createCustomer({
+                                            email: email
+                                        }, function(err, customer){
+
+                                            if (err){
+                                                return cb(err);
+                                            }
+
+                                            cb(null, customer.id);
+
+                                        });
                                 }
 
-                                stripe
-                                    .createCustomer({
-                                        email: email
-                                    }, function(err, customer){
-
-                                        if (err){
-                                            return cb(err);
-                                        }
-
-                                        cb(null, customer.id);
-
-                                    });
                             },
 
-                            function(customerId, cb){
-                                createObj['payments'] = {
-                                    customerId: customerId
-                                };
+                            function(paymentsId, cb){
+
+                                if(body.role === CONSTANTS.USER_ROLE.STYLIST){
+                                    createObj['payments'] = {
+                                        recipientId: paymentsId
+                                    };
+                                } else {
+                                    createObj['payments'] = {
+                                        customerId: paymentsId
+                                    };
+                                }
 
                                 user = new User(createObj);
 

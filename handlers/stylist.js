@@ -468,7 +468,7 @@ var StylistHandler = function (app, db) {
             });
     };
 
-    /*this.addRecipient = function(req, res, next){
+    this.addBankAccount = function(req, res, next){
         var body = req.body;
         var uId = req.session.uId;
         var data;
@@ -496,14 +496,14 @@ var StylistHandler = function (app, db) {
                 },
 
                 function (userModel, cb){
+                    var recipientId = userModel.payments.recipientId;
+
                     data = {
-                        name: userModel.personalInfo.firstName + ' ' + userModel.personalInfo.lastName,
-                        type: 'individual',
-                        email: userModel.email
+                        bank_account: token
                     };
 
                     stripe
-                        .createRecipient(data, function(err, recipient){
+                        .addBankAccount(recipientId, data, function(err, recipient){
                             if (err){
                                 return cb(err);
                             }
@@ -514,15 +514,8 @@ var StylistHandler = function (app, db) {
                                 return cb(err);
                             }
 
-                            userModel.payments.recipientId = recipient.id;
-
                             cb(null, userModel);
                         });
-                },
-
-                function(userModel, cb){
-                    userModel
-                        .save(cb);
                 }
             ], function(err){
                 if (err){
@@ -533,7 +526,7 @@ var StylistHandler = function (app, db) {
 
             });
 
-    };*/
+    };
 };
 
 module.exports = StylistHandler;
