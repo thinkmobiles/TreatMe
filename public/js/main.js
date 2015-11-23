@@ -117,9 +117,7 @@ require(['app', 'socketio', 'Validator','Moment'], function(app, io, validator, 
         var date  = this.getDate().toString();
         var hour = this.getHours().toString();
         var minutes = this.getMinutes().toString();
-        var format;
-
-        console.log(moment().format('MMMM Do YYYY, h:mm:ss a'));
+        var format  = this.getDate();
 
         var yy = year.slice(2, 4);
         var mm = padding(month);

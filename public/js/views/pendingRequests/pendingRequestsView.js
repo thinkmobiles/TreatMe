@@ -5,8 +5,9 @@ define([
     'views/customElements/ListView',
     'collections/bookingCollection',
     'text!/templates/pendingRequests/pendingRequestsTemplate.html',
-    'text!/templates/pendingRequests/pendingRequestsListTemplate.html'
-], function (ListView, Collection, MainTemplate, ListTemplate) {
+    'text!/templates/pendingRequests/pendingRequestsListTemplate.html',
+    'Moment'
+], function (ListView, Collection, MainTemplate, ListTemplate, moment) {
 
     var View = ListView.extend({
         Collection: Collection,
@@ -34,7 +35,6 @@ define([
         showDetails: function (e) {
             var element = $(e.target);
             var id;
-
             if (!element.closest('td').children().length) {
                 id = element.closest('tr').attr('data-id');
                 Backbone.history.navigate('pendingRequests/' + id, {trigger: true});
