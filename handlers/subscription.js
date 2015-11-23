@@ -184,7 +184,7 @@ var SubscriptionsHandler = function (db) {
          *      },
          *      {
          *          "_id": "5638b965f8c11d9c04081341",
-         *          "name": "Unlimited Maniqure",
+         *          "name": "Unlimited Manicure",
          *          "logo": "http://projects.thinkmobiles.com:8871/uploads/development/images/5638b965f8c11d9c04081340.png",
          *          "allowServices": [
          *              "5638ccde3624f77b33b6587d"

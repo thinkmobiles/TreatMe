@@ -31,6 +31,38 @@ var ClientsHandler = function (app, db) {
     var ObjectId = mongoose.Types.ObjectId;
     var schedulerHelper = new SchedulerHelper(app, db);
 
+    this.getCoordinatesByLocation = function(locationAddress, callback){
+        geocoder.geocode(locationAddress, function(err, data){
+            var coordinates = [];
+            var longitude;
+            var latitude;
+
+            if (err){
+                return callback(err);
+            }
+
+            if (!data || !data.results.length || !data.results[0].geometry || !data.results[0].geometry.location || data.status !== 'OK'){
+                return callback(badRequests.UnknownGeoLocation());
+            }
+
+            coordinates[0] = data.results[0].geometry.location.lng;
+            coordinates[1] = data.results[0].geometry.location.lat;
+
+            if (!Array.isArray(coordinates) || coordinates.length !== 2 || isNaN(coordinates[0]) || isNaN(coordinates[1])) {
+                return callback(badRequests.UnknownGeoLocation());
+            }
+
+            longitude = coordinates[0];
+            latitude = coordinates[1];
+
+            if (longitude < -180 || longitude > 180 || latitude < -90 || latitude > 90) {
+                return callback(badRequests.UnknownGeoLocation());
+            }
+
+            callback(null, coordinates);
+        });
+    };
+
     this.getServicesWithActiveSubscriptions = function (req, res, next) {
 
         /**
@@ -202,7 +234,7 @@ var ClientsHandler = function (app, db) {
          *  Response status: 200
          *
          *  {
-         *      "success": "Subscriptions purchased successfully"
+         *      "success": "Subscriptions bought successfully"
          *  }
          *
          * @method buySubscriptions
@@ -272,7 +304,7 @@ var ClientsHandler = function (app, db) {
          *
          * __URL: `/client/appointment`__
          *
-         * This __method__ allows create appointment by _Client_
+         * This __method__ allows book appointment by _Client_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/client/appointment
@@ -344,7 +376,7 @@ var ClientsHandler = function (app, db) {
                             return cb(err);
                         }
 
-                        if (modelsArray.length >=2){
+                        if (modelsArray.length >= CONSTANTS.LIMIT.NOT_FINISHED_APPOINTMENTS){
                             error = new Error('You already have two not finished appointments');
                             error.status = 400;
 
@@ -377,21 +409,12 @@ var ClientsHandler = function (app, db) {
                         }
 
                         if (locationAddress) {
-                            geocoder.geocode(locationAddress, function(err, data){
+                            self.getCoordinatesByLocation(locationAddress, function(err, coordinates){
                                 if (err){
                                     return cb(err);
                                 }
 
-                                if (!data || !data.results.length || !data.results[0].geometry || !data.results[0].geometry.location || data.status !== 'OK'){
-                                    return cb(badRequests.UnknownGeoLocation());
-                                }
-
-                                clientLoc.coordinates[0] = data.results[0].geometry.location.lng;
-                                clientLoc.coordinates[1] = data.results[0].geometry.location.lat;
-
-                                if (!clientLoc || !clientLoc.coordinates.length) {
-                                    return cb(badRequests.UnknownGeoLocation());
-                                }
+                                clientLoc.coordinates = coordinates;
 
                                 cb(null, clientLoc.coordinates);
                             });
@@ -515,8 +538,8 @@ var ClientsHandler = function (app, db) {
                 return next(err);
             }
 
-            userCoordinates = result[0];
-            appointmentId = result[4];
+            userCoordinates = result[1];
+            appointmentId = result[5];
 
             schedulerHelper.startLookStylistForAppointment(appointmentId, userCoordinates, body.serviceType);
 
@@ -730,6 +753,40 @@ var ClientsHandler = function (app, db) {
     }
 
     this.addCardInfo = function (req, res, next) {
+
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/card`__
+         *
+         * This __method__ allows to add credit card to _Client_ profile
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/card
+         *
+         * @example Body example:
+         *
+         *  {
+         *      "stripeToken": "tok_arjfi12938esa"
+         *  }
+         *
+         * @param {string} stripeToken - Obtained from Stripe
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *   {
+         *      success: 'Card added successfully'
+         *   }
+         *
+         * @method addCardInfo
+         * @instance
+         */
 
         var userId = req.session.uId;
         var body = req.body;

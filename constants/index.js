@@ -34,10 +34,13 @@ module.exports = {
         REQUESTED_PURCHASED_PACKAGES: 4,
         //for getStylistById in CMS
         REQUESTED_CLIENTS: 4,
-        REQUESTED_PHOTOS: 10
+        REQUESTED_PHOTOS: 10,
+        //for create appointments
+        NOT_FINISHED_APPOINTMENTS: 2
     },
     SEARCH_DISTANCE: {
         START: 1609.344, // start search stylists from 1 mile
+        STEP: 1609.344, // increase search distance for 1 mile
         MAX: 50 * 1609.344 //max 50 miles
     }
 };

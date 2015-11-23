@@ -108,23 +108,45 @@ var AdminHandler = function (app, db) {
                 'personalInfo.lastName': 1,
                 'salonInfo': 1,
                 'createdAt': 1,
-                'approved': 1
+                'approved': 1,
+                'suspend.isSuspend': 1,
+                'role': 1,
+                'fullName': {
+                    $concat: ['$personalInfo.firstName', ' ', '$personalInfo.lastName']
+                }
             };
         } else {
             projection = {
                 'personalInfo.firstName': 1,
                 'personalInfo.lastName': 1,
                 'email': 1,
-                'createdAt': 1
+                'suspend.isSuspend': 1,
+                'createdAt': 1,
+                'role': 1,
+                'fullName': {
+                    $concat: ['$personalInfo.firstName', ' ', '$personalInfo.lastName']
+                }
             };
         }
 
         User
-            .find(criteria, projection)
-            .sort(sortObj)
-            .skip(limit * (page - 1))
-            .limit(limit)
-            .exec(function(err, resultModel){
+            .aggregate([
+                {
+                    $project: projection
+                },
+                {
+                    $match: criteria
+                },
+                {
+                    $sort: sortObj
+                },
+                {
+                    $skip: limit * (page - 1)
+                },
+                {
+                    $limit: +limit
+                }
+            ], function(err, resultModel){
                 if (err){
                     return callback(err);
                 }
@@ -139,14 +161,16 @@ var AdminHandler = function (app, db) {
                             personalInfo: resultModel[i].personalInfo,
                             salonInfo: resultModel[i].salonInfo || {},
                             createdAt: resultModel[i].createdAt,
-                            approved:  resultModel[i].approved
+                            approved:  resultModel[i].approved,
+                            suspend: resultModel[i].suspend.isSuspend
                         };
                     } else {
 
                         obj = {
                             _id: resultModel[i]._id,
                             personalInfo: resultModel[i].personalInfo,
-                            email: resultModel[i].email
+                            email: resultModel[i].email,
+                            suspend: resultModel[i].suspend.isSuspend
                         }
                     }
 
@@ -157,6 +181,15 @@ var AdminHandler = function (app, db) {
                 callback(null, resultArray.reverse());
 
             });
+
+       /* User
+            .find(criteria, projection)
+            .sort(sortObj)
+            .skip(limit * (page - 1))
+            .limit(limit)
+            .exec(function(err, resultModel){
+
+            });*/
     };
 
     function getCountByCriterion(findObj, callback){
@@ -195,29 +228,69 @@ var AdminHandler = function (app, db) {
          *
          *  Response status: 200
          *
-         * [
-         *      {
-         *          "_id": "563b4e0e1886cc5c16c95375",
-         *          "personalInfo": {
-         *              "firstName": "Banana 9 ",
-         *              "lastName": "Orange"
+         *   {
+         *       total: 77,
+         *       data: [
+         *       {
+         *          _id: "564f1a0777b6580f221a8761",
+         *          personalInfo: {
+         *              lastName: "istvan",
+         *              firstName: "nazarovits test2"
          *          },
-         *          "salonInfo": {},
-         *          "createdAt": "2015-11-05T12:39:42.779Z",
-         *          "approved": false
+         *          salonInfo: {
+         *          availability: {
+         *              0: [ ],
+         *              1: [ ],
+         *              2: [ ],
+         *              3: [ ],
+         *              4: [ ],
+         *              5: [ ],
+         *              6: [ ]
+         *          },
+         *          licenseNumber: "License 123",
+         *          country: "Ukraine",
+         *          city: "Ужгород",
+         *          zipCode: "88000",
+         *          state: "Закарпаття",
+         *          address: "PS street, ...",
+         *          businessRole: "Stylist",
+         *          email: "test_1448024558225@mail.com",
+         *          phone: "+38 093 111 1111",
+         *          salonName: "mySalon"
+         *        },
+         *          createdAt: "2015-11-20T13:03:03.004Z",
+         *          approved: true
          *      },
          *      {
-         *          "_id": "563b4e091886cc5c16c95374",
-         *          "personalInfo": {
-         *              "firstName": "Banana 8 ",
-         *              "lastName": "Orange"
+         *          _id: "564f19d1acfd4b7821da3f19",
+         *          personalInfo: {
+         *              lastName: "istvan",
+         *              firstName: "nazarovits"
          *          },
-         *          "salonInfo": {},
-         *          "createdAt": "2015-11-05T12:39:37.030Z",
-         *          "approved": false
-         *      }
-         * ]
-         *
+         *          salonInfo: {
+         *          availability: {
+         *              0: [ ],
+         *              1: [ ],
+         *              2: [ ],
+         *              3: [ ],
+         *              4: [ ],
+         *              5: [ ],
+         *              6: [ ]
+         *          },
+         *          licenseNumber: "License 123",
+         *          country: "Ukraine",
+         *          city: "Ужгород",
+         *          zipCode: "88000",
+         *          state: "Закарпаття",
+         *          address: "PS street, ...",
+         *          businessRole: "Stylist",
+         *          email: "test_1448024519597@mail.com",
+         *          phone: "+38 093 111 1111",
+         *          salonName: "mySalon"
+         *          },
+         *          createdAt: "2015-11-20T13:02:09.857Z",
+         *          approved: true
+         *       }
          *
          * @method getStylistList
          * @instance
@@ -243,6 +316,7 @@ var AdminHandler = function (app, db) {
             searchObj['$or'] = [
                     {'personalInfo.firstName': {$regex: searchRegExp}},
                     {'personalInfo.lastName': {$regex: searchRegExp}},
+                    {'fullName': {$regex: searchRegExp}},
                     {'salonInfo.salonName': {$regex: searchRegExp}}
                 ];
         }
@@ -335,6 +409,10 @@ var AdminHandler = function (app, db) {
          *          "lastName": "Vashkeba",
          *          "firstName": "Misha"
          *      },
+         *      payments: {
+         *           recipientId: "rp_178vAwBmJOuEPWhp98m6GGCv",
+         *           customerId: null
+         *       },
          *      "suspend": {
          *          "history": [
          *              {
@@ -348,14 +426,22 @@ var AdminHandler = function (app, db) {
          *      "approved": true,
          *      "email": "vashm@mail.ua",
          *      "coordinates": [],
-         *      "approvedServices": [
-         *          {
-         *              "serviceId": {
-         *                  "name": "Blowout"
-         *              },
-         *              "price": 15
-         *          }
-         *      ]
+         *      services: [
+         *           {
+         *               id: "5638ccde3624f77b33b6587d",
+         *               name: "Manicure",
+         *               logo: "http://localhost:8871/uploads/development/images/5638ccde3624f77b33b6587c.png",
+         *               status: "new",
+         *               price: 0
+         *           },
+         *           {
+         *               id: "56408f8281c43c3a24a332fa",
+         *               name: "Pedicure",
+         *               logo: "http://localhost:8871/uploads/development/images/56408f8281c43c3a24a332f9.png",
+         *               status: "new",
+         *               price: 0
+         *           }
+         *          ]
          *  }
          *
          *
@@ -404,7 +490,7 @@ var AdminHandler = function (app, db) {
          *    },
          *    "salonInfo": {
          *      "salonName": "Name",
-         *      "businessRole": "Dybil",
+         *      "businessRole": "Employee",
          *      "phoneNumber": "02",
          *      "email": "test@test.com",
          *      "address": "fdsghjkl;jhgf",
@@ -637,8 +723,6 @@ var AdminHandler = function (app, db) {
 
             });
 
-
-
     };
 
     this.approveStylist = function (req, res, next) {
@@ -652,7 +736,7 @@ var AdminHandler = function (app, db) {
          *
          * __URL: `/admin/stylist/approve/`__
          *
-         * This __method__ allows approve stylist by _Admin_
+         * This __method__ allows approve stylists by _Admin_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/admin/stylist/approve/
@@ -725,7 +809,6 @@ var AdminHandler = function (app, db) {
          * @method removeStylist
          * @instance
          */
-
 
         var body = req.body;
         var ids;
@@ -806,7 +889,6 @@ var AdminHandler = function (app, db) {
                     return next(err);
                 }
 
-
                 res.status(200).send({success: 'Users suspended successfully'});
             });
     };
@@ -825,7 +907,7 @@ var AdminHandler = function (app, db) {
          * This __method__ allows activate users by _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/stylist/suspend
+         *         http://projects.thinkmobiles.com:8871/admin/activate
          *
          * {
          *      ids: [563342cf1480ea7c109dc385, 563342cf1480ea7c109dc385]
@@ -874,16 +956,43 @@ var AdminHandler = function (app, db) {
          *
          * __URL: `/admin/services/requested`__
          *
-         * __Query params: page, limit__
-         *
-         * This __method__ allows get requested services for _Admin_
+         * This __method__ allows get list requested services to _Admin_
          *
          * @example Request example:
-         *         http://projects.thinkmobiles.com:8871/admin/services/requested?page=1&limit=20
+         *         http://projects.thinkmobiles.com:8871/admin/services/requested
          *
          * @example Response example:
          *
          *  Response status: 200
+         *
+         * [
+         *    {
+         *        _id: "564ef61c59ebc4ec03f41c03",
+         *        stylist: {
+         *            _id: "5644b65026f889ac0328441f",
+         *            personalInfo: {
+         *            lastName: " Petrovich ",
+         *            firstName: "Stylist"
+         *               }
+         *         },
+         *        serviceId: "5638ccde3624f77b33b6587d",
+         *        approved: false,
+         *        price: 0
+         *    },
+         *    {
+         *        _id: "564ef62759ebc4ec03f41c04",
+         *        stylist: {
+         *           _id: "5644b65026f889ac0328441f",
+         *           personalInfo: {
+         *           lastName: " Petrovich ",
+         *           firstName: "Stylist"
+         *              }
+         *          },
+         *       serviceId: "56408f8281c43c3a24a332fa",
+         *       approved: false,
+         *       price: 0
+         *   }
+         *   ]
          *
          * @method getRequestedService
          * @instance
@@ -1305,7 +1414,7 @@ var AdminHandler = function (app, db) {
          *
          * __URL: `/admin/appointments/`__
          *
-         * This __method__ allows remove suspend appointment by _Admin_
+         * This __method__ allows suspend appointment by _Admin_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/admin/appointment/
@@ -1410,6 +1519,28 @@ var AdminHandler = function (app, db) {
         }
 
         async.parallel([
+
+            function(cb){
+                var statuses = CONSTANTS.STATUSES.APPOINTMENT;
+
+                Appointment
+                    .find({'client.id': clientId, status: {$in: [statuses.CREATED, statuses.CONFIRMED, statuses.BEGINS]}}, function(err, modelsArray){
+                        var error;
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (modelsArray.length >=2){
+                            error = new Error('Client already have two not finished appointments');
+                            error.status = 400;
+
+                            return cb(error);
+                        }
+
+                        cb();
+                    });
+            },
 
             function(cb){
                 User
@@ -1637,6 +1768,7 @@ var AdminHandler = function (app, db) {
         var search = query.search;
         var searchCriteria = {};
         var searchRegExp;
+        var projection;
 
         var criteria = {
             $and:[{expirationDate: {$gte: new Date()}}]
@@ -1659,11 +1791,23 @@ var AdminHandler = function (app, db) {
             sortObj['subscriptionType.name'] = order;
         }
 
+        projection = {
+            client: 1,
+            subscriptionType: 1,
+            price: 1,
+            purchaseDate: 1,
+            expirationDate: 1,
+            'clientFullName': {
+                $concat: ['$client.firstName', ' ', '$client.lastName']
+            }
+        };
+
         if (search){
             searchRegExp = new RegExp('.*' + search + '.*', 'ig');
             searchCriteria['$or'] = [
                 {'client.firstName': {$regex: searchRegExp}},
                 {'client.lastName': {$regex: searchRegExp}},
+                {'clientFullName': {$regex: searchRegExp}},
                 {'subscriptionType.name': {$regex: searchRegExp}}
             ];
 
@@ -1684,11 +1828,23 @@ var AdminHandler = function (app, db) {
 
             function(cb) {
                 Subscription
-                    .find(criteria, {__v: 0, expirationDate: 0})
-                    .sort(sortObj)
-                    .skip(limit * (page - 1))
-                    .limit(limit)
-                    .exec(function (err, subscriptionModelsArray) {
+                    .aggregate([
+                        {
+                            $project: projection
+                        },
+                        {
+                            $match: criteria
+                        },
+                        {
+                            $sort: sortObj
+                        },
+                        {
+                            $skip: limit * (page - 1)
+                        },
+                        {
+                            $limit: +limit
+                        }
+                    ], function (err, subscriptionModelsArray) {
                         var resultArray;
 
                         if (err) {
@@ -1696,20 +1852,20 @@ var AdminHandler = function (app, db) {
                         }
 
                         resultArray = subscriptionModelsArray.map(function (model) {
-                            var modelJson = model.toJSON();
+                            //var modelJson = model.toJSON();
 
                             if (model.client) {
-                                modelJson.client = modelJson.client.firstName + ' ' + modelJson.client.lastName;
+                                model.client = model.client.firstName + ' ' + model.client.lastName;
                             } else {
-                                modelJson.client = 'Client was removed'
+                                model.client = 'Client was removed'
                             }
                             if (model.subscriptionType) {
-                                modelJson.subscriptionType = modelJson.subscriptionType.name;
+                                model.subscriptionType = model.subscriptionType.name;
                             } else {
-                                modelJson.subscriptionType = 'Subscription was removed';
+                                model.subscriptionType = 'Subscription was removed';
                             }
 
-                            return modelJson
+                            return model
                         });
 
                         cb(null, resultArray);
@@ -1794,24 +1950,26 @@ var AdminHandler = function (app, db) {
          *
          *  Response status: 200
          *
-         * [
-         *     {
-         *         "_id": "5633451985201c7409caa2e2",
-         *         "personalInfo": {
-         *             "lastName": "Petrovich",
-         *             "firstName": "Petya"
-         *         },
-         *         "email": "Killer57575@gmail.com"
-         *     },
-         *     {
-         *         "_id": "5633451985201c7509caa7e9",
-         *         "personalInfo": {
-         *             "lastName": "Oetrovich",
-         *             "firstName": "Petya"
-         *         },
-         *         "email": "Killer@gmail.com"
-         *     }
-         * ]
+         * {
+         *       total: 14,
+         *       data: [
+         *       {
+         *       _id: "5644b666543c82ea1b153aed",
+         *       personalInfo: {
+         *       lastName: "йцукйцук",
+         *       firstName: "йкцйук"
+         *       },
+         *       email: "sdf@sdf.comm"
+         *       },
+         *       {
+         *       _id: "56444d272ee1465b107f0c69",
+         *       personalInfo: {
+         *       lastName: "m",
+         *       firstName: "m"
+         *       },
+         *       email: "misha2g@icloud.com"
+         *       }
+         *  }
          *
          * @method getClientList
          * @instance
@@ -1835,6 +1993,7 @@ var AdminHandler = function (app, db) {
             searchObj['$or'] = [
                 {'personalInfo.firstName': {$regex: searchRegExp}},
                 {'personalInfo.lastName': {$regex: searchRegExp}},
+                {'fullName': {$regex: searchRegExp}},
                 {'email': {$regex: searchRegExp}}
             ];
         }
@@ -2011,6 +2170,42 @@ var AdminHandler = function (app, db) {
     };
 
     this.getBookedAppointment = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/appointments/:clientId`__
+         *
+         * This __method__ allows get client appointments by clientId for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/appointments/563342cf1480ea7c109dc385
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *      "total": 1,
+         *      "data": [
+         *          {
+         *              "_id": "5649f4cbd50515f80a652526",
+         *              "bookingDate": "2015-11-09T11:17:50.060Z",
+         *              "price": 20,
+         *              "stylist": "Stylist  Petrovich ",
+         *              "status": "Succeeded",
+         *              "serviceType": "Manicure"
+         *          }
+         *      ]
+         * }
+         * @method getBookedAppointment
+         * @instance
+         */
+
         var clientId = req.params.clientId;
         var query = req.query;
         var sortParam = query.sort;
@@ -2123,6 +2318,45 @@ var AdminHandler = function (app, db) {
     };
 
     this.getStylistClients = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/clients/:stylistId`__
+         *
+         * This __method__ allows get stylist clients for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/clients/563342cf1480ea7c109dc385
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *   total: 2,
+         *   data: [
+         *      {
+         *          _id: "5649f4cbd50515f80a652526",
+         *          bookingDate: "2015-11-09T11:17:50.060Z",
+         *          client: "Petya Petrovich"
+         *      },
+         *      {
+         *          _id: "564ef768122888ec1ee6f87b",
+         *          bookingDate: "2015-11-08T10:17:50.060Z",
+         *          client: "Petya Lyashenko"
+         *      }
+         *      ]
+         *  }
+         *
+         * @method getStylistClients
+         * @instance
+         */
+
         var stylistId = req.params.stylistId;
         var query = req.query;
         var sortParam = query.sort;
@@ -2214,22 +2448,96 @@ var AdminHandler = function (app, db) {
     };
 
     this.getStylistPayments = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/stylistPayments/`__
+         *
+         * This __method__ allows get stylist payments for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/stylistPayments/
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *   total: 2,
+         *   data: [
+         *      {
+         *          _id: "5649f4cbd50515f80a652526",
+         *          bookingDate: "2015-11-09T11:17:50.060Z",
+         *          status: "Succeeded",
+         *          serviceType: "Manicure",
+         *          stylist: "Stylist Petrovich ",
+         *          price: 20,
+         *          stylistFullName: "Stylist Petrovich ",
+         *          tip: "-"
+         *      },
+         *      {
+         *          _id: "564ef768122888ec1ee6f87b",
+         *          bookingDate: "2015-11-08T10:17:50.060Z",
+         *          tip: 5,
+         *          status: "Succeeded",
+         *          serviceType: "Manicure",
+         *          stylist: "Stylist Petrovich ",
+         *          price: 20,
+         *          stylistFullName: "Stylist Petrovich "
+         *      }
+         *      ]
+         *   }
+         *
+         * @method getStylistPayments
+         * @instance
+         */
+
         var query = req.query;
         var sortParam = query.sort;
+        var search = query.search;
         var page = (query.page >=1) ? query.page : 1;
         var order = (query.order === '1') ? 1 : -1;
         var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_CLIENTS;
         var sortObj = {};
+        var searchRegExp;
+        var searchObj = {};
+
         var projection = {
             bookingDate: 1,
             stylist: 1,
             serviceType: 1,
             price: 1,
-            tip: 1
+            tip: 1,
+            status: 1,
+            'stylistFullName': {
+                $concat: ['$stylist.firstName', ' ', '$stylist.lastName']
 
+            }
         };
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            searchObj['$or'] = [
+                {'stylist.firstName': {$regex: searchRegExp}},
+                {'stylist.lastName': {$regex: searchRegExp}},
+                {'stylistFullName': {$regex: searchRegExp}},
+                {'serviceType.name': {$regex: searchRegExp}}
+            ];
+        }
+
         var criteria = {
-            status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
+            $and: [
+                {
+                    status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
+                },
+                searchObj
+            ]
         };
 
         if (sortParam){
@@ -2276,11 +2584,23 @@ var AdminHandler = function (app, db) {
 
             appointment: function(cb){
                 Appointment
-                    .find(criteria, projection)
-                    .sort(sortObj)
-                    .skip(limit * (page -1))
-                    .limit(limit)
-                    .exec(function(err, appointmentModelsArray){
+                    .aggregate([
+                        {
+                            $project: projection
+                        },
+                        {
+                            $match: criteria
+                        },
+                        {
+                            $sort: sortObj
+                        },
+                        {
+                            $skip: limit * (page -1)
+                        },
+                        {
+                            $limit: +limit
+                        }
+                    ], function(err, appointmentModelsArray){
                         var stylistPaymentsArray;
 
                         if (err){
@@ -2288,28 +2608,27 @@ var AdminHandler = function (app, db) {
                         }
 
                         stylistPaymentsArray = appointmentModelsArray.map(function(model){
-                            var modelJSON = model.toJSON();
 
-                            if (modelJSON.stylist && modelJSON.stylist.firstName && modelJSON.stylist.lastName){
-                                modelJSON.stylist = modelJSON.stylist.firstName + ' ' + modelJSON.stylist.lastName;
+                            if (model.stylist && model.stylist.firstName && model.stylist.lastName){
+                                model.stylist = model.stylist.firstName + ' ' + model.stylist.lastName;
                             } else {
-                                modelJSON.stylist = 'Stylist was removed'
+                                model.stylist = 'Stylist was removed'
                             }
 
-                            if (modelJSON.serviceType && modelJSON.serviceType.name){
-                                modelJSON.serviceType = modelJSON.serviceType.name;
+                            if (model.serviceType && model.serviceType.name){
+                                model.serviceType = model.serviceType.name;
                             } else {
-                                modelJSON.serviceType = 'Service was removed';
+                                model.serviceType = 'Service was removed';
                             }
 
-                            if (!modelJSON.price){
-                                modelJSON.price = '-';
+                            if (!model.price){
+                                model.price = '-';
                             }
-                            if (!modelJSON.tip){
-                                modelJSON.tip = '-';
+                            if (!model.tip){
+                                model.tip = '-';
                             }
 
-                            return modelJSON;
+                            return model;
                         });
 
                         cb(null, stylistPaymentsArray);
@@ -2328,6 +2647,39 @@ var AdminHandler = function (app, db) {
     };
 
     this.getClientSubscriptions = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/subscriptions/:clientId`__
+         *
+         * This __method__ allows get client subscriptions for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/subscriptions/5649f4cbd50515f80a652526
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *      total: 1,
+         *      data: [
+         *          {
+         *          purchaseDate: "2015-11-20T10:20:43.275Z",
+         *          package: "Unlimited Pass"
+         *          }
+         *      ]
+         *  }
+         *
+         * @method getClientSubscriptions
+         * @instance
+         */
+
         var clientId = req.params.clientId;
         var query = req.query;
         var sortParam = query.sort;
@@ -2545,6 +2897,9 @@ var AdminHandler = function (app, db) {
     };
 
     this.getStylistsLocation = function(req, res, next){
+
+
+
         var criteria = {
             role: CONSTANTS.USER_ROLE.STYLIST,
             online: true,
@@ -2641,6 +2996,38 @@ var AdminHandler = function (app, db) {
     }
 
     this.getOverviewByPeriod = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/statistic/overview`__
+         *
+         * This __method__ allows get statistic overview for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/statistic/overview?period=w
+         *
+         * @example Query parameter _period_ possible values (d, w, m)
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         * {
+         *       requestSent: 9,
+         *       appointmentBooked: 2,
+         *       packageSold: 7
+         *  }
+         *
+         * @method getOverviewByPeriod
+         * @instance
+         */
+
+
         var date = new Date();
         var period = req.query.period || 'd';
 
@@ -2691,6 +3078,37 @@ var AdminHandler = function (app, db) {
     };
 
     this.getAppointmentsStatistic = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/statistic/appointments`__
+         *
+         * This __method__ allows get statistic for booked appointments for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/statistic/appointments
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *    [
+         *        {
+         *            _id: 11,
+         *            count: 2
+         *        }
+         *    ]
+         *
+         * @method getAppointmentsStatistic
+         * @instance
+         */
+
+
         var currentDate = new Date();
         var currentYear = currentDate.getFullYear();
         var startOfYear = new Date(currentYear, 0, 1);
@@ -2719,6 +3137,62 @@ var AdminHandler = function (app, db) {
                 res.status(200).send(resultModels);
             });
     };
+
+
+    //payments
+
+    this.createTransfer = function(req, res, next){
+        var body = req.body;
+        var stylistId = body.stylistId;
+        var amount = body.amount;
+        var currency = body.currency;
+        var statement_descriptor = body.statementDescriptor;
+
+        if (!stylistId || !amount || !currency || !statement_descriptor){
+            return next(badRequests.NotEnParams());
+        }
+
+        async
+            .waterfall([
+                function(cb){
+                   User
+                       .findOne({_id: stylistId}, {'payments.recipientId': 1})
+                       .exec(function(err, resultModel){
+
+                           if (err){
+                               return cb(err);
+                           }
+
+                           if (!resultModel){
+                               err = new Error('User not found');
+                               err.status = 400;
+                               return cb(err);
+                           }
+
+
+                           cb(null, resultModel.payments.recipientId);
+                       });
+                },
+
+                function(recipientId, cb){
+                    var data = {
+                        amount: amount,
+                        currency: currency,
+                        recipient: recipientId,
+                        statement_descriptor: statement_descriptor
+                    };
+
+                    stripe.createTransfer(data, cb);
+
+                }
+            ], function(err, transfer){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Transfer succeed', transfer: transfer});
+            });
+    }
 
 
 };

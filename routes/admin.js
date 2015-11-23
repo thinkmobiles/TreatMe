@@ -10,7 +10,7 @@ module.exports = function(app, db){
 
     var admin = new AdminHandler(app, db);
     var sessionHandler = new SessionHandler(db);
-    var user = new UserHandler(null, db);
+    var user = new UserHandler(app, db);
 
     router.get('/services/requested/', sessionHandler.isAdmin, admin.getRequestedService);
     router.post('/services/approve/', sessionHandler.isAdmin, admin.approveService);
@@ -27,8 +27,7 @@ module.exports = function(app, db){
     router.get('/stylist/:id', sessionHandler.isAdmin, admin.getStylistById);
     router.post('/stylist/', sessionHandler.isAdmin, admin.createStylist);
     router.put('/stylist/:userId', sessionHandler.isAdmin, user.updateUserProfile);
-
-    router.delete('/stylist/', sessionHandler.isAdmin, admin.removeStylist);
+    router.delete('/stylist/', sessionHandler.isAdmin, admin.removeStylist); // delete not approved stylist (new application)
 
     router.post('/stylist/approve/', sessionHandler.isAdmin, admin.approveStylist);
 
@@ -42,7 +41,7 @@ module.exports = function(app, db){
     router.put('/client/', sessionHandler.isAdmin, admin.updateClient);
     router.post('/client/', sessionHandler.isAdmin, admin.createClient);
 
-    router.delete('/user/:id', sessionHandler.isAdmin, admin.removeUserById);
+    router.delete('/user/:id', sessionHandler.isAdmin, admin.removeUserById); // need to clear logic
 
     router.get('/subscriptions/:clientId', sessionHandler.isAdmin, admin.getClientSubscriptions);
 
@@ -50,7 +49,7 @@ module.exports = function(app, db){
 
     router.get('/clients/:stylistId', sessionHandler.isAdmin, admin.getStylistClients);
 
-    router.get('/appointments/:clientId', sessionHandler.isAdmin, admin.getBookedAppointment); //TODO: переробити і видалити, є метод який вертає всі юукед зустрічі
+    router.get('/appointments/:clientId', sessionHandler.isAdmin, admin.getBookedAppointment); //TODO: переробити і видалити, є метод який вертає всі букед зустрічі
     router.post('/appointments/', sessionHandler.isAdmin, admin.bookAppointment);
     router.put('/appointments/', sessionHandler.isAdmin, admin.suspendAppointments);
     router.delete('/appointments/', sessionHandler.isAdmin, admin.removeAppointments);
@@ -60,6 +59,8 @@ module.exports = function(app, db){
 
     router.get('/statistic/overview', sessionHandler.isAdmin, admin.getOverviewByPeriod);
     router.get('/statistic/appointments', sessionHandler.isAdmin, admin.getAppointmentsStatistic);
+
+    //router.post('/transfer', sessionHandler.isAdmin, admin.createTransfer);
 
     return router;
 };
