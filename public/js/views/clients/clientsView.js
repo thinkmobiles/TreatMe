@@ -19,7 +19,9 @@ define([
             //put events here ...
             'click .item'     : 'showProfile',
             'click #addClient': 'addClient',
-            'click .editBtn'  : 'edit'
+            'click .editBtn'  : 'edit',
+            'click .suspendCurrentBtn': 'suspendClient',
+            'click #suspendBtn': 'suspendClients'
         }, ListView.prototype.events),
 
         initialize: function (options) {
@@ -41,7 +43,32 @@ define([
             e.stopPropagation();
 
             Backbone.history.navigate(url, {trigger: true});
-        }
+        },
+
+        suspendClient: function (e) {
+            var target = $(e.target);
+            var id = target.closest('tr').data('id');
+            var ids = [id];
+
+            e.stopPropagation();
+
+            this.suspend(ids);
+        },
+
+        suspendClients: function () {
+            var ids = this.getSelectedIds();
+
+            this.suspend(ids);
+        },
+
+        suspend: function (ids) {
+            this.collection.suspendRequest({
+                data   : JSON.stringify({ids: ids}),
+                success: function () {
+                    self.collection.remove(ids);
+                }
+            });
+        },
     });
 
     return View;

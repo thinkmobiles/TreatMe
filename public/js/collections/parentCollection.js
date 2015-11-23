@@ -58,6 +58,30 @@ define([], function () {
             return this.currentPage * this.pageSize;
         },
 
+        deleteRequest: function (options) {
+            var opts = options || {};
+            var url = this.url();
+            var ids;
+            var data;
+
+            if (opts.data) {
+                data = opts.data;
+            } else {
+                ids = this.pluck('id');
+                data = JSON.stringify({ids: ids});
+            }
+
+            $.ajax({
+                type: 'DELETE',
+                dataType: 'json',
+                contentType: 'application/json',
+                url: url,
+                data: data,
+                success: opts.success,
+                error: opts.error
+            });
+        },
+
         dataComposer: function (page, options) {
             var self = this;
             var data;
