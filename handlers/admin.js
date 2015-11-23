@@ -17,6 +17,7 @@ var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
 var _ = require('lodash');
 var StripeModule = require('../helpers/stripe');
+var validator = require('validator');
 
 var AdminHandler = function (app, db) {
 
@@ -32,6 +33,7 @@ var AdminHandler = function (app, db) {
     var User = db.model('User');
     var Gallery = db.model('Gallery');
     var Appointment = db.model('Appointment');
+    var Inbox = db.model('Inbox');
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
@@ -3137,6 +3139,168 @@ var AdminHandler = function (app, db) {
                 }
 
                 res.status(200).send(resultModels);
+            });
+    };
+
+    this.getInboxList = function(req, res, next){
+        var query = req.query;
+        var sortParam = query.sort;
+        var search = query.search;
+        var page = (query.page >=1) ? query.page : 1;
+        var order = (query.order === '1') ? 1 : -1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_INBOX;
+        var sortObj = {};
+        var searchRegExp;
+        var criteria = {};
+
+        var projection = {
+            __v: 0,
+            message: 0,
+            createdAt: 0
+        };
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            criteria['$or'] = [
+                {'name': {$regex: searchRegExp}},
+                {'email': {$regex: searchRegExp}},
+                {'subject': {$regex: searchRegExp}}
+            ];
+        }
+
+        if (sortParam){
+            sortParam = sortParam.toLowerCase();
+        }
+
+        if (sortParam && sortParam !== 'name' && sortParam !== 'email' && sortParam !== 'subject') {
+            return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+        }
+
+        if (sortParam === 'name' || !sortParam) {
+            sortObj.name = order;
+        }
+
+        if (sortParam === 'email') {
+            sortObj.email = order;
+        }
+
+        if (sortParam === 'subject') {
+            sortObj.subject = order;
+        }
+
+        async.parallel({
+
+            inboxCount: function(cb){
+                Inbox
+                    .count(criteria, function(err, count){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, count);
+                    });
+            },
+
+            inbox: function(cb){
+                Inbox
+                    .find(criteria, projection)
+                    .sort(sortObj)
+                    .skip(limit * (page - 1))
+                    .limit(limit)
+                    .exec(function(err, inboxModelsArray){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, inboxModelsArray);
+                    });
+            }
+
+        }, function(err, result){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({total: result.inboxCount, data: result.inbox});
+        });
+    };
+
+    this.getInboxById = function(req, res, next){
+        var id = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(id)){
+            return next(badRequests.InvalidValue({value: id, param: 'id'}));
+        }
+
+        Inbox
+            .findOne({_id: id}, {__v: 0}, function(err, inboxModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!inboxModel){
+                    return next(badRequests.NotFound({target: 'Inbox'}));
+                }
+
+                res.status(200).send(inboxModel);
+            });
+    };
+
+    this.createInbox = function(req, res, next){
+        var body = req.body;
+        var name = body.name;
+        var email = body.email;
+        var subject = body.subject;
+        var message = body.message;
+        var createObj;
+        var inboxModel;
+
+        if (!name || !email || !subject || !message){
+            return next(badRequests.NotEnParams({reqParams: 'name and email and subject and message'}));
+        }
+
+        if (!validator.isEmail(email)) {
+            return next(badRequests.InvalidEmail());
+        }
+
+        createObj = {
+            name: name,
+            email: email,
+            subject: subject,
+            message: message
+        };
+
+        inboxModel = new Inbox(createObj);
+
+        inboxModel
+            .save(function(err){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Inbox created successfully'});
+            });
+    };
+
+    this.removeInbox = function(req, res, next){
+        var body = req.body;
+        var ids;
+
+        if (!body.ids) {
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        }
+
+        ids = body.ids.toObjectId();
+
+        Inbox
+            .remove({_id: {$in: ids}}, function (err) {
+                if (err) {
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Inbox deleted successfully'});
+
             });
     };
 

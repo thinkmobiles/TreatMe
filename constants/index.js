@@ -29,6 +29,7 @@ module.exports = {
         REQUESTED_STYLISTS: 20,
         REQUESTED_APPOINTMENTS: 20,
         REQUESTED_PACKAGES : 20,
+        REQUESTED_INBOX : 20,
         //for getClientById in CMS
         REQUESTED_BOOKED_APPOINTMENTS: 5,
         REQUESTED_PURCHASED_PACKAGES: 4,
