@@ -1,10 +1,11 @@
 'use strict';
 
 define([
+    'custom',
     'models/clientModel',
     'text!templates/clients/newAndEditClientsTemplate.html',
     'text!templates/customElements/servicesTemplate.html',
-], function (ClientModel, ClientAddTemplate, ServicesTemplate) {
+], function (custom, ClientModel, ClientAddTemplate, ServicesTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -14,13 +15,13 @@ define([
         servicesTemplate: _.template(ServicesTemplate),
 
         events: {
-            "click .saveBtn": "saveClients",
+            'click .saveBtn': 'saveClients',
             'click #avatar' : 'changeAvatar'
         },
 
         initialize: function (options) {
-            var self = this;
             var userId = (options && options.id) ? options.id : null;
+            var self = this;
             var model;
 
             if (!userId) {
@@ -45,7 +46,7 @@ define([
                         }]);
                         App.menu.select('#nav_clients');
 
-                        self.model.on('invalid', self.handleModelValidationError);
+                        self.model.on('invalid', self.handleModelValidationError, self);
 
                         return self.render();
                     },
@@ -56,9 +57,11 @@ define([
 
         render: function(){
             var item = this.model.toJSON();
-            console.log(item);
+            var self = this;
 
             this.$el.html(this.mainTemplate({item: item}));
+
+            custom.canvasDraw({imageSrc: item.avatar}, self);
 
             return this;
         },

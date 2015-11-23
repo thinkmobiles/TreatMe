@@ -79,6 +79,7 @@ define([
             }
 
             custom.canvasDraw({imageSrc: item.avatar}, self);
+
             container.find('.name').html(item.firstName + ' ' + item.lastName);
             container.find('.phone').html(item.phone);
             container.find('.email').html(item.email);
