@@ -20,7 +20,8 @@ module.exports = function (db) {
                 match: /^Point$/,
                 default: 'Point'
             },
-            coordinates: [Number]
+            coordinates: [Number],
+            address: String
         },
         serviceType: {
             id: {type: ObjectId, ref: 'ServiceType'},

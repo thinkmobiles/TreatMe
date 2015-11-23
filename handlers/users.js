@@ -236,7 +236,7 @@ var UserHandler = function (app, db) {
     }
 
     function getUserAppointmentById(userId, appointmentId, role, callback){
-        var populateArray = [];
+        var populateArray = [{path: 'serviceType.id', select: 'logo'}];
         var projection;
         var criteria = {_id: appointmentId};
 
@@ -258,8 +258,7 @@ var UserHandler = function (app, db) {
                 rateComment: 0
             };
             populateArray.push(
-                {path: 'serviceType.id', select: 'name logo'},
-                {path: 'stylist.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName personalInfo.profession salonInfo.salonName salonInfo.address salonInfo.city salonInfo.state salonInfo.country salonInfo.zipCode'}
+                {path: 'stylist.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName personalInfo.profession personalInfo.phone salonInfo.salonName salonInfo.address salonInfo.city salonInfo.state salonInfo.country salonInfo.zipCode'}
             );
         }
 
@@ -268,39 +267,40 @@ var UserHandler = function (app, db) {
             projection = {
                 __v: 0,
                 stylist: 0,
-                clientLoc: 0,
                 requestDate: 0,
                 startDate: 0,
                 endDate: 0,
                 cancellationReason: 0,
-                rate: 0,
+                price: 0,
                 rateComment: 0
             };
-            populateArray.push({path: 'client.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName'});
+            populateArray.push({path: 'client.id', select: 'personalInfo.avatar personalInfo.firstName personalInfo.lastName personalInfo.phone'});
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
             projection = {
                 __v: 0,
-                clientLoc: 0,
-                status: 0,
                 startDate: 0,
                 endDate: 0,
-                cancellationReason: 0,
-                rate: 0,
-                rateComment: 0,
-                stylist: 0
+                price: 0,
+                oneTimeService: 0
 
             };
-            populateArray.push({path: 'client.id', select: 'personalInfo.avatar personalInfo.phone'});
+            populateArray.push({path: 'client.id', select: 'email personalInfo.avatar personalInfo.phone'}, {path: 'stylist.id', select: 'personalInfo.avatar personalInfo.phone salonInfo'});
         }
 
         Appointment
             .findOne(criteria, projection)
             .populate(populateArray)
             .exec(function(err, appointmentModel){
-                var avatarName;
+                var clientAvatarName;
+                var clientAvatarUrl = '';
+                var stylistAvatarName;
+                var stylistAvatarUrl = '';
                 var logo;
+                var serviceLogoUrl = '';
+                var stylistAddress;
+                var modelJSON;
 
                 if (err){
                     return callback(err);
@@ -310,26 +310,63 @@ var UserHandler = function (app, db) {
                     return callback(badRequests.NotFound({target: 'Appointment'}));
                 }
 
-                if (role === CONSTANTS.USER_ROLE.CLIENT){
-                    avatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
-                    logo = appointmentModel.get('serviceType.id.logo');
+                modelJSON = appointmentModel.toJSON();
 
-                    if (avatarName){
-                        appointmentModel.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                if (modelJSON.client && modelJSON.client.id && modelJSON.client.id._id){
+                    clientAvatarName = appointmentModel.get('client.id.personalInfo.avatar');
+
+                    if (clientAvatarName){
+                        clientAvatarUrl = image.computeUrl(clientAvatarName, CONSTANTS.BUCKET.IMAGES);
                     }
 
-                    if (logo){
-                        appointmentModel.serviceType.id.logo = image.computeUrl(logo, CONSTANTS.BUCKET.IMAGES);
-                    }
-                } else {
-                    avatarName = appointmentModel.get('client.id.personalInfo.avatar');
+                    modelJSON.client = {
+                        _id: modelJSON.client.id._id,
+                        name: modelJSON.client.firstName + ' ' + modelJSON.client.lastName,
+                        email: modelJSON.client.id.email,
+                        avatar: clientAvatarUrl,
+                        address: modelJSON.clientLoc.address || 'Unknown client address',
+                        phone: modelJSON.client.id.personalInfo.phone
 
-                    if (avatarName){
-                        appointmentModel.client.id.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
-                    }
+                    };
+
+                    delete modelJSON.clientLoc;
                 }
 
-                callback(null, appointmentModel);
+                if (modelJSON.stylist && modelJSON.stylist.id && modelJSON.stylist.id._id){
+                    stylistAvatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
+
+                    if (stylistAvatarName){
+                        stylistAvatarUrl = image.computeUrl(stylistAvatarName, CONSTANTS.BUCKET.IMAGES);
+                    }
+
+                    stylistAddress = modelJSON.stylist.id.salonInfo.address + ', ' + modelJSON.stylist.id.salonInfo.city + ', ' + modelJSON.stylist.id.salonInfo.state + ', ' + modelJSON.stylist.id.salonInfo.country + ', ' + modelJSON.stylist.id.salonInfo.zipCode;
+
+                    modelJSON.stylist = {
+                        _id: modelJSON.stylist.id._id,
+                        name: modelJSON.stylist.firstName + ' ' + modelJSON.stylist.lastName,
+                        avatar: stylistAvatarUrl,
+                        address: stylistAddress,
+                        phone: modelJSON.stylist.id.personalInfo.phone,
+                        salonName: modelJSON.stylist.id.salonInfo.salonName,
+                        profession: modelJSON.stylist.id.personalInfo.profession
+                    };
+                }
+
+                if (modelJSON.serviceType && modelJSON.serviceType.id && modelJSON.serviceType.id._id){
+                    logo = appointmentModel.get('serviceType.id.logo');
+
+                    if (logo){
+                        serviceLogoUrl = image.computeUrl(logo, CONSTANTS.BUCKET.IMAGES);
+                    }
+
+                    modelJSON.serviceType = {
+                        _id: modelJSON.serviceType.id._id,
+                        name: modelJSON.serviceType.name,
+                        logo: serviceLogoUrl
+                    };
+                }
+
+                callback(null, modelJSON);
             });
     }
 

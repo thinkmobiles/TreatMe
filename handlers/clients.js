@@ -399,6 +399,8 @@ var ClientsHandler = function (app, db) {
                         }
 
                         clientLoc = clientModel.get('loc');
+                        clientLoc.address = '';
+
                         clientFirstName = clientModel.personalInfo.firstName || '';
                         clientLastName = clientModel.personalInfo.lastName || '';
 
@@ -415,6 +417,7 @@ var ClientsHandler = function (app, db) {
                                 }
 
                                 clientLoc.coordinates = coordinates;
+                                clientLoc.address = locationAddress;
 
                                 cb(null, clientLoc.coordinates);
                             });

@@ -100,7 +100,7 @@ var SubscriptionsHandler = function (db) {
             },
 
             ssalonsCount: function(cb){
-                User.count({role : CONSTANTS.USER_ROLE.STYLIST}, function(err, stylistCount){
+                User.count({role : CONSTANTS.USER_ROLE.STYLIST, approved: true}, function(err, stylistCount){
                     if (err){
                         return cb(err);
                     }
@@ -248,8 +248,9 @@ var SubscriptionsHandler = function (db) {
          *
          * @example Body example:
          * {
-         *  "name": "Manicure",
-         *  "price": 99,
+         *  "name": "Unlimited Pass",
+         *  "price": 139,
+         *  "description":"Maniqure and Blowout",
          *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
          * }
          *
@@ -268,8 +269,8 @@ var SubscriptionsHandler = function (db) {
         var createObj;
         var allowServicesObjectId;
 
-        if (!body.name || !body.logo || !body.price || !body.allowServices || !body.allowServices.length) {
-            return next(badRequests.NotEnParams({reqParams: 'name and logo and price and allowServices'}));
+        if (!body.name || !body.logo || !body.price || !body.allowServices || !body.allowServices.length || !body.description) {
+            return next(badRequests.NotEnParams({reqParams: 'name and logo and price and description and allowServices'}));
         }
 
         allowServicesObjectId = body.allowServices.toObjectId();
@@ -278,6 +279,7 @@ var SubscriptionsHandler = function (db) {
             name: body.name,
             price: body.price,
             logo: imageName,
+            description: body.description,
             allowServices: allowServicesObjectId
         };
 
@@ -323,6 +325,7 @@ var SubscriptionsHandler = function (db) {
          *  {
          *      "name": "BlowOut",
          *      "price": 99,
+         *      "description": "",
          *      "logo": "data:image/png;base64, /9j/4AAQSkZJRgABAQAAAQABAAD/2",
          *      "allowServices": ["56387644a2e4362617283dce"]
          *  }
@@ -342,6 +345,7 @@ var SubscriptionsHandler = function (db) {
         var subscriptionTypeId = req.params.id;
         var name = body.name;
         var price = body.price;
+        var description = body.description;
         var imageString = body.logo;
         var imageName;
         var allowServices = body.allowServices;
@@ -349,8 +353,8 @@ var SubscriptionsHandler = function (db) {
         var allowServicesObjectId;
         var oldLogoName;
 
-        if (!name && !imageString && !price && !allowServices && !allowServices.length) {
-            return next(badRequests.NotEnParams({reqParams: 'name or logo or price or allowServices'}));
+        if (!name && !imageString && !price && !allowServices && !allowServices.length && !description) {
+            return next(badRequests.NotEnParams({reqParams: 'name or logo or price or description or allowServices'}));
         }
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionTypeId)) {
@@ -363,6 +367,10 @@ var SubscriptionsHandler = function (db) {
 
         if (price) {
             updateObj.price = price;
+        }
+
+        if (description) {
+            updateObj.description = description;
         }
 
         if (imageString) {
