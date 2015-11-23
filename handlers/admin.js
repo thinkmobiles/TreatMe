@@ -162,7 +162,7 @@ var AdminHandler = function (app, db) {
                             salonInfo: resultModel[i].salonInfo || {},
                             createdAt: resultModel[i].createdAt,
                             approved:  resultModel[i].approved,
-                            suspend: resultModel[i].suspend.isSuspend
+                            suspend: resultModel[i].suspend ? resultModel[i].suspend.isSuspend : false
                         };
                     } else {
 
@@ -170,7 +170,7 @@ var AdminHandler = function (app, db) {
                             _id: resultModel[i]._id,
                             personalInfo: resultModel[i].personalInfo,
                             email: resultModel[i].email,
-                            suspend: resultModel[i].suspend.isSuspend
+                            suspend: resultModel[i].suspend ? resultModel[i].suspend.isSuspend : false
                         }
                     }
 
@@ -2366,8 +2366,10 @@ var AdminHandler = function (app, db) {
         var sortObj = {};
         var projection = {
             bookingDate: 1,
-            client: 1
+            client: 1,
+            rate: 1
         };
+
         var criteria = {
             'stylist.id': ObjectId(stylistId),
             status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
@@ -2395,7 +2397,6 @@ var AdminHandler = function (app, db) {
         }
 
         async.parallel({
-
             appointmentCount: function(cb){
                 Appointment
                     .count(criteria, function(err, count){
@@ -2408,6 +2409,7 @@ var AdminHandler = function (app, db) {
             },
 
             appointment: function(cb){
+
                 Appointment
                     .find(criteria, projection)
                     .sort(sortObj)
