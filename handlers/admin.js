@@ -43,8 +43,6 @@ var AdminHandler = function (app, db) {
 
     function getStylistById(sId, callback) {
 
-        var userObj;
-
         async
             .parallel([
 
@@ -103,13 +101,15 @@ var AdminHandler = function (app, db) {
                 }
 
             ], function(err, result){
-                var stylist = result[0];
-                stylist.service = result[1];
-                stylist.overallRating = result[2];
+                var stylist;
 
                 if (err){
                     return callback(err);
                 }
+
+                stylist = result[0];
+                stylist.service = result[1] || [];
+                stylist.overallRating = result[2] || 0;
 
                 callback(null, stylist);
 
@@ -462,7 +462,8 @@ var AdminHandler = function (app, db) {
          *               status: "new",
          *               price: 0
          *           }
-         *          ]
+         *          ],
+         *      overallRating: 5
          *  }
          *
          *
