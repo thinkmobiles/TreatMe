@@ -1779,6 +1779,7 @@ var UserHandler = function (app, db) {
         var session = req.session;
         var userId = req.params.id;
         var query = req.query;
+        var status;
         var page = (query.page >=1) ? query.page : 1;
         var limit = (query.limit >=1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_PHOTOS;
         var findObj = {};
@@ -1806,6 +1807,24 @@ var UserHandler = function (app, db) {
         }
 
         if (session.role === CONSTANTS.USER_ROLE.ADMIN){
+            status = query.status ? query.status.toLowerCase() : null;
+
+            if (status && status !== 'pending' && status !== 'approved' && status !== 'deleting'){
+                return next(badRequests.InvalidValue({value: status, param: 'status'}))
+            }
+
+            if (status === 'approved' || !status){
+                findObj.status = CONSTANTS.STATUSES.GALLERY.APPROVED;
+            }
+
+            if (status === 'pending'){
+                findObj.status = CONSTANTS.STATUSES.GALLERY.PENDING;
+            }
+
+            if (status === 'deleting'){
+                findObj.status = CONSTANTS.STATUSES.GALLERY.DELETING;
+            }
+
             populateArray.push(
                 {path: 'client', select: 'personalInfo.firstName personalInfo.lastName'},
                 {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}

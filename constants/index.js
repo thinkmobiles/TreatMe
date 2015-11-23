@@ -22,6 +22,11 @@ module.exports = {
             //for admin
             PENDING: 'Pending',
             BOOKED: 'Booked'
+        },
+        GALLERY: {
+            PENDING: 'Pending',
+            APPROVED: 'Approved',
+            DELETING: 'Deleting'
         }
     },
     LIMIT: {
