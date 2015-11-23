@@ -138,6 +138,10 @@ define([
                 options.status = 'Booked';
             }
 
+            if (type === 'services') {
+                options.status = 'Services';
+            }
+
             this.loadWrapperView(type, options, REDIRECT.whenNOTAuthorized);
         },
 
