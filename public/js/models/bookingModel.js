@@ -6,11 +6,13 @@ define(['Moment'], function (moment) {
         idAttribute: '_id',
 
         parse: function (res) {
-            var date = res.bookingDate;
-            var formatedDate = moment(date).format('DD/MM/YY h:mm a');
+            var dateBookind = res.bookingDate;
+            var dateRequest = res.requestDate;
+            var formatedDateBooking = moment(dateBookind).format('DD/MM/YY h:mm a');
+            var formatedDateRequest = moment(dateRequest).format('DD/MM/YY h:mm a');
 
-            res.bookingDate = formatedDate;
-            res.requestDate = formatedDate;
+            res.bookingDate = formatedDateBooking;
+            res.requestDate = formatedDateRequest;
 
             return res;
         }
