@@ -9,7 +9,7 @@ module.exports = function (db) {
 
     var Appointment = new Schema({
         client: {
-            id :{type: ObjectId, ref: 'User'},
+            id: {type: ObjectId, ref: 'User'},
             firstName: String,
             lastName: String
 

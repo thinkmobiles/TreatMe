@@ -66,7 +66,7 @@ module.exports = function(app, db){
     router.get('/statistic/overview', sessionHandler.isAdmin, admin.getOverviewByPeriod);
     router.get('/statistic/appointments', sessionHandler.isAdmin, admin.getAppointmentsStatistic);
 
-    //router.post('/transfer', sessionHandler.isAdmin, admin.createTransfer);
+    router.post('/transfer', sessionHandler.isAdmin, admin.createTransfer);
 
     return router;
 };

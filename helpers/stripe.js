@@ -139,11 +139,31 @@ var StripeModule = function(){
 
     };
 
+    this.addBankAccount = function(recipientId, data, callback){
+
+        stripe.recipients.update(recipientId, data, function(err, recipient){
+
+            if (err){
+                return callback(err);
+            }
+
+            callback(null, recipient);
+
+        });
+
+    };
+
     this.createTransfer = function(data, callback){
 
         stripe.transfers.create(data, callback);
 
-    }
+    };
+
+    this.createCharge = function(data, callback){
+
+        stripe.charges.create(data, callback);
+
+    };
 
 };
 

@@ -877,6 +877,63 @@ var ClientsHandler = function (app, db) {
 
     };
 
+    this.createCharge = function(req, res, next){
+        var body = req.body;
+        var clientId = req.session.uId;
+
+        if (!body.amount || !body.currency){
+            return next(badRequests.NotEnParams({reqParams: 'amount and currency'}));
+        }
+
+        async
+            .waterfall([
+                function(cb){
+                    User
+                        .findOne({_id: clientId}, {'payments.customerId': 1}, function(err, clientModel){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!clientModel){
+                                err = new Error('Client not found');
+                                err.status = 404;
+                                return cb(err);
+                            }
+
+                            cb(null, clientModel.payments.customerId);
+                        });
+                },
+
+                function(customerId, cb){
+                    var data = {
+                        amount: body.amount,
+                        currency: body.currency,
+                        customer: customerId
+                    };
+
+                    stripe
+                        .createCharge(data, function(err, charge){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, charge);
+
+                        });
+                }
+            ], function(err, charge){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Charges create successfully', charge: charge});
+            });
+
+
+    };
+
 
 
 };
