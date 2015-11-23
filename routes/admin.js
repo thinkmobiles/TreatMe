@@ -41,6 +41,12 @@ module.exports = function(app, db){
     router.put('/client/', sessionHandler.isAdmin, admin.updateClient);
     router.post('/client/', sessionHandler.isAdmin, admin.createClient);
 
+    // CRUD Inbox
+    router.get('/inbox/', sessionHandler.isAdmin, admin.getInboxList);
+    router.get('/inbox/:id', sessionHandler.isAdmin, admin.getInboxById);
+    router.post('/inbox/', admin.createInbox);
+    router.delete('/inbox/', sessionHandler.isAdmin, admin.removeInbox);
+
     router.delete('/user/:id', sessionHandler.isAdmin, admin.removeUserById); // need to clear logic
 
     router.get('/subscriptions/:clientId', sessionHandler.isAdmin, admin.getClientSubscriptions);
