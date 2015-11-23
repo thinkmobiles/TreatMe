@@ -45,55 +45,74 @@ var AdminHandler = function (app, db) {
 
         var userObj;
 
-        User
-            .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0, 'salonInfo.availability': 0}, function(err, resultModel){
+        async
+            .parallel([
+
+                function(cb){
+                    User
+                        .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0, 'salonInfo.availability': 0}, function(err, stylistModel){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!stylistModel){
+                                err = new Error('Stylist not found');
+                                err.status = 404;
+                                return cb(err);
+                            }
+
+                            cb(null, stylistModel.toJSON());
+
+                        });
+                },
+
+                function(cb){
+                    user.getService(sId, function(err, resultServices){
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, resultServices);
+                    });
+                },
+
+                function(cb){
+                    var count = 0;
+                    var overallRating = 0;
+                    Appointment
+                        .find({'stylist.id': sId, status: CONSTANTS.STATUSES.APPOINTMENT.SUCCEEDED}, {rate: 1}, function(err, appColl){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!appColl.length){
+                                return cb(null, 0);
+                            }
+
+                            appColl.map(function(app){
+                                if (app.rate){
+                                    count += 1;
+                                    overallRating += app.rate;
+                                }
+                            });
+
+                            cb(null, overallRating / count);
+
+                        });
+                }
+
+            ], function(err, result){
+                var stylist = result[0];
+                stylist.service = result[1];
+                stylist.overallRating = result[2];
 
                 if (err){
                     return callback(err);
                 }
 
-                if (!resultModel){
-                    err = new Error('User not found');
-                    err.status = 404;
-                    return callback(err);
-                }
+                callback(null, stylist);
 
-                userObj = resultModel.toJSON();
-
-                user.getService(sId, function(err, resultServices){
-
-                    if (err){
-                        return callback(err);
-                    }
-
-                    if (resultServices.length){
-                        userObj.services = resultServices;
-                    } else {
-                        userObj.services = []
-                    }
-
-                    callback(null, userObj);
-                });
-
-                /*Services
-                    .find({stylist: ObjectId(sId), approved: true}, {price: 1, _id: 0, serviceId: 1})
-                    .populate({path: 'serviceId', select: '-_id name'})
-                    .exec(function(err, serviceModels){
-
-                        if (err){
-                            return callback(err);
-                        }
-
-                        userObj = resultModel.toJSON();
-
-                        if (serviceModels.length){
-                            userObj.approvedServices = serviceModels;
-                        } else {
-                            userObj.approvedServices = []
-                        }
-
-                        callback(null, userObj);
-                    });*/
             });
     }
 
