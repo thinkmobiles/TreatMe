@@ -1,12 +1,13 @@
 'use strict';
 
 define([
+    'custom',
     'models/clientModel',
     'views/clients/clientsAppointmentView',
     'views/clients/clientsPurchasedView',
     'collections/clientsCollection',
     'text!/templates/clients/clientsProfileTemplate.html'
-], function (Model, ClientsAppointmentView, ClientsPurchasedView, Collection, ClientProfile) {
+], function (custom, Model, ClientsAppointmentView, ClientsPurchasedView, Collection, ClientProfile) {
     var View = Backbone.View.extend({
         el: '#wrapper',
 
@@ -31,12 +32,12 @@ define([
                     success: function (userModel) {
                         self.model = userModel;
                         App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {
-                            name: userModel.toJSON().firstName + ' '  + userModel.toJSON().lastName,
+                            name: userModel.toJSON().firstName + ' ' + userModel.toJSON().lastName,
                             path: '#clients/:id'
                         }]);
                         self.renderClient();
                     },
-                    error: self.handleModelError
+                    error  : self.handleModelError
                 });
 
             } else {
@@ -67,6 +68,7 @@ define([
             var container = this.$el.find('.accountInfo');
             var model = this.model;
             var item = model.toJSON();
+            var self = this;
 
             this.$el.find('.clientName').html(item.name);
 
@@ -76,10 +78,12 @@ define([
                 this.$el.find('#currentPackage .price').html(item.currentSubscriptions[0].price);
             }
 
-            container.find('.name').html(item.firstName +  ' ' + item.lastName);
+            custom.canvasDraw({imageSrc: item.avatar}, self);
+            container.find('.name').html(item.firstName + ' ' + item.lastName);
             container.find('.phone').html(item.phone);
             container.find('.email').html(item.email);
         }
+
     });
 
     return View;

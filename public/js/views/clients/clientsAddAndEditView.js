@@ -14,7 +14,8 @@ define([
         servicesTemplate: _.template(ServicesTemplate),
 
         events: {
-            "click .saveBtn": "saveClients"
+            "click .saveBtn": "saveClients",
+            'click #avatar' : 'changeAvatar'
         },
 
         initialize: function (options) {
@@ -100,6 +101,10 @@ define([
                     error: self.handleModelError
                 });
             });
+        },
+
+        changeAvatar: function (e) {
+            this.$el.find('#changeAvatar').click();
         }
 
     });

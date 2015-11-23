@@ -43,11 +43,12 @@ define([],function () {
     };
 
     var canvasDraw = function (argImage, argContext) {
-        /*var currentImage = (argImage && argImage.imageSrc) ? argImage.imageSrc : null;
+        var currentImage = (argImage && argImage.imageSrc) ? argImage.imageSrc : null;
         var context = (argContext) ? argContext : this;
         var canvas = context.$('#avatar')[0];
-        var inputFile = context.$('#inputImg');
-        inputFile.prop('accept', "image/!*");
+        var inputFile = context.$('#changeAvatar');
+
+        inputFile.prop('accept', "image/*");
         inputFile.on('change', function (event) {
             event.preventDefault();
 
@@ -70,7 +71,7 @@ define([],function () {
         canvasDrawing({
             imageSrc : currentImage,
             canvas   : canvas
-        }, context);*/
+        }, context);
 
     };
 
