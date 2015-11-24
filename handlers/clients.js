@@ -151,61 +151,51 @@ var ClientsHandler = function (app, db) {
             });
     };
 
-    this.buySubscriptions = function(clientId, clientName, subscriptionIds, callback){
+    this.buySubscriptions = function(clientId, clientName, subscriptionId, callback){
 
         SubscriptionType
-            .find({_id: {$in: subscriptionIds}}, {name: 1}, function(err, subscriptionColl){
+            .findOne({_id: subscriptionId}, {name: 1}, function(err, subscription){
+                var expirationDate = new Date();
+                var saveObj;
+                var subscriptionModel;
 
                 if (err){
                     return callback(err);
                 }
 
-                async.each(subscriptionColl,
+                if (!subscription){
+                    err = new Error('Subscription not found');
+                    err.status = 400;
+                    return callback(err);
+                }
 
-                    function(subscription, cb){
-                        var expirationDate = new Date();
-                        var saveObj;
-                        var subscriptionModel;
+                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
 
-                        expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
-
-                        saveObj = {
-                            client: {
-                                id: clientId,
-                                firstName: clientName.firstName,
-                                lastName: clientName.lastName
-                            },
-                            subscriptionType : {
-                                id: subscription._id,
-                                name: subscription.name
-                            },
-                            //TODO: price: 111,
-                            expirationDate: expirationDate
-                        };
-
-                        subscriptionModel = new Subscription(saveObj);
-
-                        subscriptionModel
-                            .save(function(err){
-                                if (err){
-                                    return cb(err);
-                                }
-
-                                cb();
-                            });
+                saveObj = {
+                    client: {
+                        id: clientId,
+                        firstName: clientName.firstName,
+                        lastName: clientName.lastName
                     },
+                    subscriptionType : {
+                        id: subscription._id,
+                        name: subscription.name
+                    },
+                    //TODO: price: 111,
+                    expirationDate: expirationDate
+                };
 
-                    function(err){
+                subscriptionModel = new Subscription(saveObj);
+
+                subscriptionModel
+                    .save(function(err){
                         if (err){
                             return callback(err);
                         }
 
                         callback(null);
                     });
-
-
             });
-
     };
 
     this.buySubscriptionsByClient = function(req, res, next){
@@ -226,7 +216,7 @@ var ClientsHandler = function (app, db) {
          *
          * @example Body example:
          * {
-         *  "ids": ["5638b946f8c11d9c0408133f"]
+         *  "id": "5638b946f8c11d9c0408133f"
          * }
          *
          * @example Response example:
@@ -243,9 +233,9 @@ var ClientsHandler = function (app, db) {
 
         var clientId = req.session.uId;
         var body = req.body;
-        var ids;
+        var id;
 
-        if (!body.ids) {
+        if (!body.id) {
             return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
 
@@ -261,11 +251,12 @@ var ClientsHandler = function (app, db) {
             }
         }
 
-        ids = body.ids.toObjectId();
+        id = ObjectId(body.id);
 
         User
-            .findOne({_id: clientId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1}, function(err, userModel){
+            .findOne({_id: clientId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'payments.customerId': 1}, function(err, userModel){
                 var clientName;
+                var customerId;
 
                 if (err){
                     return next(err);
@@ -275,19 +266,29 @@ var ClientsHandler = function (app, db) {
                     return next(badRequests.NotFound({target: 'Client'}));
                 }
 
+                customerId = userModel.payments.customerId;
+
                 clientName = {
                     firstName: userModel.personalInfo.firstName,
                     lastName: userModel.personalInfo.lastName
                 };
 
-                self.buySubscriptions(clientId, clientName, ids, function(err){
+                self.buySubscriptions(clientId, clientName, id, function(err){
 
                     if (err){
                         return next(err);
                     }
 
-                    res.status(200).send({success: 'Subscriptions bought successfully'});
+                    stripe
+                        .createSubscription(customerId, {plan: id.toString()}, function(err, subscription){
 
+                            if (err){
+                                return next(err);
+                            }
+
+                            res.status(200).send({success: 'Subscriptions bought successfully', subscriptions: subscription});
+
+                        });
                 });
             });
 

@@ -71,6 +71,7 @@ module.exports = function(app, db){
     router.get('/statistic/appointments', sessionHandler.isAdmin, admin.getAppointmentsStatistic);
 
     router.post('/transfer', sessionHandler.isAdmin, admin.createTransfer);
+    router.get('/transfer/:transferId?', sessionHandler.isAdmin, admin.getTransfer);
 
     return router;
 };

@@ -111,6 +111,10 @@ var AdminHandler = function (app, db) {
                 stylist.service = result[1] || [];
                 stylist.overallRating = result[2] || 0;
 
+                if (stylist.personalInfo.avatar.length){
+                    stylist.personalInfo.avatar = image.computeUrl(stylist.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
+                }
+
                 callback(null, stylist);
 
             });
@@ -3598,7 +3602,21 @@ var AdminHandler = function (app, db) {
 
                 res.status(200).send({success: 'Transfer succeed', transfer: transfer});
             });
-    }
+    };
+
+    this.getTransfer = function (req, res, next){
+        var transferId = req.params.transferId;
+
+        stripe
+            .getTransfers(transferId, function(err, transfer){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(transfer);
+            });
+    };
 
 
 };
