@@ -127,6 +127,21 @@ var StripeModule = function(){
 
     };
 
+    this.createSubscription = function(customerId, data, callback){
+
+        stripe
+            .customers
+            .createSubscription(customerId, data, function(err, subscription){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, subscription);
+
+            });
+    };
+
     this.createRecipient = function(data, callback){
 
         stripe.recipients.create(data, function(err, recipient){
@@ -159,11 +174,59 @@ var StripeModule = function(){
 
     };
 
+    this.getTransfers = function(transferId, callback){
+        if (!transferId){
+
+          stripe.transfers.list(function(err, transfersList){
+
+              if (err){
+                  return callback(err);
+              }
+
+              callback(null, transfersList);
+
+          });
+
+        } else {
+
+            stripe.transfers.retrieve(transferId, function(err, transfer){
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, transfer);
+            });
+
+        }
+    };
+
     this.createCharge = function(data, callback){
 
         stripe.charges.create(data, callback);
 
     };
+
+    this.createPlan = function(data, callback){
+        /*
+            data = {
+                amount: 4900, //(in cents)
+                interval: 'month',
+                name: 'Unlimited manicure',
+                currency: 'usd',
+                id: 'unlimitedManicure'
+            }
+        */
+
+        stripe.plans.create(data, function(err, plan){
+
+            if (err){
+                return callback(err);
+            }
+
+            callback(null, plan);
+
+        });
+    }
 
 };
 

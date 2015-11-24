@@ -10,6 +10,7 @@ var async = require('async');
 var ImageHandler = require('./image');
 var CONSTANTS = require('../constants');
 var _ = require('lodash');
+var StripeModule = require('../helpers/stripe');
 
 var SubscriptionsHandler = function (db) {
 
@@ -17,6 +18,7 @@ var SubscriptionsHandler = function (db) {
     var Subscription = db.model('Subscription');
     var User = db.model('User');
     var imageHandler = new ImageHandler();
+    var stripe = new StripeModule();
 
     function getAllSubscriptionTypes(clientId, role, callback){
         SubscriptionType
@@ -264,12 +266,11 @@ var SubscriptionsHandler = function (db) {
          */
 
         var body = req.body;
-        var subscriptionModel;
         var imageName = imageHandler.createImageName();
         var createObj;
         var allowServicesObjectId;
 
-        if (!body.name || !body.logo || !body.price || !body.allowServices || !body.allowServices.length || !body.description) {
+        if (!body.name || !body.logo || !body.price || !body.allowServices || !body.allowServices.length) {
             return next(badRequests.NotEnParams({reqParams: 'name and logo and price and description and allowServices'}));
         }
 
@@ -283,25 +284,69 @@ var SubscriptionsHandler = function (db) {
             allowServices: allowServicesObjectId
         };
 
-        imageHandler.uploadImage(body.logo, imageName, CONSTANTS.BUCKET.IMAGES, function (err) {
-            if (err) {
+        async.
+            waterfall([
+
+            function(cb){
+                imageHandler.uploadImage(body.logo, imageName, CONSTANTS.BUCKET.IMAGES, function (err) {
+                    if (err) {
+                        return cb(err);
+                    }
+
+                    cb(null);
+                });
+            },
+
+            function(cb){
+                var subscriptionModel = new SubscriptionType(createObj);
+
+                subscriptionModel
+                    .save(function (err) {
+
+                        if (err) {
+                            return cb(err);
+                        }
+
+                        cb(null, subscriptionModel._id);
+
+                    });
+            },
+
+            function(subscriptionId, cb){
+                var data = {
+                    amount: body.price * 100,
+                    interval: 'month',
+                    name: body.name,
+                    currency: 'usd',
+                    id: subscriptionId.toString(),
+                    metadata: {
+                        description: body.description || ''
+                    }
+                };
+
+                stripe
+                    .createPlan(data, function(err, plan){
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, plan);
+
+                    });
+
+            }
+
+        ], function(err, plan){
+
+            if (err){
                 return next(err);
             }
 
-            subscriptionModel = new SubscriptionType(createObj);
+            res.status(200).send({success: 'Subscription created succeed', subscription: plan});
 
-            subscriptionModel
-                .save(function (err) {
-
-                    if (err) {
-                        return next(err);
-                    }
-
-
-                    res.status(200).send({success: 'Subscription created successfully'});
-
-                });
         });
+
     };
 
     this.updateSubscriptionType = function (req, res, next) {
