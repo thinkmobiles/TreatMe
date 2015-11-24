@@ -2,15 +2,19 @@
 
 define([
     'models/bookingModel',
+    'models/clientAppointmentModel',
+    'models/adminAppointmentModel',
     'collections/clientsCollection',
     'collections/servicesCollection',
     'collections/stylistLocationCollection',
     'text!templates/pendingRequests/addTemplate.html',
     'text!templates/pendingRequests/selectTemplate.html',
     'text!templates/pendingRequests/mapDialogTemplate.html',
+    'text!templates/pendingRequests/bookDialogTemplate.html',
     'gmaps',
-    'timepicker'
-], function (StylistModel, ClientsCollection, ServicesCollection, StylistLocationCollection, MainTemplate, selectTemplate, mapDialogTemplate, GMaps, timepicker) {
+    'timepicker',
+    'Moment'
+], function (StylistModel, ClientAppointmentModel, AdminAppointmentModel, ClientsCollection, ServicesCollection, StylistLocationCollection, MainTemplate, selectTemplate, mapDialogTemplate, bookDialogTemplate, GMaps, timepicker, moment) {
 
     var View = Backbone.View.extend({
 
@@ -19,11 +23,9 @@ define([
         mainTemplate: _.template(MainTemplate),
 
         events: {
-            "click .saveBtn": "saveStylist",
-            "click #editBtn": "edit",
-            "click #acceptBtn": "saveStylist",
-            "click #removeBtn": "removeStylist",
-            "click .book": "showDialog"
+            "click .book": "showDialog",
+            "click .searchBtn": "search",
+            'click .modalBook .bookDialog':'book'
         },
 
         initialize: function (options) {
@@ -49,26 +51,107 @@ define([
 
         },
 
+        book: function(e){
+            var self = this;
+            var hours = this.$el.find(".modalBook .time").val().split(":")[0];
+            var minutes = this.$el.find(".modalBook .time").val().split(":")[1];
+
+            var bookingDate = moment(this.$el.find(".modalBook .date").val(),"MM/DD/YYYY").add(hours, "h").add(minutes, "m")._d;
+            var clientId = this.$el.find(".modalBook .clients option:selected").attr("data-id");
+            var stylistId = this.$el.find(".modalBook .stylist").attr("data-id");
+            var serviceType = this.$el.find(".modalBook .services option:selected").attr("data-id");
+
+            var saveObj = {
+                serviceType:serviceType,
+                bookingDate:bookingDate,
+                clientId:clientId,
+                stylistId:stylistId
+
+            };
+            var adminAppointmentModel = new AdminAppointmentModel();
+
+            adminAppointmentModel.on('invalid', self.handleModelValidationError, self);
+            adminAppointmentModel.save(saveObj,{
+                success: function () {
+                    console.log('success created');
+                    Backbone.history.navigate('pendingRequests', {trigger: true});
+                },
+                error: self.handleModelError
+            });
+        },
+
+        search: function(){
+            var self = this;
+            var hours = this.$el.find("#time").val().split(":")[0];
+            var minutes = this.$el.find("#time").val().split(":")[1];
+
+            var serviceType = this.$el.find("#services option:selected").attr("data-id");
+            var bookingDate = moment(this.$el.find("#date").val(),"MM/DD/YYYY").add(hours, "h").add(minutes, "m")._d;
+            var clientId = this.$el.find("#clients option:selected").attr("data-id");
+            var location =this.$el.find("#location").val();
+
+            var saveObj = {
+                serviceType:serviceType,
+                bookingDate:bookingDate,
+                clientId:clientId,
+                location:location
+
+            };
+            var clientAppointmentModel = new ClientAppointmentModel();
+
+            clientAppointmentModel.on('invalid', self.handleModelValidationError, self);
+            clientAppointmentModel.save(saveObj,{
+                success: function () {
+                    console.log('success created');
+                    Backbone.history.navigate('pendingRequests', {trigger: true});
+                },
+                error: self.handleModelError
+            });
+        },
+
         showDialog:function(e){
-            var stylist = $(e.target).attr("data-id");
-            console.log(stylist);
+            var self = this;
+            var stylistId = $(e.target).attr("data-id");
+            var stylistName = $(e.target).attr("data-name");
+            var formString = _.template(bookDialogTemplate)({
+                clients: self.clients,
+                services: self.servicesCollection.toJSON(),
+                stylistId:stylistId,
+                stylistName:stylistName
+
+            });
+            this.dialog = $(formString).dialog({
+                modal:true,
+                resizable: false,
+                draggable: false,
+                closeOnEscape: false,
+                appendTo:"#wrapper",
+                dialogClass: "modalBook",
+                width: 400
+            });
+            this.$el.find(".modalBook .date").datepicker();
+            this.$el.find(".modalBook .time").timepicker({
+                disableTextInput:true,
+                timeFormat: 'H:i',
+                step: 15
+            });
 
         },
 
         showClients: function () {
-            var clients = this.clientsCollection.toJSON();
-
-            clients = _.map(clients, function (client) {
+            this.clients = this.clientsCollection.toJSON();
+            console.log(this.clients);
+            this.clients = _.map(this.clients, function (client) {
                 return {
                     _id: client._id,
                     name: client.personalInfo.firstName + " " + client.personalInfo.lastName
                 }
             });
-            this.$el.find("#clients").html(_.template(selectTemplate)({list: clients}));
+            console.log(this.clients);
+            this.$el.find("#clients").html(_.template(selectTemplate)({list: this.clients}));
         },
         showServices: function () {
             var services = this.servicesCollection.toJSON();
-            console.log(services);
 
             this.$el.find("#services").html(_.template(selectTemplate)({list: services}));
         },
@@ -79,7 +162,6 @@ define([
 
         showLocations: function () {
             var locations = this.stylistLocationCollection.toJSON();
-            console.log(locations);
             var self = this;
             this.map = new GMaps({
                 div: '#map',
@@ -129,7 +211,9 @@ define([
 
             $("#date").datepicker();
             $('#time').timepicker({
-                disableTextInput:true
+                disableTextInput:true,
+                timeFormat: 'H:i',
+                step: 15
             });
             return this;
         }
