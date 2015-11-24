@@ -251,6 +251,7 @@ var SubscriptionsHandler = function (db) {
          *  "name": "Unlimited Pass",
          *  "price": 139,
          *  "description":"Maniqure and Blowout",
+         *  "allowServices":["56387644a2e4362617283dce", "56387644a2e4362617283dch"],
          *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
          * }
          *
@@ -269,8 +270,8 @@ var SubscriptionsHandler = function (db) {
         var createObj;
         var allowServicesObjectId;
 
-        if (!body.name || !body.logo || !body.price || !body.allowServices || !body.allowServices.length || !body.description) {
-            return next(badRequests.NotEnParams({reqParams: 'name and logo and price and description and allowServices'}));
+        if (!body.name || !body.logo || !body.price || !body.allowServices || !body.allowServices.length || (typeof body.description !== 'string')) {
+            return next(badRequests.NotEnParams({reqParams: 'name and logo and price and allowServices and description'}));
         }
 
         allowServicesObjectId = body.allowServices.toObjectId();
@@ -353,7 +354,7 @@ var SubscriptionsHandler = function (db) {
         var allowServicesObjectId;
         var oldLogoName;
 
-        if (!name && !imageString && !price && !allowServices && !allowServices.length && !description) {
+        if (!name && !imageString && !price && !allowServices && !allowServices.length && (typeof description !== 'string')) {
             return next(badRequests.NotEnParams({reqParams: 'name or logo or price or description or allowServices'}));
         }
 
@@ -369,7 +370,7 @@ var SubscriptionsHandler = function (db) {
             updateObj.price = price;
         }
 
-        if (description) {
+        if (typeof description === 'string') {
             updateObj.description = description;
         }
 
