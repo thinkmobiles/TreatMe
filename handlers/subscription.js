@@ -10,6 +10,8 @@ var async = require('async');
 var ImageHandler = require('./image');
 var CONSTANTS = require('../constants');
 var _ = require('lodash');
+var mongoose = require('mongoose');
+var ObjectId = mongoose.Types.ObjectId;
 
 var SubscriptionsHandler = function (db) {
 
@@ -354,7 +356,7 @@ var SubscriptionsHandler = function (db) {
         var allowServicesObjectId;
         var oldLogoName;
 
-        if (!name && !imageString && !price && !allowServices && !allowServices.length && (typeof description !== 'string')) {
+        if (!name && !imageString && !price && !allowServices && (typeof description !== 'string')) {
             return next(badRequests.NotEnParams({reqParams: 'name or logo or price or description or allowServices'}));
         }
 
@@ -379,7 +381,7 @@ var SubscriptionsHandler = function (db) {
             updateObj.logo = imageName;
         }
 
-        if (allowServices) {
+        if (allowServices && allowServices.length) {
             allowServicesObjectId = allowServices.toObjectId();
             updateObj.allowServices = allowServicesObjectId;
         }
