@@ -13,7 +13,7 @@ module.exports = function(app, db){
     router.post('/appointment', sessionHandler.clientOrAdmin, clientsHandler.createAppointment);
     router.post('/appointment/rate', sessionHandler.isClient, clientsHandler.rateAppointmentById);
 
-    router.post('/gallery',  sessionHandler.clientOrAdmin, clientsHandler.addPhotoToGallery);
+    router.post('/gallery',  sessionHandler.isClient, clientsHandler.addPhotoToGallery);
 
     router.post('/card', sessionHandler.isClient, clientsHandler.addCardInfo);
     router.get('/card', sessionHandler.isClient, clientsHandler.getListCards);

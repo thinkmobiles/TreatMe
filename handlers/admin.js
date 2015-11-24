@@ -3324,6 +3324,226 @@ var AdminHandler = function (app, db) {
             });
     };
 
+    this.createPhotoToGallery = function(req, res, next){
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/gallery`__
+         *
+         * This __method__ allows to add photo to gallery by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/gallery
+         *
+         * @example Body example:
+         *
+         *  {
+         *      "clientId":"5644a3453f00c1f81c25b548",
+         *      "stylistId":"5644a3453f00c1f81c25b549",
+         *      "serviceType":"5644a3453f00c1f81c25b550",
+         *      "bookingDate": "2015-11-08T10:17:50.060Z",
+         *      "image": "data:image/png;base64, /9j/4AAQSkZJRgABAQA..."
+         *  }
+         *
+         * @param {string} clientId - Client id
+         * @param {string} stylistId - Stylist id
+         * @param {string} serviceType - Service type id
+         * @param {date} bookingDate - date when photo was shot
+         * @param {string} image - base64
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Your photo was added to gallery"
+         *  }
+         *
+         * @method createPhotoToGallery
+         * @instance
+         */
+
+        var body = req.body;
+        var clientId = body.clientId;
+        var stylistId = body.stylistId;
+        var serviceType = body.serviceType;
+        var bookingDate = body.bookingDate;
+        var imageString = body.image;
+        var saveObj;
+        var galleryModel;
+
+        if (!clientId || !stylistId || !serviceType || !bookingDate || !imageString) {
+            return next(badRequests.NotEnParams({reqParams: 'clientId and stylistId and serviceType and bookingDate and image'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)) {
+            return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)) {
+            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(serviceType)) {
+            return next(badRequests.InvalidValue({value: serviceType, param: 'serviceType'}));
+        }
+
+        saveObj = {
+            client: ObjectId(clientId),
+            stylist: ObjectId(stylistId),
+            serviceType: ObjectId(serviceType),
+            bookingDate: bookingDate,
+            status: CONSTANTS.STATUSES.GALLERY.APPROVED
+        };
+
+        galleryModel = new Gallery(saveObj);
+
+        galleryModel
+            .save(function (err) {
+                var imageName;
+
+                if (err) {
+                    return next(err);
+                }
+
+                imageName = galleryModel.get('_id').toString();
+
+                image.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, function (err) {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'Your photo was added to gallery', photoId: imageName});
+                });
+            });
+    };
+
+    this.acceptPhotoFromGallery = function(req, res, next){
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/gallery/:id`__
+         *
+         * This __method__ allows to accept photo from gallery by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/gallery/56541f998cb50b2807ba8f8c
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Photo was accepted successfully"
+         *  }
+         *
+         * @method acceptPhotoFromGallery
+         * @instance
+         */
+
+        var id = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(id)){
+            return next(badRequests.InvalidValue({value: id, param: 'id'}));
+        }
+
+        Gallery
+            .findOneAndUpdate({_id: id}, {$set: {status: CONSTANTS.STATUSES.GALLERY.APPROVED, message: ''}}, function (err, galleryModel) {
+                if (err) {
+                    return next(err);
+                }
+
+                if (!galleryModel){
+                    return next(badRequests.NotFound({target: 'Photo'}));
+                }
+
+                res.status(200).send({success: 'Photo was accepted successfully'});
+            });
+    };
+
+    this.removePhotoFromGallery = function(req, res, next){
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/gallery/:id`__
+         *
+         * This __method__ allows delete _User_ photo from gallery by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/gallery/564f0abd122888ec1ee6f87d
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Photo was removed from gallery"
+         *  }
+         *
+         * @method removePhotoFromGallery
+         * @instance
+         */
+
+        var imageName = req.params.id;
+        var criteria = {_id: imageName};
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(imageName)){
+            return next(badRequests.InvalidValue({value: imageName, param: 'id'}));
+        }
+
+        async.waterfall([
+
+            function(cb){
+                Gallery
+                    .findOne(criteria, function(err, imageModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!imageModel){
+                            return cb(badRequests.NotFound({target: 'Photo'}));
+                        }
+
+                        cb(null, imageModel);
+                    });
+            },
+
+            function(imageModel, cb){
+                imageModel.remove(function(err){
+                    if (err){
+                        return cb(err);
+                    }
+
+                    cb();
+                });
+            },
+
+            function(cb){
+                image.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, cb);
+            }
+
+        ], function(err){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Photo was removed from gallery'});
+        });
+    };
+
 
     //payments
 

@@ -13,7 +13,8 @@ module.exports = function (db) {
         stylist: {type: ObjectId, ref: 'User'},
         serviceType: {type: ObjectId, ref: 'ServiceType'},
         bookingDate: {type: Date, default: Date.now},
-        status: {type: String, default: CONSTANTS.STATUSES.GALLERY.PENDING}
+        status: {type: String, default: CONSTANTS.STATUSES.GALLERY.PENDING},
+        message: {type: String, default: ''}
     }, {
         collection: 'Gallery'
     });
