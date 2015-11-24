@@ -11,6 +11,8 @@ var ImageHandler = require('./image');
 var CONSTANTS = require('../constants');
 var _ = require('lodash');
 var StripeModule = require('../helpers/stripe');
+var mongoose = require('mongoose');
+var ObjectId = mongoose.Types.ObjectId;
 
 var SubscriptionsHandler = function (db) {
 
@@ -253,6 +255,7 @@ var SubscriptionsHandler = function (db) {
          *  "name": "Unlimited Pass",
          *  "price": 139,
          *  "description":"Maniqure and Blowout",
+         *  "allowServices":["56387644a2e4362617283dce", "56387644a2e4362617283dch"],
          *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
          * }
          *
@@ -270,8 +273,8 @@ var SubscriptionsHandler = function (db) {
         var createObj;
         var allowServicesObjectId;
 
-        if (!body.name || !body.logo || !body.price || !body.allowServices || !body.allowServices.length) {
-            return next(badRequests.NotEnParams({reqParams: 'name and logo and price and description and allowServices'}));
+        if (!body.name || !body.logo || !body.price || !body.allowServices || !body.allowServices.length || (typeof body.description !== 'string')) {
+            return next(badRequests.NotEnParams({reqParams: 'name and logo and price and allowServices and description'}));
         }
 
         allowServicesObjectId = body.allowServices.toObjectId();
@@ -398,7 +401,7 @@ var SubscriptionsHandler = function (db) {
         var allowServicesObjectId;
         var oldLogoName;
 
-        if (!name && !imageString && !price && !allowServices && !allowServices.length && !description) {
+        if (!name && !imageString && !price && !allowServices && (typeof description !== 'string')) {
             return next(badRequests.NotEnParams({reqParams: 'name or logo or price or description or allowServices'}));
         }
 
@@ -414,7 +417,7 @@ var SubscriptionsHandler = function (db) {
             updateObj.price = price;
         }
 
-        if (description) {
+        if (typeof description === 'string') {
             updateObj.description = description;
         }
 
@@ -423,7 +426,7 @@ var SubscriptionsHandler = function (db) {
             updateObj.logo = imageName;
         }
 
-        if (allowServices) {
+        if (allowServices && allowServices.length) {
             allowServicesObjectId = allowServices.toObjectId();
             updateObj.allowServices = allowServicesObjectId;
         }

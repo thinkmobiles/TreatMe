@@ -53,8 +53,8 @@ module.exports = function (app, db) {
 
     app.get('/service/:stylistId?', sessionHandler.isAdmin, user.getStylistServices);
 
-    app.get('/gallery/:id?', sessionHandler.authenticatedUser, user.getGalleryPhotos);
-    app.delete('/gallery/:id', sessionHandler.clientOrStylist, user.removePhotoFromGallery);
+    app.get('/gallery/:clientId?', sessionHandler.authenticatedUser, user.getGalleryPhotos);
+    app.delete('/gallery/:id', sessionHandler.clientOrStylist, user.requestOnRemovePhotoFromGallery);
 
     app.get('/appointment/:id?', sessionHandler.authenticatedUser, user.getAppointments); //can accept query [&status=Pending //or Booked &page=2&limit=20] status for admin only
     app.post('/appointment/cancel',sessionHandler.clientOrStylist, user.cancelByUser);

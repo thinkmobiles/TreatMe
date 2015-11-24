@@ -731,7 +731,7 @@ var ClientsHandler = function (app, db) {
                                 return next(err);
                             }
 
-                            res.status(200).send({success: 'Your photo was added to gallery'});
+                            res.status(200).send({success: 'Your photo was added to gallery', photoId: imageName});
                         });
                     });
             });

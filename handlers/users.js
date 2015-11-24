@@ -1788,6 +1788,7 @@ var UserHandler = function (app, db) {
          *             "client": "Petya Lyashenko",
          *             "serviceType": "Manicure",
          *             "bookingDate": "2015-11-08T10:17:50.060Z",
+         *             "status": "Approved",
          *             "photoUrl": "http://projects.thinkmobiles.com:8871/uploads/development/images/564f0abd122888ec1ee6f87d.png"
          *         }
          *     ]
@@ -1798,8 +1799,9 @@ var UserHandler = function (app, db) {
          */
 
         var session = req.session;
-        var userId = req.params.id;
+        var userId = req.params.clientId;
         var query = req.query;
+        var status;
         var page = (query.page >=1) ? query.page : 1;
         var limit = (query.limit >=1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_PHOTOS;
         var findObj = {};
@@ -1809,6 +1811,7 @@ var UserHandler = function (app, db) {
 
         if (session.role === CONSTANTS.USER_ROLE.CLIENT){
             findObj.client = session.uId;
+            findObj.status = CONSTANTS.STATUSES.GALLERY.APPROVED;
             populateArray.push({path: 'stylist', select: 'salonInfo.salonName personalInfo.firstName personalInfo.lastName personalInfo.avatar'});
         }
 
@@ -1823,10 +1826,29 @@ var UserHandler = function (app, db) {
 
             findObj.client = userId;
             findObj.stylist = session.uId;
+            findObj.status = CONSTANTS.STATUSES.GALLERY.APPROVED;
             populateArray.push({path: 'client', select: 'personalInfo.firstName personalInfo.lastName'});
         }
 
         if (session.role === CONSTANTS.USER_ROLE.ADMIN){
+            status = query.status ? query.status.toLowerCase() : null;
+
+            if (status && status !== 'pending' && status !== 'approved' && status !== 'deleting'){
+                return next(badRequests.InvalidValue({value: status, param: 'status'}))
+            }
+
+            if (status === 'approved' || !status){
+                findObj.status = CONSTANTS.STATUSES.GALLERY.APPROVED;
+            }
+
+            if (status === 'pending'){
+                findObj.status = CONSTANTS.STATUSES.GALLERY.PENDING;
+            }
+
+            if (status === 'deleting'){
+                findObj.status = CONSTANTS.STATUSES.GALLERY.DELETING;
+            }
+
             populateArray.push(
                 {path: 'client', select: 'personalInfo.firstName personalInfo.lastName'},
                 {path: 'stylist', select: 'personalInfo.firstName personalInfo.lastName'}
@@ -1911,7 +1933,7 @@ var UserHandler = function (app, db) {
         });
     };
 
-    this.removePhotoFromGallery = function(req, res, next){
+    this.requestOnRemovePhotoFromGallery = function(req, res, next){
 
         /**
          * __Type__ __`DELETE`__
@@ -1922,78 +1944,58 @@ var UserHandler = function (app, db) {
          *
          * __URL: `/gallery/:id`__
          *
-         * This __method__ allows delete _User_ photo from gallery
+         * This __method__ allows to send request for deleting _User_ photo from gallery
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/gallery/564f0abd122888ec1ee6f87d
          *
+         * @example Body example:
+         *
+         * {
+         *      "message": "I dont like this photo, please remove it."
+         * }
          * @example Response example:
          *
          *  Response status: 200
          *
          *  {
-         *      "success": "Photo was removed from gallery"
+         *      "success": "Your request on deleting photo was accepted"
          *  }
          *
-         * @method removePhotoFromGallery
+         * @method requestOnRemovePhotoFromGallery
          * @instance
          */
 
         var session = req.session;
         var userId = session.uId;
         var imageName = req.params.id;
-        var findObj = {_id: imageName};
+        var message = req.body.message;
+        var criteria = {_id: imageName};
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(imageName)){
             return next(badRequests.InvalidValue({value: imageName, param: 'id'}));
         }
 
         if (session.role === CONSTANTS.USER_ROLE.CLIENT){
-            findObj.client = ObjectId(userId);
+            criteria.client = ObjectId(userId);
         }
 
         if (session.role === CONSTANTS.USER_ROLE.STYLIST){
-            findObj.stylist = ObjectId(userId);
+            criteria.stylist = ObjectId(userId);
         }
 
-        async.waterfall([
+        Gallery
+            .findOneAndUpdate(criteria, {$set: {status: CONSTANTS.STATUSES.GALLERY.DELETING, message: message}}, function(err, galleryModel){
+                if (err) {
+                    return next(err);
+                }
 
-            function(cb){
-                Gallery
-                    .findOne(findObj, function(err, imageModel){
-                        if (err){
-                            return cb(err);
-                        }
+                if (!galleryModel){
+                    return next(badRequests.NotFound({target: 'Photo'}));
+                }
 
-                        if (!imageModel){
-                            return cb(badRequests.NotFound({target: 'image'}));
-                        }
-
-                        cb(null, imageModel);
-                    });
-            },
-
-            function(imageModel, cb){
-                imageModel.remove(function(err){
-                    if (err){
-                        return cb(err);
-                    }
-
-                    cb();
-                });
-            },
-
-            function(cb){
-                image.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, cb);
-            }
-
-        ], function(err){
-            if (err){
-                return next(err);
-            }
-
-            res.status(200).send({success: 'Photo was removed from gallery'});
-        });
+                res.status(200).send({success: 'Your request on deleting photo was accepted'});
+            });
     };
 
     this.getAppointments = function(req, res, next){
