@@ -39,7 +39,7 @@ define([
 
             }
             /* ---password--- */
-            if (!password) {
+            if (!this.id && !password) {
                 errors.push({name: 'password', message: 'Please fill Password field.'})
             } else {
 

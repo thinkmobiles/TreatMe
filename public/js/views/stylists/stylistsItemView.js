@@ -1,6 +1,7 @@
 'use strict';
 
 define([
+    'custom',
     'models/stylistModel',
     'views/services/servicesView',
     'views/newApplications/newApplicationsServiceView',
@@ -11,7 +12,7 @@ define([
     //'views/stylists/stylistsEditView',
     //'views/stylists/stylistsClientsView',
     'text!templates/stylists/editStylistTemplate.html'
-], function (StylistModel, ServicesView, ApplicationsServiceView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
+], function (custom, StylistModel, ServicesView, ApplicationsServiceView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -25,8 +26,9 @@ define([
         previewStylistTemplate: _.template(PreviewStylistTemplate),
 
         events: {
-            "click .saveBtn": "saveStylist"
-            //"click .edit"   : "edit"
+            'click .saveBtn'      : 'saveStylist',
+            'click .avatar'       : 'changeAvatar',
+            'change .changeAvatar': 'changeInputFile'
         },
 
         initialize: function (options) {
@@ -70,16 +72,16 @@ define([
                     profession: 'profession'
                 },
                 salonInfo   : {
-                    salonName: 'mySalon',
-                    businessRole     : 'Stylist',
-                    phone     : '+38 093 111 1111',
-                    email       : 'test_' + ticks + '@mail.com',
-                    address: 'PS street, ...',
+                    salonName    : 'mySalon',
+                    businessRole : 'Stylist',
+                    phone        : '+38 093 111 1111',
+                    email        : 'test_' + ticks + '@mail.com',
+                    address      : 'PS street, ...',
                     licenseNumber: 'License 123',
-                    zipCode: '88000',
-                    state: 'Закарпаття',
-                    country: 'Ukraine',
-                    city: 'Ужгород'
+                    zipCode      : '88000',
+                    state        : 'Закарпаття',
+                    country      : 'Ukraine',
+                    city         : 'Ужгород'
                 }
             };
             this.model = new StylistModel(data);
@@ -134,6 +136,7 @@ define([
 
             $el.find('.info').html(this.itemTemplate(user));
             //$el.find('.userName').html(userName);
+            //custom.canvasDraw({imageSrc: user.avatar}, self);
 
             this.updateNavigation(user);
 
@@ -197,6 +200,8 @@ define([
             var state = form.find('.state').val();
             var zipCode = form.find('.zipCode').val();
             var country = form.find('.country').val();
+            var avatarBASE64 = form.find('.avatar').attr('src');
+
             var data;
 
             var dataService = this.serviceApplications.getData();
@@ -208,6 +213,7 @@ define([
             //validation ...
 
             data = {
+                avatar      : avatarBASE64,
                 email       : email,
                 personalInfo: {
                     firstName : firstName,
@@ -227,7 +233,7 @@ define([
                     country      : country,
                     licenseNumber: licenseNumber
                 },
-                 services    : dataService
+                services    : dataService
             };
 
             callback(null, data);
@@ -235,6 +241,15 @@ define([
 
         saveStylist: function (event) {
             var self = this;
+            var form = this.$el.find('.stylistForm');
+            var image = form.find('.avatar');
+
+            if (image.data('changed')) {
+                this.avatarBASE64 = image.attr('src');
+            } else {
+                this.avatarBASE64 = null;
+            }
+
 
             self.prepareSaveData(function (err, data) {
                 var model;
@@ -246,7 +261,17 @@ define([
                 model = self.model;
                 model.save(data, {
                     success: function () {
-                        alert('success');
+                        var src = self.avatarBASE64;
+
+                        if (src) {
+                            console.log('>>> change the avatar');
+                            self.saveTheAvatar(src, function (res) {
+                                alert('success saved the user + avatar');
+                            });
+                        } else {
+                            alert('success saved');
+                        }
+
                     },
                     error  : self.handleModelError
                 });
@@ -261,6 +286,51 @@ define([
             var url = this.path + '/' + id + '/edit';
 
             Backbone.history.navigate(url, {trigger: true});
+        },
+
+        changeAvatar: function (e) {
+            this.$el.find('.changeAvatar').click();
+        },
+
+        changeInputFile: function (e) {
+            var avatar = this.$el.find('.avatar');
+            var self = this;
+
+            custom.getSrc(e, function (err, src) {
+                if (err) {
+                    return self.handleError(err);
+                }
+
+                avatar.attr('src', src);
+                avatar.attr('data-changed', 'true');
+            });
+
+        },
+
+        saveTheAvatar: function (src, callback) {
+            var userId = this.model.id;
+            var src = src;
+            var data = {
+                userId: userId,
+                avatar: src
+            };
+            var self = this;
+
+            if (!userId || !src) {
+                return console.error('Not enough incoming parameters.');
+            }
+
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                contentType: 'application/json',
+                url: '/avatar',
+                data: JSON.stringify(data),
+                success: function (res) {
+                    callback(res);
+                },
+                error: self.handleErrorResponse
+            });
         }
 
     });

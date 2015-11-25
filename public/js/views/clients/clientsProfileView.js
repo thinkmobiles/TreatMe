@@ -65,21 +65,20 @@ define([
         },
 
         renderClient: function () {
-            var container = this.$el.find('.accountInfo');
+            var container = this.$el.find('.stylistForm');
             var model = this.model;
             var item = model.toJSON();
-            var self = this;
+            var $el = this.$el;
 
-            this.$el.find('.clientName').html(item.name);
+            $el.find('.clientName').html(item.name);
 
             if (item.currentSubscriptions[0]) {
-                this.$el.find('#currentPackage .purchaseDate').html(item.currentSubscriptions[0].purchaseDate);
-                this.$el.find('#currentPackage .package').html(item.currentSubscriptions[0].package);
-                this.$el.find('#currentPackage .price').html(item.currentSubscriptions[0].price);
+                $el.find('#currentPackage .purchaseDate').html(item.currentSubscriptions[0].purchaseDate);
+                $el.find('#currentPackage .package').html(item.currentSubscriptions[0].package);
+                $el.find('#currentPackage .price').html(item.currentSubscriptions[0].price);
             }
 
-            custom.canvasDraw({imageSrc: item.avatar}, self);
-
+            container.find('#avatar').attr('src', item.avatar);
             container.find('.name').html(item.firstName + ' ' + item.lastName);
             container.find('.phone').html(item.phone);
             container.find('.email').html(item.email);

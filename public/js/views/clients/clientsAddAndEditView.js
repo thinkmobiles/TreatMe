@@ -11,12 +11,13 @@ define([
 
         el: '#wrapper',
 
-        mainTemplate: _.template(ClientAddTemplate),
+        mainTemplate    : _.template(ClientAddTemplate),
         servicesTemplate: _.template(ServicesTemplate),
 
         events: {
-            'click .saveBtn': 'saveClients',
-            'click #avatar' : 'changeAvatar'
+            'click .saveBtn'      : 'saveClients',
+            'click .avatar'       : 'changeAvatar',
+            'change .changeAvatar': 'changeInputFile'
         },
 
         initialize: function (options) {
@@ -35,7 +36,7 @@ define([
             } else {
                 model = new ClientModel({_id: userId});
                 model.fetch({
-                    success: function (userModel){
+                    success: function (userModel) {
                         self.model = userModel;
                         App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {
                             name: self.model.toJSON().firstName + ' ' + self.model.toJSON().lastName,
@@ -50,12 +51,12 @@ define([
 
                         return self.render();
                     },
-                    error: self.handleModelError
+                    error  : self.handleModelError
                 });
             }
         },
 
-        render: function(){
+        render: function () {
             var item = this.model.toJSON();
             var self = this;
 
@@ -76,11 +77,11 @@ define([
             var password = thisEl.find('.password').val();
 
             data = {
-                firstName : firstName,
-                lastName  : lastName,
-                phone     : phone,
-                email     : email,
-                password  : password
+                firstName: firstName,
+                lastName : lastName,
+                phone    : phone,
+                email    : email,
+                password : password
             };
 
             callback(null, data)
@@ -101,13 +102,27 @@ define([
                     success: function () {
                         alert('success');
                     },
-                    error: self.handleModelError
+                    error  : self.handleModelError
                 });
             });
         },
 
         changeAvatar: function (e) {
-            this.$el.find('#changeAvatar').click();
+            this.$el.find('.changeAvatar').click();
+        },
+
+        changeInputFile: function (e) {
+            var avatar = this.$el.find('.avatar');
+            var self = this;
+
+            custom.getSrc(e, function (err, src) {
+                if (err) {
+                    return self.handleError(err);
+                }
+
+                avatar.attr('src', src);
+            });
+
         }
 
     });

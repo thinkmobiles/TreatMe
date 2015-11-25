@@ -66,6 +66,8 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
     };
 
     Backbone.View.prototype.handleErrorResponse = function (xhr) {
+        var errMessage;
+
         if (xhr) {
             if (xhr.status === 401 || xhr.status === 403) {
                 if (xhr.status === 401) {
@@ -75,10 +77,11 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
                 }
             } else {
                 if (xhr.responseJSON) {
-                    alert(xhr.responseJSON.error);
-                } else {
-                    Backbone.history.navigate("users", { trigger: true });
-                }
+                    errMessage = xhr.responseJSON.error || xhr.responseJSON.message;
+                    alert(errMessage);
+                } /*else {
+                    Backbone.history.navigate("dashboard", { trigger: true });
+                }*/
             }
         }
     };
