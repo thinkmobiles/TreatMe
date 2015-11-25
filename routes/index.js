@@ -37,6 +37,8 @@ module.exports = function (app, db) {
     app.post('/invoice', function(req, res, next){
         var body = req.body;
 
+        console.dir(body.toJSON());
+
         res.status(200).send({result: body});
 
     });
