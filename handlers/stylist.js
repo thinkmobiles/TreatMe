@@ -321,7 +321,7 @@ var StylistHandler = function (app, db) {
                         return cb(badRequests.DatabaseError());
                     }
 
-                    cb(null, appointmentModel, price);
+                    cb(null, appointmentModel, serviceModel.price);
 
                 });
             },
@@ -369,7 +369,7 @@ var StylistHandler = function (app, db) {
                     paymentType: 'oneTime',
                     amount: charge.amount,
                     fee: charge.amount * 0.029 + 30,
-                    totalAmount: charge * (1 - 0.029) - 30,
+                    totalAmount: charge.amount * (1 - 0.029) - 30,
                     user: clientId,
                     role: 'client'
                 };
@@ -608,7 +608,7 @@ var StylistHandler = function (app, db) {
     this.createCharge = function(clientId, paymentData, callback){
 
         if (!paymentData.amount || !paymentData.currency){
-            return next(badRequests.NotEnParams({reqParams: 'amount and currency'}));
+            return callback(badRequests.NotEnParams({reqParams: 'amount and currency'}));
         }
 
         async
@@ -632,8 +632,8 @@ var StylistHandler = function (app, db) {
 
                 function(customerId, cb){
                     var data = {
-                        amount: body.amount,
-                        currency: body.currency,
+                        amount: paymentData.amount,
+                        currency: paymentData.currency,
                         customer: customerId
                     };
 
