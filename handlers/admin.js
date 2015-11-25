@@ -1117,7 +1117,8 @@ var AdminHandler = function (app, db) {
          * @example Body example:
          * {
          *  "name": "Manicure",
-         *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
+         *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64),
+         *  "price": 25
          * }
          *
          * @example Response example:
@@ -1134,13 +1135,14 @@ var AdminHandler = function (app, db) {
         var imageName = image.createImageName();
         var createObj;
 
-        if (!body.name || !body.logo) {
+        if (!body.name || !body.logo || !body.price) {
             return next(badRequests.NotEnParams({params: 'name or logo'}));
         }
 
         createObj = {
             name: body.name,
-            logo: imageName
+            logo: imageName,
+            price: body.price
         };
 
         image
@@ -1270,11 +1272,13 @@ var AdminHandler = function (app, db) {
          *
          * {
          *      "name": "Pedicurerrrrrrrr",
-         *      "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1..." (Base64)
+         *      "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1..." (Base64),
+         *      "price": 25
          * }
          *
          * @param {string} [name] - service name
          * @param {string} [logo] - service logo
+         * @param {number} [price] - service price
          *
          * @example Response example:
          *
@@ -1296,6 +1300,10 @@ var AdminHandler = function (app, db) {
 
         if (body.logo) {
             updateObj.logo = body.logo;
+        }
+
+        if (body.price){
+            updateObj.price = body.price;
         }
 
         ServiceType
