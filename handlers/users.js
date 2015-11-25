@@ -42,6 +42,79 @@ var UserHandler = function (app, db) {
         return shaSum.digest('hex');
     }
 
+    function appointmentToJSON(appointmentModel){
+        var clientAvatarName;
+        var clientAvatarUrl = '';
+        var stylistAvatarName;
+        var stylistAvatarUrl = '';
+        var logo;
+        var serviceLogoUrl = '';
+        var stylistAddress;
+        var modelJSON = appointmentModel.toJSON();
+
+        if (modelJSON.client && modelJSON.client.id && modelJSON.client.id._id){
+            clientAvatarName = appointmentModel.get('client.id.personalInfo.avatar');
+
+            if (clientAvatarName){
+                clientAvatarUrl = image.computeUrl(clientAvatarName, CONSTANTS.BUCKET.IMAGES);
+            }
+
+            if (!modelJSON.clientLoc || !modelJSON.clientLoc.address){
+                modelJSON.clientLoc = {
+                    address: 'Unknown client address'
+                };
+            }
+
+            modelJSON.client = {
+                _id: modelJSON.client.id._id,
+                name: modelJSON.client.firstName + ' ' + modelJSON.client.lastName,
+                email: modelJSON.client.id.email,
+                avatar: clientAvatarUrl,
+                address: modelJSON.clientLoc.address,
+                phone: modelJSON.client.id.personalInfo.phone
+
+            };
+
+            delete modelJSON.clientLoc;
+        }
+
+        if (modelJSON.stylist && modelJSON.stylist.id && modelJSON.stylist.id._id){
+            stylistAvatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
+
+            if (stylistAvatarName){
+                stylistAvatarUrl = image.computeUrl(stylistAvatarName, CONSTANTS.BUCKET.IMAGES);
+            }
+
+            stylistAddress = modelJSON.stylist.id.salonInfo.address + ', ' + modelJSON.stylist.id.salonInfo.city + ', ' + modelJSON.stylist.id.salonInfo.state + ', ' + modelJSON.stylist.id.salonInfo.country + ', ' + modelJSON.stylist.id.salonInfo.zipCode;
+
+            modelJSON.stylist = {
+                _id: modelJSON.stylist.id._id,
+                name: modelJSON.stylist.firstName + ' ' + modelJSON.stylist.lastName,
+                avatar: stylistAvatarUrl,
+                address: stylistAddress,
+                phone: modelJSON.stylist.id.personalInfo.phone,
+                salonName: modelJSON.stylist.id.salonInfo.salonName,
+                profession: modelJSON.stylist.id.personalInfo.profession
+            };
+        }
+
+        if (modelJSON.serviceType && modelJSON.serviceType.id && modelJSON.serviceType.id._id){
+            logo = appointmentModel.get('serviceType.id.logo');
+
+            if (logo){
+                serviceLogoUrl = image.computeUrl(logo, CONSTANTS.BUCKET.IMAGES);
+            }
+
+            modelJSON.serviceType = {
+                _id: modelJSON.serviceType.id._id,
+                name: modelJSON.serviceType.name,
+                logo: serviceLogoUrl
+            };
+        }
+
+        return modelJSON;
+    }
+
     function getAllUserAppointments(userId, role, appointmentStatus, page, limit, sortParam, order, search, callback){
         var criteria = {};
         var projection;
@@ -62,6 +135,7 @@ var UserHandler = function (app, db) {
 
         if (role === CONSTANTS.USER_ROLE.CLIENT){
             criteria['client.id'] = userId;
+            criteria.status = {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED};
             projection = {
                 __v: 0,
                 client: 0,
@@ -69,7 +143,7 @@ var UserHandler = function (app, db) {
                 requestDate: 0,
                 status: 0
             };
-            populateArray.push({path: 'stylist.id', select: 'personalInfo.avatar salonInfo.salonName'});
+            populateArray.push({path: 'serviceType.id', select: 'logo'}, {path: 'stylist.id', select: 'personalInfo.avatar salonInfo'});
         }
 
         if (role === CONSTANTS.USER_ROLE.STYLIST){
@@ -77,11 +151,10 @@ var UserHandler = function (app, db) {
             projection = {
                 __v: 0,
                 stylist: 0,
-                clientLoc: 0,
                 requestDate: 0,
                 status: 0
             };
-            populateArray.push({path: 'client.id', select: 'personalInfo.avatar'});
+            populateArray.push({path: 'serviceType.id', select: 'logo'}, {path: 'client.id', select: 'personalInfo.avatar'});
         }
 
         if (role === CONSTANTS.USER_ROLE.ADMIN){
@@ -199,30 +272,17 @@ var UserHandler = function (app, db) {
                     .skip(limit * (page - 1))
                     .limit(limit)
                     .exec(function(err, appointmentModelsArray){
-                        var avatarName;
+                        var appointmentsArray;
 
                         if (err){
                             return cb(err);
                         }
 
-                        appointmentModelsArray.map(function(appointmentModel){
-
-                            if (role === CONSTANTS.USER_ROLE.CLIENT){
-                                avatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
-
-                                if (avatarName){
-                                    appointmentModelsArray.stylist.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
-                                }
-                            } else {
-                                avatarName = appointmentModel.get('client.id.personalInfo.avatar');
-
-                                if (avatarName){
-                                    appointmentModelsArray.client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
-                                }
-                            }
+                        appointmentsArray = appointmentModelsArray.map(function(appointmentModel){
+                            return appointmentToJSON(appointmentModel);
                         });
 
-                        cb(null, appointmentModelsArray);
+                        cb(null, appointmentsArray);
                     });
             }],
 
@@ -293,13 +353,6 @@ var UserHandler = function (app, db) {
             .findOne(criteria, projection)
             .populate(populateArray)
             .exec(function(err, appointmentModel){
-                var clientAvatarName;
-                var clientAvatarUrl = '';
-                var stylistAvatarName;
-                var stylistAvatarUrl = '';
-                var logo;
-                var serviceLogoUrl = '';
-                var stylistAddress;
                 var modelJSON;
 
                 if (err){
@@ -310,61 +363,7 @@ var UserHandler = function (app, db) {
                     return callback(badRequests.NotFound({target: 'Appointment'}));
                 }
 
-                modelJSON = appointmentModel.toJSON();
-
-                if (modelJSON.client && modelJSON.client.id && modelJSON.client.id._id){
-                    clientAvatarName = appointmentModel.get('client.id.personalInfo.avatar');
-
-                    if (clientAvatarName){
-                        clientAvatarUrl = image.computeUrl(clientAvatarName, CONSTANTS.BUCKET.IMAGES);
-                    }
-
-                    modelJSON.client = {
-                        _id: modelJSON.client.id._id,
-                        name: modelJSON.client.firstName + ' ' + modelJSON.client.lastName,
-                        email: modelJSON.client.id.email,
-                        avatar: clientAvatarUrl,
-                        address: modelJSON.clientLoc.address || 'Unknown client address',
-                        phone: modelJSON.client.id.personalInfo.phone
-
-                    };
-
-                    delete modelJSON.clientLoc;
-                }
-
-                if (modelJSON.stylist && modelJSON.stylist.id && modelJSON.stylist.id._id){
-                    stylistAvatarName = appointmentModel.get('stylist.id.personalInfo.avatar');
-
-                    if (stylistAvatarName){
-                        stylistAvatarUrl = image.computeUrl(stylistAvatarName, CONSTANTS.BUCKET.IMAGES);
-                    }
-
-                    stylistAddress = modelJSON.stylist.id.salonInfo.address + ', ' + modelJSON.stylist.id.salonInfo.city + ', ' + modelJSON.stylist.id.salonInfo.state + ', ' + modelJSON.stylist.id.salonInfo.country + ', ' + modelJSON.stylist.id.salonInfo.zipCode;
-
-                    modelJSON.stylist = {
-                        _id: modelJSON.stylist.id._id,
-                        name: modelJSON.stylist.firstName + ' ' + modelJSON.stylist.lastName,
-                        avatar: stylistAvatarUrl,
-                        address: stylistAddress,
-                        phone: modelJSON.stylist.id.personalInfo.phone,
-                        salonName: modelJSON.stylist.id.salonInfo.salonName,
-                        profession: modelJSON.stylist.id.personalInfo.profession
-                    };
-                }
-
-                if (modelJSON.serviceType && modelJSON.serviceType.id && modelJSON.serviceType.id._id){
-                    logo = appointmentModel.get('serviceType.id.logo');
-
-                    if (logo){
-                        serviceLogoUrl = image.computeUrl(logo, CONSTANTS.BUCKET.IMAGES);
-                    }
-
-                    modelJSON.serviceType = {
-                        _id: modelJSON.serviceType.id._id,
-                        name: modelJSON.serviceType.name,
-                        logo: serviceLogoUrl
-                    };
-                }
+                modelJSON = appointmentToJSON(appointmentModel);
 
                 callback(null, modelJSON);
             });
@@ -2024,6 +2023,10 @@ var UserHandler = function (app, db) {
 
                 if (!appointmentStatus){
                     return next(badRequests.NotEnParams({reqParams: 'status'}));
+                }
+
+                if (appointmentStatus !== CONSTANTS.STATUSES.APPOINTMENT.PENDING && appointmentStatus !== CONSTANTS.STATUSES.APPOINTMENT.BOOKED){
+                    return next(badRequests.InvalidValue({value: appointmentStatus, param: 'status'}));
                 }
             }
 

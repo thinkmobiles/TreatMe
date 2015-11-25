@@ -2319,7 +2319,7 @@ var AdminHandler = function (app, db) {
                                 modelJSON.serviceType = 'Service was removed';
                             }
 
-                            if (modelJSON.stylist ){
+                            if (modelJSON.stylist){
                                 modelJSON.stylist = modelJSON.stylist.firstName + ' ' + modelJSON.stylist.lastName;
                             } else {
                                 modelJSON.stylist = 'Stylist was removed'
