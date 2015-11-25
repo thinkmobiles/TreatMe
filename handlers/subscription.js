@@ -528,6 +528,56 @@ var SubscriptionsHandler = function (db) {
             });
     };
 
+    this.changeSubscriptionEndDate = function(req, res, next){
+        var body = req.body;
+        var customerId = body.data.object.customer;
+        var subscriptionId = body.data.object.subscription;
+        var currentPeriodEnd;
+
+        async
+            .waterfall([
+                function(cb){
+                    stripe.getSubscription(customerId, subscriptionId, function(err, subscription){
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!subscription){
+                            return cb(badRequests.NotFound({target: 'Subscription'}));
+                        }
+
+                        currentPeriodEnd = subscription.current_period_end * 1000;
+
+                        cb(null, currentPeriodEnd);
+
+                    });
+                },
+
+                function(dateOfEnd, cb){
+                    Subscription
+                        .findOneAndUpdate({stripeSubId: subscriptionId}, {$set: {expirationDate: new Date(dateOfEnd)}}, function(err){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null);
+
+                        });
+                }
+            ], function(err){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send();
+
+            });
+
+    };
+
 };
 
 module.exports = SubscriptionsHandler;

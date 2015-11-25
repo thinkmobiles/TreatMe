@@ -628,7 +628,7 @@ var AdminHandler = function (app, db) {
          *      "lastName": "Vashkeba",
          *      "phone": "21",
          *      "stripeToken": "tok_21349tfdjkfsdf324" (optional)
-         *      "subscriptions": ["5638b976f8c11d9c04081343", "5638b965f8c11d9c04081341"] (optional)
+         *      "subscriptionId": "5638b976f8c11d9c04081343" (optional)
          * }
          *
          * @example Response example:
@@ -647,10 +647,14 @@ var AdminHandler = function (app, db) {
         var email = body.email;
         var stripeToken = body.stripeToken;
         var password = passGen(12, false);
-        var subscriptionIds = body.subscriptions;
+        var subscriptionId = body.subscriptionId;
 
         if (!firstName || !lastName || !phone || !email){
             return next(badRequests.NotEnParams({reqParams: 'firstName or lastName or phone or email'}))
+        }
+
+        if (subscriptionId && !CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){
+            return next(badRequests.InvalidValue({value: subscriptionId, param: 'subscriptionId'}));
         }
 
         async
@@ -724,7 +728,11 @@ var AdminHandler = function (app, db) {
                         });
                 },
                 function(clientId, cb){
-                    client.buySubscriptions(clientId, {firstName: firstName, lastName: lastName}, subscriptionIds, cb);
+                    if (!subscriptionId || !stripeToken){
+                        return cb();
+                    }
+
+                    client.buySubscription(clientId, subscriptionId, cb);
                 },
 
                 function(cb){

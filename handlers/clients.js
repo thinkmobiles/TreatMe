@@ -151,7 +151,7 @@ var ClientsHandler = function (app, db) {
             });
     };
 
-    this.buySubscriptions = function(clientId, clientName, subscriptionId, callback){
+    this.createSubscription = function(clientId, clientName, subscriptionId, callback){
 
         SubscriptionType
             .findOne({_id: subscriptionId}, {name: 1}, function(err, subscription){
@@ -164,9 +164,7 @@ var ClientsHandler = function (app, db) {
                 }
 
                 if (!subscription){
-                    err = new Error('Subscription not found');
-                    err.status = 400;
-                    return callback(err);
+                    return callback(badRequests.NotFound({target: 'SubscriptionType'}));
                 }
 
                 expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
@@ -274,31 +272,35 @@ var ClientsHandler = function (app, db) {
          *      "success": "Subscriptions bought successfully"
          *  }
          *
-         * @method buySubscriptions
+         * @method buySubscriptionsByClient
          * @instance
          */
 
         var clientId = req.session.uId;
-        var body = req.body;
-        var id;
+        var subscriptionId = req.body.id;
 
-        if (!body.id) {
-            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        if (!subscriptionId) {
+            return next(badRequests.NotEnParams({reqParams: 'id'}));
         }
 
-        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
-            if (!req.params.clientId){
-                return next(badRequests.NotEnParams({reqParams: 'clientId'}));
-            }
-
-            clientId = req.params.clientId;
-
-            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
-                return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
-            }
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){
+            return next(badRequests.InvalidValue({value: subscriptionId, param: 'id'}));
         }
 
-        id = ObjectId(body.id);
+        subscriptionId = ObjectId(subscriptionId);
+
+        self.buySubscription(clientId, subscriptionId, function(err){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Subscriptions bought successfully'});
+        });
+    };
+
+    this.buySubscription = function(clientId, subscriptionId, callback){
+
+        subscriptionId = ObjectId(subscriptionId);
 
         async
             .waterfall([
@@ -323,9 +325,7 @@ var ClientsHandler = function (app, db) {
                         }
 
                         if (!clientModel){
-                            err = new Error('Client not found');
-                            err.status = 404;
-                            return cb(err);
+                            return cb(badRequests.NotFound({target: 'Client'}));
                         }
 
                         cb(null, subscription, clientModel.toJSON());
@@ -333,7 +333,11 @@ var ClientsHandler = function (app, db) {
                 },
 
                 function(subscriptionModel, client, cb){
-                    var customerId = client.payments.customerId;
+                    var customerId = client['payments.customerId'];
+
+                    if (!customerId){
+                        return cb(badRequests.DatabaseError());
+                    }
 
                     if (!subscriptionModel){
                         return cb(null, true, null, customerId, client, null);
@@ -347,9 +351,7 @@ var ClientsHandler = function (app, db) {
                             }
 
                             if (!subscription.data.length){
-                                err = new Error('Subscription not found');
-                                err.status = 400;
-                                return cb(err);
+                                return cb(badRequests.NotFound({target: 'Subscription'}));
                             }
 
                             cb(null, false, subscription.data[0].id, customerId, client, subscriptionModel);
@@ -357,9 +359,24 @@ var ClientsHandler = function (app, db) {
                         });
                 },
 
-                function (isNew, subscriptionId, customerId, client, subscriptionModel, cb){
+                function(subscription, cb){
+                    User.findOne({_id: clientId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'payments.customerId': 1}, function(err, clientModel){
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!clientModel){
+                            return cb(badRequests.NotFound({target: 'Client'}));
+                        }
+
+                        cb(null, subscription, clientModel.toJSON());
+                    });
+                },
+
+                function (isNew, stripeSubscriptionId, customerId, client, subscriptionModel, cb){
                     if (isNew){
-                        stripe.createSubscription(customerId, {plan: id.toString()}, function(err){
+                        stripe.createSubscription(customerId, {plan: subscriptionId.toString()}, function(err){
                                 if (err){
                                     return cb(err);
                                 }
@@ -367,7 +384,7 @@ var ClientsHandler = function (app, db) {
                                 cb(null, subscriptionModel, client);
                             });
                     } else {
-                        stripe.updateSubscription(customerId, subscriptionId, {plan: id.toString()},function(err){
+                        stripe.updateSubscription(customerId, stripeSubscriptionId, {plan: subscriptionId.toString()},function(err){
                             if (err){
                                 return cb(err);
                             }
@@ -384,7 +401,7 @@ var ClientsHandler = function (app, db) {
                     };
 
                     if (!subscription){
-                        self.buySubscriptions(clientId, clientName, id, function(err){
+                        self.createSubscription(clientId, clientName, subscriptionId, function(err){
                             if (err){
                                 return cb(err);
                             }
@@ -392,7 +409,7 @@ var ClientsHandler = function (app, db) {
                             cb(null, true, client.payments.customerId);
                         });
                     } else {
-                        self.updateSubscription(subscription._id, id, function(err){
+                        self.updateSubscription(subscription._id, subscriptionId, function(err){
                             if (err){
                                 return cb(err);
                             }
@@ -403,14 +420,12 @@ var ClientsHandler = function (app, db) {
                 }
 
             ], function(err){
-
                 if (err){
-                    return next(err);
+                    return callback(err);
                 }
 
-                res.status(200).send({success: 'Subscriptions bought successfully'});
+                callback();
             });
-
     };
 
     this.createAppointment = function (req, res, next) {
