@@ -18,15 +18,36 @@ define([
         },
 
         initialize: function (options) {
-            var collection = new Collection();
+            var opts = options || {};
+            var services = opts.services;
+
+            var collection;
+
+            if (services) {
+                collection = new Collection(services, {fetch: false});
+            } else {
+                collection = new Collection();
+            }
 
             collection.on('reset', this.render, this);
 
+            this.checkedIds = opts.checkedIds || [];
             this.collection = collection;
         },
 
         render: function () {
             var collection = this.collection.toJSON();
+            //var checkedIds = this.checkedIds;
+
+            /*_.forEach(collection, function (service) {
+                var id = service._id;
+
+                if (checkedIds.indexOf(id) === -1) {
+                    service.checked = false;
+                } else {
+                    service.checked = true;
+                }
+            });*/
 
             this.$el.html(this.mainTemplate({services: collection}));
 

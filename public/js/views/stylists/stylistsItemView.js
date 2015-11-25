@@ -48,7 +48,7 @@ define([
                 App.menu.select('#nav_stylists');
             }
 
-            this.serviceApplications = new ApplicationsServiceView();
+            //this.servicesView = new ApplicationsServiceView();
         },
 
         addStylist: function (options) {
@@ -89,7 +89,8 @@ define([
 
             this.render();
             this.renderUserInfo();
-            this.serviceApplications = new ApplicationsServiceView();
+            //this.serviceApplications = new ApplicationsServiceView();
+            //this.servicesView = new ApplicationsServiceView();
         },
 
         editStylist: function (options) { // load edit for stylists and new applications.
@@ -104,7 +105,6 @@ define([
 
             this.model = model;
             this.render();
-            this.servicesView = new ApplicationsServiceView();
         },
 
         render: function () {
@@ -131,6 +131,8 @@ define([
 
         renderUserInfo: function () {
             var user = this.model.toJSON();
+            var services = user.service;
+
             //var userName = this.getUserName(user);
             var $el = this.$el;
 
@@ -138,6 +140,8 @@ define([
             //$el.find('.userName').html(userName);
             //custom.canvasDraw({imageSrc: user.avatar}, self);
 
+            this.servicesView = new ApplicationsServiceView({services: services});
+            this.servicesView.render();
             this.updateNavigation(user);
 
             return this;
@@ -204,7 +208,7 @@ define([
 
             var data;
 
-            var dataService = this.serviceApplications.getData();
+            var dataService = this.servicesView.getData();
 
             if (dataService === false) {
                 return callback('Please fill Price field or Incorrect format Price');
@@ -233,7 +237,7 @@ define([
                     country      : country,
                     licenseNumber: licenseNumber
                 },
-                services    : dataService
+                //services    : dataService //TODO: !!!
             };
 
             callback(null, data);

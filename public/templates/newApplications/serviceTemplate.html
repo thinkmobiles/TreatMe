@@ -13,7 +13,7 @@
             <% var name = service.name; %>
             <tr class="service" data-id="<%=service._id%>">
                 <td>
-                    <input id="<%= name %>" type="checkbox" class="checkbox" <%= checked%>>
+                    <input id="<%= name %>" type="checkbox" class="checkbox" <%= (checked) ? 'checked' : '' %>>
                     <label for="<%= name %>"><%= name %></label>
                 </td>
                 <td>

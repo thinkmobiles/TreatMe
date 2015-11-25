@@ -6,7 +6,7 @@
     <div class="accountInfo">
         <span class="title">ACCOUNT INFO</span><br/>
 
-        <img class="avatar" width="90" height="90" alt="avatar" src="<%= avatar %>"/>
+        <img class="avatar" width="90" height="90" alt="avatar" src="<%= personalInfo.avatar %>"/>
         <input style="display: none" type="file" value="Avatar" class="changeAvatar" accept="image/*"><br/>
 
         <input type="text" class="firstName" placeholder="First Name" value="<%= (personalInfo.firstName) ? personalInfo.firstName : ''%>"><span class="prompt"></span>
