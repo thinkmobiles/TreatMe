@@ -8,7 +8,7 @@ module.exports = function(app, db){
     var sessionHandler = new SessionHandler(db);
 
     router.get('/subscriptions/', sessionHandler.isClient, clientsHandler.getServicesWithActiveSubscriptions);
-    router.post('/subscriptions/:clientId?', sessionHandler.clientOrAdmin, clientsHandler.buySubscriptionsByClient);
+    router.post('/subscriptions/', sessionHandler.isClient, clientsHandler.buySubscriptionsByClient);
 
     router.post('/appointment', sessionHandler.clientOrAdmin, clientsHandler.createAppointment);
     router.post('/appointment/rate', sessionHandler.isClient, clientsHandler.rateAppointmentById);
