@@ -9,11 +9,10 @@
         </thead>
         <tbody>
         <% _.forEach(services, function (service) {%>
-            <% var checked = service.status === 'new' ? "" : "checked" %>
             <% var name = service.name; %>
             <tr class="service" data-id="<%=service._id%>">
                 <td>
-                    <input id="<%= name %>" type="checkbox" class="checkbox" <%= (checked) ? 'checked' : '' %>>
+                    <input id="<%= name %>" type="checkbox" class="checkbox" <%= (service.status === 'approved') ? 'checked' : '' %>>
                     <label for="<%= name %>"><%= name %></label>
                 </td>
                 <td>
