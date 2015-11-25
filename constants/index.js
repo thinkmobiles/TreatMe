@@ -17,11 +17,16 @@ module.exports = {
             CONFIRMED: 'Confirmed',
             BEGINS: 'Begins',
             SUCCEEDED: 'Succeeded',
-            CANCEL_BY_CLIENT: 'Cancel by client',
-            CANCEL_BY_STYLIST: 'Cancel by stylist',
+            CANCEL_BY_CLIENT: 'Cancelled by client',
+            CANCEL_BY_STYLIST: 'Cancelled by stylist',
             //for admin
             PENDING: 'Pending',
             BOOKED: 'Booked'
+        },
+        GALLERY: {
+            PENDING: 'Pending',
+            APPROVED: 'Approved',
+            DELETING: 'Deleting'
         }
     },
     LIMIT: {

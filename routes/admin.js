@@ -63,10 +63,15 @@ module.exports = function(app, db){
     router.get('/packages/', sessionHandler.isAdmin, admin.getClientPackages);
     router.delete('/packages/', sessionHandler.isAdmin, admin.removePackages);
 
+    router.post('/gallery/',  sessionHandler.isAdmin, admin.createPhotoToGallery);
+    router.delete('/gallery/:id',  sessionHandler.isAdmin, admin.removePhotoFromGallery);
+    router.get('/gallery/accept/:id',  sessionHandler.isAdmin, admin.acceptPhotoFromGallery);
+
     router.get('/statistic/overview', sessionHandler.isAdmin, admin.getOverviewByPeriod);
     router.get('/statistic/appointments', sessionHandler.isAdmin, admin.getAppointmentsStatistic);
 
-    //router.post('/transfer', sessionHandler.isAdmin, admin.createTransfer);
+    router.post('/transfer', sessionHandler.isAdmin, admin.createTransfer);
+    router.get('/transfer/:transferId?', sessionHandler.isAdmin, admin.getTransfer);
 
     return router;
 };

@@ -9,7 +9,7 @@ module.exports = function (db) {
 
     var Appointment = new Schema({
         client: {
-            id :{type: ObjectId, ref: 'User'},
+            id: {type: ObjectId, ref: 'User'},
             firstName: String,
             lastName: String
 
@@ -20,7 +20,8 @@ module.exports = function (db) {
                 match: /^Point$/,
                 default: 'Point'
             },
-            coordinates: [Number]
+            coordinates: [Number],
+            address: String
         },
         serviceType: {
             id: {type: ObjectId, ref: 'ServiceType'},

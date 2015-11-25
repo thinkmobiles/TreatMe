@@ -83,7 +83,7 @@ module.exports = function(app, db){
 
     router.put('/online', sessionHandler.isStylist, stylistHandler.changeOnlineStatus);
 
-    //router.post('/accountNumber', /*sessionHandler.isStylist, */stylistHandler.addRecipient);
+    router.post('/bankAccount', /*sessionHandler.isStylist, */stylistHandler.addBankAccount);
     //router.get('/appointment/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getBusinessAppointmentById);
 
     return router;

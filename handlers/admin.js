@@ -43,57 +43,80 @@ var AdminHandler = function (app, db) {
 
     function getStylistById(sId, callback) {
 
-        var userObj;
+        async
+            .parallel([
 
-        User
-            .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0, 'salonInfo.availability': 0}, function(err, resultModel){
+                function(cb){
+                    User
+                        .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0, 'salonInfo.availability': 0}, function(err, stylistModel){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!stylistModel){
+                                err = new Error('Stylist not found');
+                                err.status = 404;
+                                return cb(err);
+                            }
+
+                            cb(null, stylistModel.toJSON());
+
+                        });
+                },
+
+                function(cb){
+                    user.getService(sId, function(err, resultServices){
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, resultServices);
+                    });
+                },
+
+                function(cb){
+                    var count = 0;
+                    var overallRating = 0;
+                    Appointment
+                        .find({'stylist.id': sId, status: CONSTANTS.STATUSES.APPOINTMENT.SUCCEEDED}, {rate: 1}, function(err, appColl){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!appColl.length){
+                                return cb(null, 0);
+                            }
+
+                            appColl.map(function(app){
+                                if (app.rate){
+                                    count += 1;
+                                    overallRating += app.rate;
+                                }
+                            });
+
+                            cb(null, overallRating / count);
+
+                        });
+                }
+
+            ], function(err, result){
+                var stylist;
 
                 if (err){
                     return callback(err);
                 }
 
-                if (!resultModel){
-                    err = new Error('User not found');
-                    err.status = 404;
-                    return callback(err);
+                stylist = result[0];
+                stylist.service = result[1] || [];
+                stylist.overallRating = result[2] || 0;
+
+                if (stylist.personalInfo.avatar.length){
+                    stylist.personalInfo.avatar = image.computeUrl(stylist.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
                 }
 
-                userObj = resultModel.toJSON();
+                callback(null, stylist);
 
-                user.getService(sId, function(err, resultServices){
-
-                    if (err){
-                        return callback(err);
-                    }
-
-                    if (resultServices.length){
-                        userObj.services = resultServices;
-                    } else {
-                        userObj.services = []
-                    }
-
-                    callback(null, userObj);
-                });
-
-                /*Services
-                    .find({stylist: ObjectId(sId), approved: true}, {price: 1, _id: 0, serviceId: 1})
-                    .populate({path: 'serviceId', select: '-_id name'})
-                    .exec(function(err, serviceModels){
-
-                        if (err){
-                            return callback(err);
-                        }
-
-                        userObj = resultModel.toJSON();
-
-                        if (serviceModels.length){
-                            userObj.approvedServices = serviceModels;
-                        } else {
-                            userObj.approvedServices = []
-                        }
-
-                        callback(null, userObj);
-                    });*/
             });
     }
 
@@ -443,7 +466,8 @@ var AdminHandler = function (app, db) {
          *               status: "new",
          *               price: 0
          *           }
-         *          ]
+         *          ],
+         *      overallRating: 5
          *  }
          *
          *
@@ -1093,7 +1117,8 @@ var AdminHandler = function (app, db) {
          * @example Body example:
          * {
          *  "name": "Manicure",
-         *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
+         *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64),
+         *  "price": 25
          * }
          *
          * @example Response example:
@@ -1110,13 +1135,14 @@ var AdminHandler = function (app, db) {
         var imageName = image.createImageName();
         var createObj;
 
-        if (!body.name || !body.logo) {
+        if (!body.name || !body.logo || !body.price) {
             return next(badRequests.NotEnParams({params: 'name or logo'}));
         }
 
         createObj = {
             name: body.name,
-            logo: imageName
+            logo: imageName,
+            price: body.price
         };
 
         image
@@ -1246,11 +1272,13 @@ var AdminHandler = function (app, db) {
          *
          * {
          *      "name": "Pedicurerrrrrrrr",
-         *      "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1..." (Base64)
+         *      "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1..." (Base64),
+         *      "price": 25
          * }
          *
          * @param {string} [name] - service name
          * @param {string} [logo] - service logo
+         * @param {number} [price] - service price
          *
          * @example Response example:
          *
@@ -1272,6 +1300,10 @@ var AdminHandler = function (app, db) {
 
         if (body.logo) {
             updateObj.logo = body.logo;
+        }
+
+        if (body.price){
+            updateObj.price = body.price;
         }
 
         ServiceType
@@ -1681,7 +1713,7 @@ var AdminHandler = function (app, db) {
                     firstName: clientFirstName,
                     lastName: clientLastName
                 },
-                clientLoc: {type: 'Point', coordinates: [0, 0]},
+                clientLoc: {type: 'Point', coordinates: [0, 0], address: ''},
                 serviceType: {
                     id: ObjectId(serviceType),
                     name: serviceTypeName
@@ -2295,7 +2327,7 @@ var AdminHandler = function (app, db) {
                                 modelJSON.serviceType = 'Service was removed';
                             }
 
-                            if (modelJSON.stylist ){
+                            if (modelJSON.stylist){
                                 modelJSON.stylist = modelJSON.stylist.firstName + ' ' + modelJSON.stylist.lastName;
                             } else {
                                 modelJSON.stylist = 'Stylist was removed'
@@ -3304,6 +3336,226 @@ var AdminHandler = function (app, db) {
             });
     };
 
+    this.createPhotoToGallery = function(req, res, next){
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/gallery`__
+         *
+         * This __method__ allows to add photo to gallery by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/gallery
+         *
+         * @example Body example:
+         *
+         *  {
+         *      "clientId":"5644a3453f00c1f81c25b548",
+         *      "stylistId":"5644a3453f00c1f81c25b549",
+         *      "serviceType":"5644a3453f00c1f81c25b550",
+         *      "bookingDate": "2015-11-08T10:17:50.060Z",
+         *      "image": "data:image/png;base64, /9j/4AAQSkZJRgABAQA..."
+         *  }
+         *
+         * @param {string} clientId - Client id
+         * @param {string} stylistId - Stylist id
+         * @param {string} serviceType - Service type id
+         * @param {date} bookingDate - date when photo was shot
+         * @param {string} image - base64
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Your photo was added to gallery"
+         *  }
+         *
+         * @method createPhotoToGallery
+         * @instance
+         */
+
+        var body = req.body;
+        var clientId = body.clientId;
+        var stylistId = body.stylistId;
+        var serviceType = body.serviceType;
+        var bookingDate = body.bookingDate;
+        var imageString = body.image;
+        var saveObj;
+        var galleryModel;
+
+        if (!clientId || !stylistId || !serviceType || !bookingDate || !imageString) {
+            return next(badRequests.NotEnParams({reqParams: 'clientId and stylistId and serviceType and bookingDate and image'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)) {
+            return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)) {
+            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(serviceType)) {
+            return next(badRequests.InvalidValue({value: serviceType, param: 'serviceType'}));
+        }
+
+        saveObj = {
+            client: ObjectId(clientId),
+            stylist: ObjectId(stylistId),
+            serviceType: ObjectId(serviceType),
+            bookingDate: bookingDate,
+            status: CONSTANTS.STATUSES.GALLERY.APPROVED
+        };
+
+        galleryModel = new Gallery(saveObj);
+
+        galleryModel
+            .save(function (err) {
+                var imageName;
+
+                if (err) {
+                    return next(err);
+                }
+
+                imageName = galleryModel.get('_id').toString();
+
+                image.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, function (err) {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'Your photo was added to gallery', photoId: imageName});
+                });
+            });
+    };
+
+    this.acceptPhotoFromGallery = function(req, res, next){
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/gallery/:id`__
+         *
+         * This __method__ allows to accept photo from gallery by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/gallery/56541f998cb50b2807ba8f8c
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Photo was accepted successfully"
+         *  }
+         *
+         * @method acceptPhotoFromGallery
+         * @instance
+         */
+
+        var id = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(id)){
+            return next(badRequests.InvalidValue({value: id, param: 'id'}));
+        }
+
+        Gallery
+            .findOneAndUpdate({_id: id}, {$set: {status: CONSTANTS.STATUSES.GALLERY.APPROVED, message: ''}}, function (err, galleryModel) {
+                if (err) {
+                    return next(err);
+                }
+
+                if (!galleryModel){
+                    return next(badRequests.NotFound({target: 'Photo'}));
+                }
+
+                res.status(200).send({success: 'Photo was accepted successfully'});
+            });
+    };
+
+    this.removePhotoFromGallery = function(req, res, next){
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/gallery/:id`__
+         *
+         * This __method__ allows delete _User_ photo from gallery by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/gallery/564f0abd122888ec1ee6f87d
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Photo was removed from gallery"
+         *  }
+         *
+         * @method removePhotoFromGallery
+         * @instance
+         */
+
+        var imageName = req.params.id;
+        var criteria = {_id: imageName};
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(imageName)){
+            return next(badRequests.InvalidValue({value: imageName, param: 'id'}));
+        }
+
+        async.waterfall([
+
+            function(cb){
+                Gallery
+                    .findOne(criteria, function(err, imageModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!imageModel){
+                            return cb(badRequests.NotFound({target: 'Photo'}));
+                        }
+
+                        cb(null, imageModel);
+                    });
+            },
+
+            function(imageModel, cb){
+                imageModel.remove(function(err){
+                    if (err){
+                        return cb(err);
+                    }
+
+                    cb();
+                });
+            },
+
+            function(cb){
+                image.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, cb);
+            }
+
+        ], function(err){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Photo was removed from gallery'});
+        });
+    };
+
 
     //payments
 
@@ -3358,7 +3610,21 @@ var AdminHandler = function (app, db) {
 
                 res.status(200).send({success: 'Transfer succeed', transfer: transfer});
             });
-    }
+    };
+
+    this.getTransfer = function (req, res, next){
+        var transferId = req.params.transferId;
+
+        stripe
+            .getTransfers(transferId, function(err, transfer){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(transfer);
+            });
+    };
 
 
 };
