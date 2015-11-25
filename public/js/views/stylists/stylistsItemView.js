@@ -63,7 +63,7 @@ define([
             App.menu.select('#nav_new_applications');
 
             var ticks = new Date().valueOf();
-            var data = {
+            /*var data = {
                 email       : 'test_' + ticks + '@mail.com',
                 personalInfo: {
                     firstName : 'nazarovits',
@@ -83,8 +83,8 @@ define([
                     country      : 'Ukraine',
                     city         : 'Ужгород'
                 }
-            };
-            this.model = new StylistModel(data);
+            };*/
+            this.model = new StylistModel();
             this.model.on('invalid', this.handleModelValidationError, this);
 
             this.render();
