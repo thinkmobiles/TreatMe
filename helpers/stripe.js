@@ -142,6 +142,50 @@ var StripeModule = function(){
             });
     };
 
+    this.getSubscription = function(customerId, subscriptionId, callback){
+
+        if (!callback && typeof subscriptionId === 'function'){
+            callback = subscriptionId;
+            stripe
+                .customers
+                .listSubscriptions(customerId, function(err, subscriptionsList){
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    callback(null, subscriptionsList);
+                });
+
+        } else {
+
+            stripe
+                .customers
+                .retrieveSubscription(customerId, subscriptionId, function(err, subscription){
+
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    callback(null, subscription);
+
+                });
+        }
+    };
+
+    this.updateSubscription = function(customerId, currentSubId, data, callback){
+        stripe
+            .customers
+            .updateSubscription(customerId, currentSubId, data, function(err, subscription){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, subscription);
+
+            });
+    };
+
     this.createRecipient = function(data, callback){
 
         stripe.recipients.create(data, function(err, recipient){
