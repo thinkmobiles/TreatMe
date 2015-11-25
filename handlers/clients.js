@@ -151,7 +151,7 @@ var ClientsHandler = function (app, db) {
             });
     };
 
-    this.createSubscription = function(clientId, clientName, subscriptionId, callback){
+    this.createSubscription = function(clientId, clientName, subscriptionId, stripeSubId, callback){
 
         SubscriptionType
             .findOne({_id: subscriptionId}, {name: 1}, function(err, subscription){
@@ -180,7 +180,8 @@ var ClientsHandler = function (app, db) {
                         name: subscription.name
                     },
                     //TODO: price: 111,
-                    expirationDate: expirationDate
+                    expirationDate: expirationDate,
+                    stripeSubId: stripeSubId
                 };
 
                 subscriptionModel = new Subscription(saveObj);
@@ -196,7 +197,7 @@ var ClientsHandler = function (app, db) {
             });
     };
 
-    this.updateSubscription = function(sId, subscriptionId, callback){
+    this.updateSubscription = function(sId, subscriptionId, stripeSubId, callback){
 
         SubscriptionType
             .findOne({_id: subscriptionId}, {name: 1}, function(err, subscription) {
@@ -229,6 +230,7 @@ var ClientsHandler = function (app, db) {
                         subModel.expirationDate = expirationDate;
                         subModel.subscriptionType.id = subscription._id;
                         subModel.subscriptionType.name = subscription.name;
+                        subModel.stripeSubId = stripeSubId;
 
                         subModel.save(function(err){
                             if (err){
@@ -333,7 +335,7 @@ var ClientsHandler = function (app, db) {
                 },
 
                 function(subscriptionModel, client, cb){
-                    var customerId = client['payments.customerId'];
+                    var customerId = client.payments.customerId;
 
                     if (!customerId){
                         return cb(badRequests.DatabaseError());
@@ -359,49 +361,34 @@ var ClientsHandler = function (app, db) {
                         });
                 },
 
-                function(subscription, cb){
-                    User.findOne({_id: clientId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'payments.customerId': 1}, function(err, clientModel){
-
-                        if (err){
-                            return cb(err);
-                        }
-
-                        if (!clientModel){
-                            return cb(badRequests.NotFound({target: 'Client'}));
-                        }
-
-                        cb(null, subscription, clientModel.toJSON());
-                    });
-                },
-
                 function (isNew, stripeSubscriptionId, customerId, client, subscriptionModel, cb){
                     if (isNew){
-                        stripe.createSubscription(customerId, {plan: subscriptionId.toString()}, function(err){
+                        stripe.createSubscription(customerId, {plan: subscriptionId.toString()}, function(err, stripeSub){
                                 if (err){
                                     return cb(err);
                                 }
 
-                                cb(null, subscriptionModel, client);
+                                cb(null, subscriptionModel, client, stripeSub.id);
                             });
                     } else {
-                        stripe.updateSubscription(customerId, stripeSubscriptionId, {plan: subscriptionId.toString()},function(err){
+                        stripe.updateSubscription(customerId, stripeSubscriptionId, {plan: subscriptionId.toString()},function(err, stripeSub){
                             if (err){
                                 return cb(err);
                             }
 
-                            cb(null, subscriptionModel, client);
+                            cb(null, subscriptionModel, client, stripeSub.id);
                         });
                     }
                 },
 
-                function(subscription, client, cb){
+                function(subscription, client, stripeSubId, cb){
                     var clientName = {
                         firstName: client.personalInfo.firstName || '',
                         lastName: client.personalInfo.lastName || ''
                     };
 
                     if (!subscription){
-                        self.createSubscription(clientId, clientName, subscriptionId, function(err){
+                        self.createSubscription(clientId, clientName, subscriptionId, stripeSubId, function(err){
                             if (err){
                                 return cb(err);
                             }
@@ -409,7 +396,7 @@ var ClientsHandler = function (app, db) {
                             cb(null, true, client.payments.customerId);
                         });
                     } else {
-                        self.updateSubscription(subscription._id, subscriptionId, function(err){
+                        self.updateSubscription(subscription._id, subscriptionId, stripeSubId, function(err){
                             if (err){
                                 return cb(err);
                             }
@@ -1015,62 +1002,6 @@ var ClientsHandler = function (app, db) {
 
     };
 
-    this.createCharge = function(req, res, next){
-        var body = req.body;
-        var clientId = req.session.uId;
-
-        if (!body.amount || !body.currency){
-            return next(badRequests.NotEnParams({reqParams: 'amount and currency'}));
-        }
-
-        async
-            .waterfall([
-                function(cb){
-                    User
-                        .findOne({_id: clientId}, {'payments.customerId': 1}, function(err, clientModel){
-                            if (err){
-                                return cb(err);
-                            }
-
-                            if (!clientModel){
-                                err = new Error('Client not found');
-                                err.status = 404;
-                                return cb(err);
-                            }
-
-                            cb(null, clientModel.payments.customerId);
-                        });
-                },
-
-                function(customerId, cb){
-                    var data = {
-                        amount: body.amount,
-                        currency: body.currency,
-                        customer: customerId
-                    };
-
-                    stripe
-                        .createCharge(data, function(err, charge){
-
-                            if (err){
-                                return cb(err);
-                            }
-
-                            cb(null, charge);
-
-                        });
-                }
-            ], function(err, charge){
-
-                if (err){
-                    return next(err);
-                }
-
-                res.status(200).send({success: 'Charges create successfully', charge: charge});
-            });
-
-
-    };
 
 
 

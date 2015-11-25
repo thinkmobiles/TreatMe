@@ -9,10 +9,12 @@ var StripeModule = require('../helpers/stripe');
 
 
 var StylistHandler = function (app, db) {
+    var self = this;
 
     var ServiceType = db.model('ServiceType');
     var Services = db.model('Service');
     var Appointment = db.model('Appointment');
+    var Payments = db.model('Payment');
     var User = db.model('User');
     var imageHandler = new ImageHandler();
     var stripe = new StripeModule();
@@ -207,6 +209,7 @@ var StylistHandler = function (app, db) {
         var stylistId = req.session.uId;
         var appointmentId = req.params.id;
         var updateObj;
+        var clientId;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)) {
             return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
@@ -289,23 +292,97 @@ var StylistHandler = function (app, db) {
 
                         updateObj.price = price;
 
-                        cb(null, appointmentModel);
+                        cb(null, appointmentModel, serviceType);
                     });
 
             },
 
-            //TODO: write off money from the clients STRIPE account and then update appointment
-            // clientId = appointmentModel.get('client.id').toString();
-            //if (appointmentModel.oneTimeService){ write off money from client}
-
-            function(appointmentModel, cb){
+            function(appointmentModel, serviceType, cb){
                 appointmentModel
                     .update({$set: updateObj}, function (err) {
                         if (err) {
                             return cb(err);
                         }
 
-                        cb();
+                        cb(null, appointmentModel, serviceType);
+                    });
+            },
+
+            function (appointmentModel, serviceType, cb){
+                var price;
+
+                ServiceType.findOne({_id: serviceType}, {price: 1}, function(err, serviceModel){
+
+                    if (err){
+                        return cb(err);
+                    }
+
+                    if (!serviceModel){
+                        return cb(badRequests.DatabaseError());
+                    }
+
+                    cb(null, appointmentModel, price);
+
+                });
+            },
+
+            function(appointmentModel, price, cb){
+                var isOneTime = appointmentModel.oneTimeService;
+                clientId = appointmentModel.client.id;
+
+                var paymentData = {
+                    amount: price * 100,
+                    currency: 'usd'
+                };
+
+                if (!isOneTime){
+                    return cb(null, true, null);
+                }
+
+                self.createCharge(clientId, paymentData, function(err, charge){
+                    if (err){
+                        return cb(err);
+                    }
+
+                    cb(null, false, charge);
+                });
+
+            },
+
+            function(isOneTime, charge, cb){
+                var err;
+                var payment;
+                var paymentModel;
+
+                if (isOneTime){
+                    return cb(null);
+                }
+
+                if (!cb && typeof charge === 'function'){
+                    cb = charge;
+                    err = new Error('Charge doesn\'t create');
+                    err.status = 400;
+                    return cb(err);
+                }
+
+                payment = {
+                    paymentType: 'oneTime',
+                    amount: charge.amount,
+                    fee: charge.amount * 0.029 + 30,
+                    totalAmount: charge * (1 - 0.029) - 30,
+                    user: clientId,
+                    role: 'client'
+                };
+
+                paymentModel = new Payments(payment);
+
+                paymentModel
+                    .save(function(err){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null);
                     });
             }
 
@@ -525,6 +602,61 @@ var StylistHandler = function (app, db) {
                 res.status(200).send({success: 'Bank account added successfully'});
 
             });
+
+    };
+
+    this.createCharge = function(clientId, paymentData, callback){
+
+        if (!paymentData.amount || !paymentData.currency){
+            return next(badRequests.NotEnParams({reqParams: 'amount and currency'}));
+        }
+
+        async
+            .waterfall([
+                function(cb){
+                    User
+                        .findOne({_id: clientId}, {'payments.customerId': 1}, function(err, clientModel){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!clientModel){
+                                err = new Error('Client not found');
+                                err.status = 404;
+                                return cb(err);
+                            }
+
+                            cb(null, clientModel.payments.customerId);
+                        });
+                },
+
+                function(customerId, cb){
+                    var data = {
+                        amount: body.amount,
+                        currency: body.currency,
+                        customer: customerId
+                    };
+
+                    stripe
+                        .createCharge(data, function(err, charge){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, charge);
+
+                        });
+                }
+            ], function(err, charge){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, charge);
+            });
+
 
     };
 };
