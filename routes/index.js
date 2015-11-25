@@ -32,6 +32,17 @@ module.exports = function (app, db) {
     });*/
 
 
+    //TODO Remove test
+
+    app.post('/invoice', function(req, res, next){
+        var body = req.body;
+
+        console.dir(body);
+
+        res.status(200).send({result: body});
+
+    });
+
     // signUp signIn
     app.post('/signUp', user.signUp);
     app.post('/signIn', user.signIn);
