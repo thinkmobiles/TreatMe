@@ -24,7 +24,9 @@ module.exports = function (db) {
         expirationDate: {
             type: Date,
             default: Date.now
-        }
+        },
+
+        stripeSubId: {type: String, default: null}
 
     }, {
         collection: 'Subscriptions'

@@ -20,6 +20,8 @@ module.exports = function (app, db) {
         res.sendfile('index.html');
     });
 
+    app.post('/invoice', subscriptionHandler.changeSubscriptionEndDate);
+
     app.use('/client', clientsRouter);
     app.use('/admin', adminRouter);
     app.use('/stylist', stylistRouter);
@@ -30,18 +32,6 @@ module.exports = function (app, db) {
         }
         next();
     });*/
-
-
-    //TODO Remove test
-
-    app.post('/invoice', function(req, res, next){
-        var body = req.body;
-
-        console.dir(body);
-
-        res.status(200).send({result: body});
-
-    });
 
     // signUp signIn
     app.post('/signUp', user.signUp);
