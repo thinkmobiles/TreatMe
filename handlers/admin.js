@@ -650,7 +650,7 @@ var AdminHandler = function (app, db) {
         var subscriptionId = body.subscriptionId;
 
         if (!firstName || !lastName || !phone || !email){
-            return next(badRequests.NotEnParams({reqParams: 'firstName or lastName or phone or email'}))
+            return next(badRequests.NotEnParams({reqParams: 'firstName and lastName and phone and email'}))
         }
 
         if (subscriptionId && !CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){

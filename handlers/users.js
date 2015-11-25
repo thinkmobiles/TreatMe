@@ -1184,7 +1184,7 @@ var UserHandler = function (app, db) {
          *            country: "Ukraine"
          *            licenseNumber: "41515643"
          *    },
-         *    "services": [
+         *    services: [
          *       {
          *           "id": "5638ccde3624f77b33b6587d",
          *           "price": 27
@@ -1193,7 +1193,9 @@ var UserHandler = function (app, db) {
          *           "id": "56408f8281c43c3a24a332fa",
          *           "price": 24
          *       }
-         *   ]
+         *   ],
+         *   stripeToken: "tok_fdskljsfklsfd",
+         *   subscriptionId: "5638ccde3624f77b33b6587d"
          *
          *  }
          * @example Response example:
@@ -1243,6 +1245,43 @@ var UserHandler = function (app, db) {
 
                 async
                     .parallel([
+
+                        /*function(cb){ TODO: update credit card or create new
+                            var data = {};
+
+                            if (!body.stripeToken){
+                                return cb();
+                            }
+
+                            if (!customerId){
+                                return cb(badRequests.DatabaseError());
+                            }
+
+                            data.source = body.stripeToken;
+
+                            stripe.addCard(customerId, data, function(err, card){
+                                if (err){
+                                    return cb(err);
+                                }
+
+
+                            });
+                        },*/
+
+                        function(cb){
+                            var subscriptionId = body.subscriptionId;
+
+                            if (!subscriptionId){
+                                return cb();
+                            }
+
+                            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){
+                                return cb(badRequests.InvalidValue({value: subscriptionId, param: 'subscriptionId'}));
+                            }
+
+                            clientHandler.buySubscription(uId, subscriptionId, cb);
+                        },
+
                         function(cb){
                             var locationAddress;
                             var updateObj = {
@@ -1366,13 +1405,13 @@ var UserHandler = function (app, db) {
                                 .update({'client.id': uId}, {$set: update}, {multi: true}, cb);
                         }
 
-                    ], function(err){
+                    ], function(err, result){
 
                         if (err) {
                             return next(err);
                         }
 
-                        res.status(200).send({success: userObj.role + ' updated successfully'});
+                        res.status(200).send({success: userObj.role + ' updated successfully', model: result[1]});
 
                     });
 
