@@ -284,6 +284,12 @@ var StylistHandler = function (app, db) {
                             return cb(err);
                         }
 
+                        if (!serviceModel){
+                            err = new Error('Stylist don\'t provide this service');
+                            err.status = 400;
+                            return cb(err);
+                        }
+
                         price = serviceModel.get('price');
 
                         if (!serviceModel || !price){
@@ -298,15 +304,6 @@ var StylistHandler = function (app, db) {
             },
 
             function(appointmentModel, serviceType, cb){
-                /*appointmentModel
-                    .update({$set: updateObj}, function (err) {
-                        if (err) {
-                            return cb(err);
-                        }
-
-                        cb(null, appointmentModel, serviceType);
-                    });*/
-
                 appointmentModel.price = updateObj.price;
                 appointmentModel.stylist = updateObj.stylist;
                 appointmentModel.status = updateObj.status;
@@ -686,6 +683,43 @@ var StylistHandler = function (app, db) {
 
 
     };
+
+    this.getStylistsPaymentsByPeriod = function(req, res, next){
+        var body = req.body;
+        var start;
+        var end;
+
+        if (!body.start || !body.end){
+            return next(badRequests.NotEnParams({reqParams: 'start and end'}));
+        }
+
+        start = new Date(body.start);
+        end = new Date(body.end);
+
+        StylistPayments
+            .aggregate([
+                {
+                    $match: {
+                        $and: [
+                            {date: {$gte: start}},
+                            {date: {$lte: end}}
+                        ]
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$stylist',
+                        total: {$sum: '$stylistAmount'}
+                    }
+                }
+            ], function(err, result){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(result);
+            });
+    }
 };
 
 module.exports = StylistHandler;

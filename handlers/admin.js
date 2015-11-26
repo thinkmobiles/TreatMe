@@ -642,12 +642,13 @@ var AdminHandler = function (app, db) {
          */
 
         var body = req.body;
-        var firstName = body.firstName;
-        var lastName = body.lastName;
-        var phone = body.phone;
+        var personalInfo = body.personalInfo;
+        var firstName = personalInfo ? personalInfo.firstName : '';
+        var lastName = personalInfo ? personalInfo.lastName : '';
+        var phone = personalInfo ? personalInfo.phone: '';
         var email = body.email;
         var stripeToken = body.stripeToken;
-        var password = passGen(12, false);
+        var password = body.password || passGen(12, false);
         var subscriptionId = body.subscriptionId;
 
         if (!firstName || !lastName || !phone || !email){
@@ -3625,7 +3626,6 @@ var AdminHandler = function (app, db) {
             res.status(200).send({success: 'Photo was removed from gallery'});
         });
     };
-
 
     //payments
 
