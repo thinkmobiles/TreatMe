@@ -8,6 +8,14 @@ define([
         urlRoot : '/admin/client',
         idAttribute: "_id",
 
+        defaults: {
+            currentSubscriptions: [],
+            suspend: {
+                isSuspend: false,
+                history: []
+            }
+        },
+
         validate: function (attrs, options) {
             var errors = [];
             var firstName = attrs.firstName;

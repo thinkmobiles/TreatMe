@@ -1,0 +1,72 @@
+<div class="stylistForm" xmlns="http://www.w3.org/1999/html">
+    <div class="userNameContainer">
+        <span>
+            <% if (item._id) { %>
+                <%= item.name%>
+            <% } else { %>
+                Add stylist profile
+            <% } %>
+        </span>
+    </div>
+    <div class="infoAccount">
+        <img class="avatar" width="90" height="90" alt="avatar" src=""/>
+        <input style="display: none" type="file" value="Avatar" class="changeAvatar" accept="image/*">
+
+        <% if (item._id) { %>
+        <br class="accountInfo">
+        <div class="avatar"></div>
+        <input type="text" class="firstName" name="firstName" placeholder="First Name" value="<%= item.firstName%>"/><span class="prompt"></span><br/>
+        <input type="text" class="lastName" name="lastName" placeholder="Last Name" value="<%= item.lastName%>"/><span class="prompt"></span><br/>
+        <input type="text" class="phone" name="phone" placeholder="Phone Number" value="<%= item.phone%>"/><span class="prompt"></span><br/>
+        <input type="text" class="email" name="email" placeholder="Email" value="<%= item.email%>"/><span class="prompt"></span><br/>
+        <% } else {%>
+        <br class="accountInfo">
+        <div class="avatar"></div>
+        <input type="text" class="firstName" name="firstName" placeholder="First Name"/><span class="prompt"></span><br/>
+        <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><span class="prompt"></span><br/>
+        <input type="text" class="phone" name="phone" placeholder="Phone Number"/><span class="prompt"></span><br/>
+        <input type="text" class="email" name="email" placeholder="Email"/><span class="prompt"></span><br/>
+        <input type="text" class="password" name="password" placeholder="Password"/><span class="prompt"></span><br/>
+        <% } %>
+    </div>
+    <div class="infoCard">
+        <span>
+            <% if (item._id) { %>
+                Credit card
+            <% } else { %>
+                Add credit card
+            <% } %>
+        </span>
+        <form id="payment-form">
+            <input type="text" class="nameOnCard" name="nameOnCard" placeholder="Name on card"/><span class="prompt"></span><br/>
+            <input type="text" class="cardNumber" name="cardNumber" placeholder="Card number"/><span class="prompt"></span><br/>
+            <input type="text" class="month" name="month" placeholder="Month"/><span class="prompt"></span><br/>
+            <input type="text" class="year" name="year" placeholder="Year"/><span class="prompt"></span><br/>
+            <input type="text" class="cvc" name="cvc" placeholder="CVC"/><span class="prompt"></span><br/>
+            <input type="text" class="firstName" name="firstName" placeholder="First Name"/><span class="prompt"></span><br/>
+            <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><span class="prompt"></span><br/>
+            <input type="text" class="address" name="address" placeholder="Address"/><span class="prompt"></span><br/>
+            <input type="text" class="city" name="city" placeholder="City"/><span class="prompt"></span><br/>
+            <input type="text" class="state" name="state" placeholder="State"/><span class="prompt"></span><br/>
+            <input type="text" class="zipcode" name="zipcode" placeholder="Zipcode"/><span class="prompt"></span><br/>
+        </form>
+    </div>
+
+    <div class="addPackage">
+        <span>Add package that client would like to book</span>
+
+        <p>Package*</p>
+        <% item.currentSubscriptions.forEach(function (item) {%>
+        <tr class="item" data-id="<%= item._id%>">
+            <td><input type="checkbox" class="checkItem"></td>
+            <td><%= item.package %></td>
+        </tr>
+        <%});%>
+        <p>*To be filled in by TreatMe team based on negotiations with client</p>
+
+    </div>
+
+
+    <button class="saveBtn">Save</button>
+
+</div>

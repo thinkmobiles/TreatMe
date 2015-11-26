@@ -1,6 +1,4 @@
-/**
- * Created by andrey on 16.07.15.
- */
+'use strict';
 
 var App = {};
 
@@ -8,7 +6,7 @@ require.config({
     paths: {
         jQuery          : './libs/jquery/dist/jquery',
         jQueryUI        : './libs/jqueryui/jquery-ui',
-        Validator       : './libs/validator-js/validator',
+        Validator       : './libs/validator-js/validator', //TODO
         Underscore      : './libs/underscore/underscore',
         Backbone        : './libs/backbone/backbone',
         Moment          : './libs/moment/moment',

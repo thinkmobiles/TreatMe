@@ -109,7 +109,7 @@ define([
                 order = order || ASC;
 
                 if (order === ASC) {
-                    orderClassName = 'asc';
+                    orderClassName = 'asc'; //TODO:...
                 } else {
                     orderClassName = 'desc';
                 }
