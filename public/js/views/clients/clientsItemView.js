@@ -2,11 +2,12 @@
 
 define([
     'custom',
+    'async',
     'models/clientModel',
     //'text!templates/clients/newAndEditClientsTemplate.html',
     'text!templates/clients/clientsItemTemplate.html',
     'text!templates/customElements/servicesTemplate.html'
-], function (custom, ClientModel, MainTemplate, ServicesTemplate) {
+], function (custom, async, ClientModel, MainTemplate, ServicesTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -16,7 +17,7 @@ define([
         servicesTemplate: _.template(ServicesTemplate),
 
         events: {
-            'click .saveBtn'      : 'saveClients',
+            'click .saveBtn'      : 'saveClient',
             'click .avatar'       : 'changeAvatar',
             'change .changeAvatar': 'changeInputFile'
         },
@@ -97,8 +98,8 @@ define([
         getUserName: function (user) {
             var userName;
 
-            if (user && user.firstName && user.lastName) {
-                userName = user.firstName + ' ' + user.lastName;
+            if (user && user.personalInfo && user.personalInfo.firstName && user.personalInfo.lastName) {
+                userName = user.personalInfo.firstName + ' ' + user.personalInfo.lastName;
             } else {
                 userName = '';
             }
@@ -153,15 +154,36 @@ define([
             callback(null, data)
         },
 
-        saveClients: function (e) {
+        saveClient: function (e) {
             var self = this;
 
-            self.prepareSaveData(function (err, data) {
+            App.errorNotification('Hello world');
+
+            /*self.prepareSaveData(function (err, data) {
                 var model;
 
                 if (err) {
                     self.handleError(err);
                 }
+
+                async.parallel({
+
+                        //try save the client model:
+                        savedModel: function (cb) {
+                            cb();
+                        },
+
+                        //try to change the avatar:
+                        avatar: function (cb) {
+                            cb();
+                        }
+
+                    }, function (err, result) {
+                        if (err) {
+
+                        }
+                    });
+
 
                 model = self.model;
                 model.save(data, {
@@ -170,7 +192,7 @@ define([
                     },
                     error  : self.handleModelError
                 });
-            });
+            });*/
         },
 
         changeAvatar: function (e) {

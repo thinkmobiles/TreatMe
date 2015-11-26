@@ -104,5 +104,30 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
         return dd + '/' + mm + '/' + yy;
     };
 
+    App.__errorContainer__ = $('#errorNotifications');
+
+    App.errorNotification = function (data) {
+        var container = this.__errorContainer__;
+        var messageClass = data.type || 'error';
+        var text = data.message || 'Something went wrong';
+        var renderEl = '<div class="animate ' + messageClass + '">' + text + '</div>';
+
+        container.append(renderEl);
+
+        container.find('div.animate').delay(10).animate({
+            left   : "85%",
+            opacity: 0.9
+        }, 500, function () {
+            var self = $(this);
+
+            self.removeClass('animate').delay(5000).animate({
+                left   : "100%",
+                opacity: 0
+            }, 1000, function () {
+                self.remove();
+            });
+        });
+    };
+
     app.initialize(io);
 });

@@ -9,6 +9,8 @@ define([
         idAttribute: "_id",
 
         defaults: {
+            personalInfo: {
+            },
             currentSubscriptions: [],
             suspend: {
                 isSuspend: false,
