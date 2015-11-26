@@ -32,7 +32,7 @@ require.config({
     }
 });
 
-require(['app', 'socketio', 'Validator'], function(app, io, validator){
+require(['app', 'socketio', 'Validator','Moment'], function(app, io, validator, moment){
 
     validator.extend('isPhoneNumber', function (str) {
         return /^\+?[1-9]\d{4,14}$/.test(str);
@@ -102,6 +102,32 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
 
         return dd + '/' + mm + '/' + yy;
     };
+
+    Date.prototype.toLocaleDateTimeString = function () {
+        function padding(x) {
+            if (x.length < 2) {
+                return '0' + x;
+            } else {
+                return x;
+            }
+        }
+
+        var year = this.getFullYear().toString();
+        var month = (this.getMonth() + 1).toString();
+        var date  = this.getDate().toString();
+        var hour = this.getHours().toString();
+        var minutes = this.getMinutes().toString();
+        var format  = this.getDate();
+
+        var yy = year.slice(2, 4);
+        var mm = padding(month);
+        var dd = padding(date);
+        var hh = padding(hour);
+        var min = padding(minutes);
+
+        return dd + '/' + mm + '/' + yy + ' ' + hh + ':' + min;
+    };
+
 
     app.initialize(io);
 });

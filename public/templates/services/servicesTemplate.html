@@ -1,28 +1,26 @@
 <div class="list">
-    <div class="searchBlock">
-        <input class="search" type="text" value="<%= (filter) ? filter : ''%>">
-        <button class="searchBtn" type="button">SEARCH</button>
-    </div>
+    <span>Services</span>
 
     <div class="buttons">
-        <button id="suspendSelectedBtn">Reject</button>
-        <button id="removeSelectedBtn">Delete</button>
-        <button id="addBtn">Add Request</button>
+        <a href="#" class="add">Add New Service</a>
     </div>
-    <table class="table">
-        <thead>
-        <tr>
-            <th><input type="checkbox" class="checkAll"></th>
-            <th class="sortable" data-orderby="createdAt">Date and Time</th>
-            <th class="sortable" data-orderby="Name">Client Name</th>
-            <th class="sortable" data-orderby="">Service</th>
-            <th>Suspend</th>
-            <th>Delete</th>
-        </tr>
-        </thead>
-        <tbody class="items">
-        <!-- put items here -->
-        </tbody>
-    </table>
+
+    <div>
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="sortable" data-orderby="">Image</th>
+                <th class="sortable" data-orderby="">Service Name</th>
+                <th class="sortable" data-orderby="">Default Discount</th>
+                <th class="sortable" data-orderby="">Edit</th>
+                <th class="sortable" data-orderby="">Delete</th>
+            </tr>
+            </thead>
+
+            <tbody class="items">
+            <!-- put items here -->
+            </tbody>
+        </table>
+    </div>
     <div class="pagination"></div>
 </div>
