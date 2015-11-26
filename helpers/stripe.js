@@ -127,6 +127,65 @@ var StripeModule = function(){
 
     };
 
+    this.createSubscription = function(customerId, data, callback){
+
+        stripe
+            .customers
+            .createSubscription(customerId, data, function(err, subscription){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, subscription);
+
+            });
+    };
+
+    this.getSubscription = function(customerId, subscriptionId, callback){
+
+        if (!callback && typeof subscriptionId === 'function'){
+            callback = subscriptionId;
+            stripe
+                .customers
+                .listSubscriptions(customerId, function(err, subscriptionsList){
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    callback(null, subscriptionsList);
+                });
+
+        } else {
+
+            stripe
+                .customers
+                .retrieveSubscription(customerId, subscriptionId, function(err, subscription){
+
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    callback(null, subscription);
+
+                });
+        }
+    };
+
+    this.updateSubscription = function(customerId, currentSubId, data, callback){
+        stripe
+            .customers
+            .updateSubscription(customerId, currentSubId, data, function(err, subscription){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, subscription);
+
+            });
+    };
+
     this.createRecipient = function(data, callback){
 
         stripe.recipients.create(data, function(err, recipient){
@@ -139,10 +198,78 @@ var StripeModule = function(){
 
     };
 
+    this.addBankAccount = function(recipientId, data, callback){
+
+        stripe.recipients.update(recipientId, data, function(err, recipient){
+
+            if (err){
+                return callback(err);
+            }
+
+            callback(null, recipient);
+
+        });
+
+    };
+
     this.createTransfer = function(data, callback){
 
         stripe.transfers.create(data, callback);
 
+    };
+
+    this.getTransfers = function(transferId, callback){
+        if (!transferId){
+
+          stripe.transfers.list(function(err, transfersList){
+
+              if (err){
+                  return callback(err);
+              }
+
+              callback(null, transfersList);
+
+          });
+
+        } else {
+
+            stripe.transfers.retrieve(transferId, function(err, transfer){
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, transfer);
+            });
+
+        }
+    };
+
+    this.createCharge = function(data, callback){
+
+        stripe.charges.create(data, callback);
+
+    };
+
+    this.createPlan = function(data, callback){
+        /*
+            data = {
+                amount: 4900, //(in cents)
+                interval: 'month',
+                name: 'Unlimited manicure',
+                currency: 'usd',
+                id: 'unlimitedManicure'
+            }
+        */
+
+        stripe.plans.create(data, function(err, plan){
+
+            if (err){
+                return callback(err);
+            }
+
+            callback(null, plan);
+
+        });
     }
 
 };

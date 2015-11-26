@@ -7,12 +7,14 @@ var _ = require('lodash');
 var ImageHandler = require('./image');
 var StripeModule = require('../helpers/stripe');
 
-
 var StylistHandler = function (app, db) {
+    var self = this;
 
     var ServiceType = db.model('ServiceType');
     var Services = db.model('Service');
     var Appointment = db.model('Appointment');
+    var Payments = db.model('Payment');
+    var StylistPayments = db.model('StylistPayments');
     var User = db.model('User');
     var imageHandler = new ImageHandler();
     var stripe = new StripeModule();
@@ -207,6 +209,7 @@ var StylistHandler = function (app, db) {
         var stylistId = req.session.uId;
         var appointmentId = req.params.id;
         var updateObj;
+        var clientId;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)) {
             return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
@@ -289,24 +292,125 @@ var StylistHandler = function (app, db) {
 
                         updateObj.price = price;
 
-                        cb(null, appointmentModel);
+                        cb(null, appointmentModel, serviceType);
                     });
 
             },
 
-            //TODO: write off money from the clients STRIPE account and then update appointment
-            // clientId = appointmentModel.get('client.id').toString();
-            //if (appointmentModel.oneTimeService){ write off money from client}
-
-            function(appointmentModel, cb){
-                appointmentModel
+            function(appointmentModel, serviceType, cb){
+                /*appointmentModel
                     .update({$set: updateObj}, function (err) {
                         if (err) {
                             return cb(err);
                         }
 
-                        cb();
+                        cb(null, appointmentModel, serviceType);
+                    });*/
+
+                appointmentModel.price = updateObj.price;
+                appointmentModel.stylist = updateObj.stylist;
+                appointmentModel.status = updateObj.status;
+
+                appointmentModel
+                    .save(function(err, model){
+                        if (err){
+                            return cb(err);
+                        }
+
+                       cb(null, model, serviceType);
                     });
+
+            },
+
+            function (appointmentModel, serviceType, cb){
+
+                ServiceType.findOne({_id: serviceType}, {price: 1}, function(err, serviceModel){
+
+                    if (err){
+                        return cb(err);
+                    }
+
+                    if (!serviceModel){
+                        return cb(badRequests.DatabaseError());
+                    }
+
+                    cb(null, appointmentModel, serviceModel.price);
+
+                });
+            },
+
+            function(appointmentModel, price, cb){
+                var isOneTime = appointmentModel.oneTimeService;
+                clientId = appointmentModel.client.id;
+
+                var paymentData = {
+                    amount: price * 100,
+                    currency: 'usd'
+                };
+
+                if (!isOneTime){
+                    return cb(null, true, appointmentModel, null);
+                }
+
+                self.createCharge(clientId, paymentData, function(err, charge){
+                    if (err){
+                        return cb(err);
+                    }
+
+                    cb(null, false, appointmentModel, charge);
+                });
+
+            },
+
+            function(isOneTime, appointmentModel, charge, cb){
+                var err;
+                var payment;
+                var paymentModel;
+
+                if (isOneTime){
+                    return cb(null, appointmentModel, 0);
+                }
+
+                if (!cb && typeof charge === 'function'){
+                    cb = charge;
+                    err = new Error('Charge doesn\'t create');
+                    err.status = 400;
+                    return cb(err);
+                }
+
+                payment = {
+                    paymentType: 'oneTime',
+                    amount: charge.amount,
+                    fee: charge.amount * 0.029 + 30,
+                    totalAmount: charge.amount * (1 - 0.029) - 30,
+                    user: clientId,
+                    role: 'client'
+                };
+
+                paymentModel = new Payments(payment);
+
+                paymentModel
+                    .save(function(err){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, appointmentModel, charge.amount);
+                    });
+            },
+
+            function(appointmentModel, amount, cb){
+                var stylistPaymentsModel;
+                var paymentsData = {
+                    paymentType: 'service',
+                    realAmount: amount,
+                    stylistAmount: appointmentModel.price * 100,
+                    stylist: appointmentModel.stylist.id
+                };
+
+                stylistPaymentsModel = new StylistPayments(paymentsData);
+
+                stylistPaymentsModel.save(cb);
             }
 
         ], function(err){
@@ -468,7 +572,7 @@ var StylistHandler = function (app, db) {
             });
     };
 
-    this.addRecipient = function(req, res, next){
+    this.addBankAccount = function(req, res, next){
         var body = req.body;
         var uId = req.session.uId;
         var data;
@@ -496,15 +600,14 @@ var StylistHandler = function (app, db) {
                 },
 
                 function (userModel, cb){
+                    var recipientId = userModel.payments.recipientId;
+
                     data = {
-                        name: userModel.personalInfo.firstName + ' ' + userModel.personalInfo.lastName,
-                        type: 'individual',
-                        bank_account: token,
-                        email: userModel.email
+                        bank_account: token
                     };
 
                     stripe
-                        .createRecipient(data, function(err, recipient){
+                        .addBankAccount(recipientId, data, function(err, recipient){
                             if (err){
                                 return cb(err);
                             }
@@ -515,15 +618,8 @@ var StylistHandler = function (app, db) {
                                 return cb(err);
                             }
 
-                            userModel.payments.recipientId = recipient.id;
-
                             cb(null, userModel);
                         });
-                },
-
-                function(userModel, cb){
-                    userModel
-                        .save(cb);
                 }
             ], function(err){
                 if (err){
@@ -533,6 +629,61 @@ var StylistHandler = function (app, db) {
                 res.status(200).send({success: 'Bank account added successfully'});
 
             });
+
+    };
+
+    this.createCharge = function(clientId, paymentData, callback){
+
+            if (!paymentData.amount || !paymentData.currency){
+            return callback(badRequests.NotEnParams({reqParams: 'amount and currency'}));
+        }
+
+        async
+            .waterfall([
+                function(cb){
+                    User
+                        .findOne({_id: clientId}, {'payments.customerId': 1}, function(err, clientModel){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!clientModel){
+                                err = new Error('Client not found');
+                                err.status = 404;
+                                return cb(err);
+                            }
+
+                            cb(null, clientModel.payments.customerId);
+                        });
+                },
+
+                function(customerId, cb){
+                    var data = {
+                        amount: paymentData.amount,
+                        currency: paymentData.currency,
+                        customer: customerId
+                    };
+
+                    stripe
+                        .createCharge(data, function(err, charge){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, charge);
+
+                        });
+                }
+            ], function(err, charge){
+
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, charge);
+            });
+
 
     };
 };

@@ -1,0 +1,17 @@
+<div id="stylistLocationDetails" style="width: 300px">
+    <select class="services">
+        <% _.each(services, function(item){%>
+        <option data-id="<%=item._id%>"><%=item.name%></option>
+        <%});%>
+    </select>
+    <select class="clients">
+        <% _.each(clients, function(item){%>
+        <option data-id="<%=item._id%>"><%=item.name%></option>
+        <%});%>
+    </select>
+    <input placeholder="Stylist" class="stylist" type="text" readonly value="<%=stylistName%>" data-id="<%=stylistId%>">
+    <input placeholder="Date" class="date" type="text">
+    <input placeholder="Time" class="time" type="text"><br/>
+    <button class="bookDialog">Book</button>
+</div>
+

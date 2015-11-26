@@ -43,11 +43,12 @@ define([],function () {
     };
 
     var canvasDraw = function (argImage, argContext) {
-        /*var currentImage = (argImage && argImage.imageSrc) ? argImage.imageSrc : null;
+        var currentImage = (argImage && argImage.imageSrc) ? argImage.imageSrc : null;
         var context = (argContext) ? argContext : this;
         var canvas = context.$('#avatar')[0];
-        var inputFile = context.$('#inputImg');
-        inputFile.prop('accept', "image/!*");
+        var inputFile = context.$('#changeAvatar');
+
+        inputFile.prop('accept', "image/*");
         inputFile.on('change', function (event) {
             event.preventDefault();
 
@@ -70,7 +71,7 @@ define([],function () {
         canvasDrawing({
             imageSrc : currentImage,
             canvas   : canvas
-        }, context);*/
+        }, context);
 
     };
 
@@ -90,9 +91,38 @@ define([],function () {
         img.src = currentImage;
     };
 
+    var getSrc = function (event, callback) {
+        event.preventDefault();
+
+        var inputFile = $(event.target)[0];
+        var file = inputFile.files[0];
+        var filesExt = ['jpg','png','jpeg', 'bmp'];
+        var parts = $(inputFile).val().split('.');
+        var ext = parts[parts.length - 1].toLowerCase();
+        var fr;
+
+        if (filesExt.join().search(ext) != -1) {
+            fr = new FileReader();
+            fr.onload = function () {
+                var src = fr.result;
+
+                if (callback && (typeof callback === 'function')) {
+                    callback(null, src);
+                }
+            };
+            fr.readAsDataURL(file);
+        } else {
+            if (callback && (typeof callback === 'function')) {
+                callback('Invalid file type');
+            }
+        }
+    };
+
     return {
         runApplication : runApplication,
         canvasDraw     : canvasDraw,
-        canvasDrawing  : canvasDrawing
+        canvasDrawing  : canvasDrawing,
+        getSrc         : getSrc
+
     };
 });

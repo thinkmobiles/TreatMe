@@ -17,6 +17,7 @@ var async = require('async');
 var ObjectId = mongoose.Types.ObjectId;
 var _ = require('lodash');
 var StripeModule = require('../helpers/stripe');
+var validator = require('validator');
 
 var AdminHandler = function (app, db) {
 
@@ -32,6 +33,8 @@ var AdminHandler = function (app, db) {
     var User = db.model('User');
     var Gallery = db.model('Gallery');
     var Appointment = db.model('Appointment');
+    var Inbox = db.model('Inbox');
+    var Payments = db.model('Payment');
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
@@ -41,57 +44,80 @@ var AdminHandler = function (app, db) {
 
     function getStylistById(sId, callback) {
 
-        var userObj;
+        async
+            .parallel([
 
-        User
-            .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0, 'salonInfo.availability': 0}, function(err, resultModel){
+                function(cb){
+                    User
+                        .findOne({_id: sId}, {fbId: 0, token: 0, forgotToken: 0, __v: 0, confirmed: 0, 'salonInfo.availability': 0}, function(err, stylistModel){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!stylistModel){
+                                err = new Error('Stylist not found');
+                                err.status = 404;
+                                return cb(err);
+                            }
+
+                            cb(null, stylistModel.toJSON());
+
+                        });
+                },
+
+                function(cb){
+                    user.getService(sId, function(err, resultServices){
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, resultServices);
+                    });
+                },
+
+                function(cb){
+                    var count = 0;
+                    var overallRating = 0;
+                    Appointment
+                        .find({'stylist.id': sId, status: CONSTANTS.STATUSES.APPOINTMENT.SUCCEEDED}, {rate: 1}, function(err, appColl){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!appColl.length){
+                                return cb(null, 0);
+                            }
+
+                            appColl.map(function(app){
+                                if (app.rate){
+                                    count += 1;
+                                    overallRating += app.rate;
+                                }
+                            });
+
+                            cb(null, overallRating / count);
+
+                        });
+                }
+
+            ], function(err, result){
+                var stylist;
 
                 if (err){
                     return callback(err);
                 }
 
-                if (!resultModel){
-                    err = new Error('User not found');
-                    err.status = 404;
-                    return callback(err);
+                stylist = result[0];
+                stylist.services = result[1] || [];
+                stylist.overallRating = result[2] || 0;
+
+                if (stylist.personalInfo.avatar.length){
+                    stylist.personalInfo.avatar = image.computeUrl(stylist.personalInfo.avatar, CONSTANTS.BUCKET.IMAGES);
                 }
 
-                userObj = resultModel.toJSON();
+                callback(null, stylist);
 
-                user.getService(sId, function(err, resultServices){
-
-                    if (err){
-                        return callback(err);
-                    }
-
-                    if (resultServices.length){
-                        userObj.services = resultServices;
-                    } else {
-                        userObj.services = []
-                    }
-
-                    callback(null, userObj);
-                });
-
-                /*Services
-                    .find({stylist: ObjectId(sId), approved: true}, {price: 1, _id: 0, serviceId: 1})
-                    .populate({path: 'serviceId', select: '-_id name'})
-                    .exec(function(err, serviceModels){
-
-                        if (err){
-                            return callback(err);
-                        }
-
-                        userObj = resultModel.toJSON();
-
-                        if (serviceModels.length){
-                            userObj.approvedServices = serviceModels;
-                        } else {
-                            userObj.approvedServices = []
-                        }
-
-                        callback(null, userObj);
-                    });*/
             });
     }
 
@@ -162,7 +188,7 @@ var AdminHandler = function (app, db) {
                             salonInfo: resultModel[i].salonInfo || {},
                             createdAt: resultModel[i].createdAt,
                             approved:  resultModel[i].approved,
-                            suspend: resultModel[i].suspend.isSuspend
+                            suspend: resultModel[i].suspend ? resultModel[i].suspend.isSuspend : false
                         };
                     } else {
 
@@ -170,7 +196,7 @@ var AdminHandler = function (app, db) {
                             _id: resultModel[i]._id,
                             personalInfo: resultModel[i].personalInfo,
                             email: resultModel[i].email,
-                            suspend: resultModel[i].suspend.isSuspend
+                            suspend: resultModel[i].suspend ? resultModel[i].suspend.isSuspend : false
                         }
                     }
 
@@ -441,7 +467,8 @@ var AdminHandler = function (app, db) {
          *               status: "new",
          *               price: 0
          *           }
-         *          ]
+         *          ],
+         *      overallRating: 5
          *  }
          *
          *
@@ -602,7 +629,7 @@ var AdminHandler = function (app, db) {
          *      "lastName": "Vashkeba",
          *      "phone": "21",
          *      "stripeToken": "tok_21349tfdjkfsdf324" (optional)
-         *      "subscriptions": ["5638b976f8c11d9c04081343", "5638b965f8c11d9c04081341"] (optional)
+         *      "subscriptionId": "5638b976f8c11d9c04081343" (optional)
          * }
          *
          * @example Response example:
@@ -621,10 +648,14 @@ var AdminHandler = function (app, db) {
         var email = body.email;
         var stripeToken = body.stripeToken;
         var password = passGen(12, false);
-        var subscriptionIds = body.subscriptions;
+        var subscriptionId = body.subscriptionId;
 
         if (!firstName || !lastName || !phone || !email){
-            return next(badRequests.NotEnParams({reqParams: 'firstName or lastName or phone or email'}))
+            return next(badRequests.NotEnParams({reqParams: 'firstName and lastName and phone and email'}))
+        }
+
+        if (subscriptionId && !CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){
+            return next(badRequests.InvalidValue({value: subscriptionId, param: 'subscriptionId'}));
         }
 
         async
@@ -698,7 +729,11 @@ var AdminHandler = function (app, db) {
                         });
                 },
                 function(clientId, cb){
-                    client.buySubscriptions(clientId, {firstName: firstName, lastName: lastName}, subscriptionIds, cb);
+                    if (!subscriptionId || !stripeToken){
+                        return cb();
+                    }
+
+                    client.buySubscription(clientId, subscriptionId, cb);
                 },
 
                 function(cb){
@@ -1091,7 +1126,8 @@ var AdminHandler = function (app, db) {
          * @example Body example:
          * {
          *  "name": "Manicure",
-         *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64)
+         *  "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JF..." (Base64),
+         *  "price": 25
          * }
          *
          * @example Response example:
@@ -1108,13 +1144,14 @@ var AdminHandler = function (app, db) {
         var imageName = image.createImageName();
         var createObj;
 
-        if (!body.name || !body.logo) {
+        if (!body.name || !body.logo || !body.price) {
             return next(badRequests.NotEnParams({params: 'name or logo'}));
         }
 
         createObj = {
             name: body.name,
-            logo: imageName
+            logo: imageName,
+            price: body.price
         };
 
         image
@@ -1244,11 +1281,13 @@ var AdminHandler = function (app, db) {
          *
          * {
          *      "name": "Pedicurerrrrrrrr",
-         *      "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1..." (Base64)
+         *      "logo": "/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1..." (Base64),
+         *      "price": 25
          * }
          *
          * @param {string} [name] - service name
          * @param {string} [logo] - service logo
+         * @param {number} [price] - service price
          *
          * @example Response example:
          *
@@ -1270,6 +1309,10 @@ var AdminHandler = function (app, db) {
 
         if (body.logo) {
             updateObj.logo = body.logo;
+        }
+
+        if (body.price){
+            updateObj.price = body.price;
         }
 
         ServiceType
@@ -1679,7 +1722,7 @@ var AdminHandler = function (app, db) {
                     firstName: clientFirstName,
                     lastName: clientLastName
                 },
-                clientLoc: {type: 'Point', coordinates: [0, 0]},
+                clientLoc: {type: 'Point', coordinates: [0, 0], address: ''},
                 serviceType: {
                     id: ObjectId(serviceType),
                     name: serviceTypeName
@@ -2084,17 +2127,17 @@ var AdminHandler = function (app, db) {
          */
 
         var clientId = req.params.id;
-        var resultObj = {};
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
             return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
         }
 
         async.parallel([
-
                 function(cb){
+                    var client;
+
                     User
-                        .findOne({_id: clientId, role: CONSTANTS.USER_ROLE.CLIENT}, function(err, clientModel){
+                        .findOne({_id: clientId, role: CONSTANTS.USER_ROLE.CLIENT}, {__V: 0, approved: 0, token: 0, forgotToken: 0, activeSubscriptions: 0, online: 0, payments: 0}, function(err, clientModel){
                             var avatarName;
 
                             if (err){
@@ -2105,21 +2148,17 @@ var AdminHandler = function (app, db) {
                                 return cb(badRequests.DatabaseError());
                             }
 
-                            resultObj.firstName = clientModel.personalInfo.firstName;
-                            resultObj.lastName = clientModel.personalInfo.lastName;
-                            resultObj.phone = clientModel.personalInfo.phone;
-                            resultObj.email = clientModel.email;
-                            resultObj.suspend = clientModel.suspend;
+                            client = clientModel.toJSON();
 
                             avatarName = clientModel.personalInfo.avatar;
 
-                            if (avatarName){
-                                resultObj.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                            if (avatarName.length){
+                                client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                             } else {
-                                resultObj.avatar = '';
+                                client.personalInfo.avatar = '';
                             }
 
-                            cb();
+                            cb(null, client);
                         });
                 },
 
@@ -2152,20 +2191,22 @@ var AdminHandler = function (app, db) {
                                 return modelJSON;
                             });
 
-                            resultObj.currentSubscriptions = currentSubscriptions;
 
-                            cb();
+                            cb(null, currentSubscriptions);
 
                         });
                 }
             ],
 
-            function(err){
+            function(err, result){
+                var client = result[0] || {};
+                client.currentSubscriptions = result[1] || {};
+
                 if (err){
                     return next(err);
                 }
 
-                res.status(200).send(resultObj);
+                res.status(200).send(client);
         });
     };
 
@@ -2293,7 +2334,7 @@ var AdminHandler = function (app, db) {
                                 modelJSON.serviceType = 'Service was removed';
                             }
 
-                            if (modelJSON.stylist ){
+                            if (modelJSON.stylist){
                                 modelJSON.stylist = modelJSON.stylist.firstName + ' ' + modelJSON.stylist.lastName;
                             } else {
                                 modelJSON.stylist = 'Stylist was removed'
@@ -2366,8 +2407,10 @@ var AdminHandler = function (app, db) {
         var sortObj = {};
         var projection = {
             bookingDate: 1,
-            client: 1
+            client: 1,
+            rate: 1
         };
+
         var criteria = {
             'stylist.id': ObjectId(stylistId),
             status: {$ne : CONSTANTS.STATUSES.APPOINTMENT.CREATED}
@@ -2395,7 +2438,6 @@ var AdminHandler = function (app, db) {
         }
 
         async.parallel({
-
             appointmentCount: function(cb){
                 Appointment
                     .count(criteria, function(err, count){
@@ -2408,6 +2450,7 @@ var AdminHandler = function (app, db) {
             },
 
             appointment: function(cb){
+
                 Appointment
                     .find(criteria, projection)
                     .sort(sortObj)
@@ -3138,6 +3181,451 @@ var AdminHandler = function (app, db) {
             });
     };
 
+    this.getMonthlyRevenue = function(req, res, next){
+
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/statistic/revenue`__
+         *
+         * This __method__ allows get statistic monthly revenue for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/statistic/revenue
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *    [
+         *      {
+         *          "_id": 10,
+         *          "total": 38.54
+         *      },
+         *      {
+         *          "_id": 11,
+         *          "total": 154.16
+         *      }
+         *    ]
+         *
+         * @method getMonthlyRevenue
+         * @instance
+         */
+
+        var currentDate = new Date();
+        var currentYear = currentDate.getFullYear();
+        var startOfYear = new Date(currentYear, 0, 1);
+
+        Payments
+            .aggregate([
+                {
+                    $match: {
+                        date: {$gte: startOfYear},
+                        totalAmount: {$gte: 0}
+                    }
+                },
+                {
+                    $group: {
+                        _id: {$month: '$date'},
+                        total: {$sum: {$divide: ['$totalAmount', 100]}}
+                    }
+                }
+            ], function (err, resultModels) {
+                if (err) {
+                    return next(err);
+                }
+
+                res.status(200).send(resultModels);
+            });
+
+    };
+
+    this.getInboxList = function(req, res, next){
+        var query = req.query;
+        var sortParam = query.sort;
+        var search = query.search;
+        var page = (query.page >=1) ? query.page : 1;
+        var order = (query.order === '1') ? 1 : -1;
+        var limit = (query.limit >= 1) ? query.limit : CONSTANTS.LIMIT.REQUESTED_INBOX;
+        var sortObj = {};
+        var searchRegExp;
+        var criteria = {};
+
+        var projection = {
+            __v: 0,
+            message: 0,
+            createdAt: 0
+        };
+
+        if (search){
+            searchRegExp = new RegExp('.*' + search + '.*', 'ig');
+
+            criteria['$or'] = [
+                {'name': {$regex: searchRegExp}},
+                {'email': {$regex: searchRegExp}},
+                {'subject': {$regex: searchRegExp}}
+            ];
+        }
+
+        if (sortParam){
+            sortParam = sortParam.toLowerCase();
+        }
+
+        if (sortParam && sortParam !== 'name' && sortParam !== 'email' && sortParam !== 'subject') {
+            return next(badRequests.InvalidValue({value: sortParam, param: 'sort'}))
+        }
+
+        if (sortParam === 'name' || !sortParam) {
+            sortObj.name = order;
+        }
+
+        if (sortParam === 'email') {
+            sortObj.email = order;
+        }
+
+        if (sortParam === 'subject') {
+            sortObj.subject = order;
+        }
+
+        async.parallel({
+
+            inboxCount: function(cb){
+                Inbox
+                    .count(criteria, function(err, count){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, count);
+                    });
+            },
+
+            inbox: function(cb){
+                Inbox
+                    .find(criteria, projection)
+                    .sort(sortObj)
+                    .skip(limit * (page - 1))
+                    .limit(limit)
+                    .exec(function(err, inboxModelsArray){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null, inboxModelsArray);
+                    });
+            }
+
+        }, function(err, result){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({total: result.inboxCount, data: result.inbox});
+        });
+    };
+
+    this.getInboxById = function(req, res, next){
+        var id = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(id)){
+            return next(badRequests.InvalidValue({value: id, param: 'id'}));
+        }
+
+        Inbox
+            .findOne({_id: id}, {__v: 0}, function(err, inboxModel){
+                if (err){
+                    return next(err);
+                }
+
+                if (!inboxModel){
+                    return next(badRequests.NotFound({target: 'Inbox'}));
+                }
+
+                res.status(200).send(inboxModel);
+            });
+    };
+
+    this.createInbox = function(req, res, next){
+        var body = req.body;
+        var name = body.name;
+        var email = body.email;
+        var subject = body.subject;
+        var message = body.message;
+        var createObj;
+        var inboxModel;
+
+        if (!name || !email || !subject || !message){
+            return next(badRequests.NotEnParams({reqParams: 'name and email and subject and message'}));
+        }
+
+        if (!validator.isEmail(email)) {
+            return next(badRequests.InvalidEmail());
+        }
+
+        createObj = {
+            name: name,
+            email: email,
+            subject: subject,
+            message: message
+        };
+
+        inboxModel = new Inbox(createObj);
+
+        inboxModel
+            .save(function(err){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Inbox created successfully'});
+            });
+    };
+
+    this.removeInbox = function(req, res, next){
+        var body = req.body;
+        var ids;
+
+        if (!body.ids) {
+            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        }
+
+        ids = body.ids.toObjectId();
+
+        Inbox
+            .remove({_id: {$in: ids}}, function (err) {
+                if (err) {
+                    return next(err);
+                }
+
+                res.status(200).send({success: 'Inbox deleted successfully'});
+
+            });
+    };
+
+    this.createPhotoToGallery = function(req, res, next){
+        /**
+         * __Type__ __`POST`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/gallery`__
+         *
+         * This __method__ allows to add photo to gallery by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/gallery
+         *
+         * @example Body example:
+         *
+         *  {
+         *      "clientId":"5644a3453f00c1f81c25b548",
+         *      "stylistId":"5644a3453f00c1f81c25b549",
+         *      "serviceType":"5644a3453f00c1f81c25b550",
+         *      "bookingDate": "2015-11-08T10:17:50.060Z",
+         *      "image": "data:image/png;base64, /9j/4AAQSkZJRgABAQA..."
+         *  }
+         *
+         * @param {string} clientId - Client id
+         * @param {string} stylistId - Stylist id
+         * @param {string} serviceType - Service type id
+         * @param {date} bookingDate - date when photo was shot
+         * @param {string} image - base64
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Your photo was added to gallery"
+         *  }
+         *
+         * @method createPhotoToGallery
+         * @instance
+         */
+
+        var body = req.body;
+        var clientId = body.clientId;
+        var stylistId = body.stylistId;
+        var serviceType = body.serviceType;
+        var bookingDate = body.bookingDate;
+        var imageString = body.image;
+        var saveObj;
+        var galleryModel;
+
+        if (!clientId || !stylistId || !serviceType || !bookingDate || !imageString) {
+            return next(badRequests.NotEnParams({reqParams: 'clientId and stylistId and serviceType and bookingDate and image'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)) {
+            return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)) {
+            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(serviceType)) {
+            return next(badRequests.InvalidValue({value: serviceType, param: 'serviceType'}));
+        }
+
+        saveObj = {
+            client: ObjectId(clientId),
+            stylist: ObjectId(stylistId),
+            serviceType: ObjectId(serviceType),
+            bookingDate: bookingDate,
+            status: CONSTANTS.STATUSES.GALLERY.APPROVED
+        };
+
+        galleryModel = new Gallery(saveObj);
+
+        galleryModel
+            .save(function (err) {
+                var imageName;
+
+                if (err) {
+                    return next(err);
+                }
+
+                imageName = galleryModel.get('_id').toString();
+
+                image.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, function (err) {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    res.status(200).send({success: 'Your photo was added to gallery', photoId: imageName});
+                });
+            });
+    };
+
+    this.acceptPhotoFromGallery = function(req, res, next){
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/gallery/:id`__
+         *
+         * This __method__ allows to accept photo from gallery by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/gallery/56541f998cb50b2807ba8f8c
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Photo was accepted successfully"
+         *  }
+         *
+         * @method acceptPhotoFromGallery
+         * @instance
+         */
+
+        var id = req.params.id;
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(id)){
+            return next(badRequests.InvalidValue({value: id, param: 'id'}));
+        }
+
+        Gallery
+            .findOneAndUpdate({_id: id}, {$set: {status: CONSTANTS.STATUSES.GALLERY.APPROVED, message: ''}}, function (err, galleryModel) {
+                if (err) {
+                    return next(err);
+                }
+
+                if (!galleryModel){
+                    return next(badRequests.NotFound({target: 'Photo'}));
+                }
+
+                res.status(200).send({success: 'Photo was accepted successfully'});
+            });
+    };
+
+    this.removePhotoFromGallery = function(req, res, next){
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/gallery/:id`__
+         *
+         * This __method__ allows delete _User_ photo from gallery by _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/gallery/564f0abd122888ec1ee6f87d
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *  {
+         *      "success": "Photo was removed from gallery"
+         *  }
+         *
+         * @method removePhotoFromGallery
+         * @instance
+         */
+
+        var imageName = req.params.id;
+        var criteria = {_id: imageName};
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(imageName)){
+            return next(badRequests.InvalidValue({value: imageName, param: 'id'}));
+        }
+
+        async.waterfall([
+
+            function(cb){
+                Gallery
+                    .findOne(criteria, function(err, imageModel){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!imageModel){
+                            return cb(badRequests.NotFound({target: 'Photo'}));
+                        }
+
+                        cb(null, imageModel);
+                    });
+            },
+
+            function(imageModel, cb){
+                imageModel.remove(function(err){
+                    if (err){
+                        return cb(err);
+                    }
+
+                    cb();
+                });
+            },
+
+            function(cb){
+                image.deleteImage(imageName, CONSTANTS.BUCKET.IMAGES, cb);
+            }
+
+        ], function(err){
+            if (err){
+                return next(err);
+            }
+
+            res.status(200).send({success: 'Photo was removed from gallery'});
+        });
+    };
+
 
     //payments
 
@@ -3192,7 +3680,21 @@ var AdminHandler = function (app, db) {
 
                 res.status(200).send({success: 'Transfer succeed', transfer: transfer});
             });
-    }
+    };
+
+    this.getTransfer = function (req, res, next){
+        var transferId = req.params.transferId;
+
+        stripe
+            .getTransfers(transferId, function(err, transfer){
+
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send(transfer);
+            });
+    };
 
 
 };

@@ -41,7 +41,7 @@ define([], function () {
         totalRecords: null,
         pageSize: 25,
 
-        initialize: function (options, params) {
+        initialize: function (options, params) { //TODO: use only options
             var _opts   = options || {};
             var _params = params  || {};
             var page;

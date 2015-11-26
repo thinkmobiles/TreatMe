@@ -10,6 +10,7 @@ module.exports = function (db) {
         name: String,
         price: {type: Number, default: 0},
         logo: String,
+        description: String,
         allowServices: [ObjectId]
     }, {
         collection: 'SubscriptionTypes'

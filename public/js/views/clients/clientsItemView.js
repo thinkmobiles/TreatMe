@@ -2,25 +2,55 @@
 
 define([
     'custom',
+    'async',
     'models/clientModel',
-    'text!templates/clients/newAndEditClientsTemplate.html',
-    'text!templates/customElements/servicesTemplate.html',
-], function (custom, ClientModel, ClientAddTemplate, ServicesTemplate) {
+    //'text!templates/clients/newAndEditClientsTemplate.html',
+    'text!templates/clients/clientsItemTemplate.html',
+    'text!templates/customElements/servicesTemplate.html'
+], function (custom, async, ClientModel, MainTemplate, ServicesTemplate) {
 
     var View = Backbone.View.extend({
 
         el: '#wrapper',
 
-        mainTemplate    : _.template(ClientAddTemplate),
+        mainTemplate    : _.template(MainTemplate),
         servicesTemplate: _.template(ServicesTemplate),
 
         events: {
-            'click .saveBtn'      : 'saveClients',
+            'click .saveBtn'      : 'saveClient',
             'click .avatar'       : 'changeAvatar',
             'change .changeAvatar': 'changeInputFile'
         },
 
         initialize: function (options) {
+            App.menu.select('#nav_clients');
+
+            if (options.id) {
+                this.editClient(options);
+            } else {
+                this.addClient(options);
+            }
+        },
+
+        addClient: function (options) {
+            this.model = new ClientModel();
+            this.render();
+        },
+
+        editClient: function (options) {
+            var userId = options.id;
+            var model = new ClientModel({_id: userId});
+
+            this.model = model;
+
+            model.on('sync', this.render, this);
+            model.on('error', this.handleModelError, this);
+            model.on('invalid', this.handleModelValidationError, this);
+
+            model.fetch();
+        },
+
+        initialize__: function (options) {
             var userId = (options && options.id) ? options.id : null;
             var self = this;
             var model;
@@ -57,14 +87,51 @@ define([
         },
 
         render: function () {
-            var item = this.model.toJSON();
-            var self = this;
+            var user = this.model.toJSON();
 
-            this.$el.html(this.mainTemplate({item: item}));
-
-            custom.canvasDraw({imageSrc: item.avatar}, self);
+            this.updateNavigation(user);
+            this.$el.html(this.mainTemplate({item: user}));
 
             return this;
+        },
+
+        getUserName: function (user) {
+            var userName;
+
+            if (user && user.personalInfo && user.personalInfo.firstName && user.personalInfo.lastName) {
+                userName = user.personalInfo.firstName + ' ' + user.personalInfo.lastName;
+            } else {
+                userName = '';
+            }
+
+            return userName;
+        },
+
+        updateNavigation: function (user) {
+            var breadcrumbs;
+
+            if (!user._id) {
+                breadcrumbs = [{
+                    name: 'Client List',
+                    path: '#clients'
+                }, {
+                    name: 'Add',
+                    path: '#clients/add'
+                }];
+            } else {
+                breadcrumbs = [{
+                    name: 'Client List',
+                    path: '#clients'
+                }, {
+                    name: this.getUserName(user),
+                    path: '#clients/' + user._id
+                }, {
+                    name: 'Edit',
+                    path: '#clients/' + user._id + '/edit'
+                }];
+            }
+
+            App.Breadcrumbs.reset(breadcrumbs);
         },
 
         prepareSaveData: function (callback) {
@@ -87,15 +154,36 @@ define([
             callback(null, data)
         },
 
-        saveClients: function (e) {
+        saveClient: function (e) {
             var self = this;
 
-            self.prepareSaveData(function (err, data) {
+            App.errorNotification('Hello world');
+
+            /*self.prepareSaveData(function (err, data) {
                 var model;
 
                 if (err) {
                     self.handleError(err);
                 }
+
+                async.parallel({
+
+                        //try save the client model:
+                        savedModel: function (cb) {
+                            cb();
+                        },
+
+                        //try to change the avatar:
+                        avatar: function (cb) {
+                            cb();
+                        }
+
+                    }, function (err, result) {
+                        if (err) {
+
+                        }
+                    });
+
 
                 model = self.model;
                 model.save(data, {
@@ -104,7 +192,7 @@ define([
                     },
                     error  : self.handleModelError
                 });
-            });
+            });*/
         },
 
         changeAvatar: function (e) {

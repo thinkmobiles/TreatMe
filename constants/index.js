@@ -17,11 +17,16 @@ module.exports = {
             CONFIRMED: 'Confirmed',
             BEGINS: 'Begins',
             SUCCEEDED: 'Succeeded',
-            CANCEL_BY_CLIENT: 'Cancel by client',
-            CANCEL_BY_STYLIST: 'Cancel by stylist',
+            CANCEL_BY_CLIENT: 'Cancelled by client',
+            CANCEL_BY_STYLIST: 'Cancelled by stylist',
             //for admin
             PENDING: 'Pending',
             BOOKED: 'Booked'
+        },
+        GALLERY: {
+            PENDING: 'Pending',
+            APPROVED: 'Approved',
+            DELETING: 'Deleting'
         }
     },
     LIMIT: {
@@ -29,6 +34,7 @@ module.exports = {
         REQUESTED_STYLISTS: 20,
         REQUESTED_APPOINTMENTS: 20,
         REQUESTED_PACKAGES : 20,
+        REQUESTED_INBOX : 20,
         //for getClientById in CMS
         REQUESTED_BOOKED_APPOINTMENTS: 5,
         REQUESTED_PURCHASED_PACKAGES: 4,
