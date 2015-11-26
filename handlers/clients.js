@@ -725,7 +725,7 @@ var ClientsHandler = function (app, db) {
         var tip;
         var appointmentModel;
 
-        if (!body.appointmentId || isNaN(body.rate) || isNaN(body.tip)) {
+        if (!body.appointmentId || isNaN(body.rate)) {
             return next(badRequests.NotEnParams({reqParams: 'appointmentId and rate and tip'}));
         }
 
