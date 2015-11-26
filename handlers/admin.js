@@ -3183,6 +3183,39 @@ var AdminHandler = function (app, db) {
 
     this.getMonthlyRevenue = function(req, res, next){
 
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/admin/statistic/revenue`__
+         *
+         * This __method__ allows get statistic monthly revenue for _Admin_
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/admin/statistic/revenue
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *    [
+         *      {
+         *          "_id": 10,
+         *          "total": 38.54
+         *      },
+         *      {
+         *          "_id": 11,
+         *          "total": 154.16
+         *      }
+         *    ]
+         *
+         * @method getMonthlyRevenue
+         * @instance
+         */
+
         var currentDate = new Date();
         var currentYear = currentDate.getFullYear();
         var startOfYear = new Date(currentYear, 0, 1);

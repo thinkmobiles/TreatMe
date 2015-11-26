@@ -7,7 +7,6 @@ var _ = require('lodash');
 var ImageHandler = require('./image');
 var StripeModule = require('../helpers/stripe');
 
-
 var StylistHandler = function (app, db) {
     var self = this;
 
@@ -635,7 +634,7 @@ var StylistHandler = function (app, db) {
 
     this.createCharge = function(clientId, paymentData, callback){
 
-        if (!paymentData.amount || !paymentData.currency){
+            if (!paymentData.amount || !paymentData.currency){
             return callback(badRequests.NotEnParams({reqParams: 'amount and currency'}));
         }
 
