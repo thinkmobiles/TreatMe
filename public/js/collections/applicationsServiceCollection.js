@@ -16,7 +16,7 @@ define([
             if (options && options.id) {
                 this.baseUrl += '/' + options.id;
             }
-            ParentCollection.prototype.initialize.call(this, options);
+            ParentCollection.prototype.initialize.apply(this, arguments);
         }
     });
 

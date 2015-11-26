@@ -8,6 +8,16 @@ define([
         urlRoot : '/admin/client',
         idAttribute: "_id",
 
+        defaults: {
+            personalInfo: {
+            },
+            currentSubscriptions: [],
+            suspend: {
+                isSuspend: false,
+                history: []
+            }
+        },
+
         validate: function (attrs, options) {
             var errors = [];
             var firstName = attrs.firstName;
@@ -39,7 +49,7 @@ define([
 
             }
             /* ---password--- */
-            if (!password) {
+            if (!this.id && !password) {
                 errors.push({name: 'password', message: 'Please fill Password field.'})
             } else {
 

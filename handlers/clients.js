@@ -15,6 +15,7 @@ var geocoder = require('geocoder');
 var SchedulerHelper = require('../helpers/scheduler');
 var StripeModule = require('../helpers/stripe');
 var _ = require('lodash');
+var StylistHandler = require('./stylist');
 
 var ClientsHandler = function (app, db) {
 
@@ -27,9 +28,12 @@ var ClientsHandler = function (app, db) {
     var Subscription = db.model('Subscription');
     var ServiceType = db.model('ServiceType');
     var SubscriptionType = db.model('SubscriptionType');
+    var StylistPayments = db.model('StylistPayments');
+    var Payments = db.model('Payment');
     var imageHandler = new ImageHandler(db);
     var ObjectId = mongoose.Types.ObjectId;
     var schedulerHelper = new SchedulerHelper(app, db);
+    var stylist = new StylistHandler(app, db);
 
     this.getCoordinatesByLocation = function(locationAddress, callback){
         geocoder.geocode(locationAddress, function(err, data){
@@ -151,61 +155,98 @@ var ClientsHandler = function (app, db) {
             });
     };
 
-    this.buySubscriptions = function(clientId, clientName, subscriptionIds, callback){
+    this.createSubscription = function(clientId, clientName, subscriptionId, stripeSubId, callback){
 
         SubscriptionType
-            .find({_id: {$in: subscriptionIds}}, {name: 1}, function(err, subscriptionColl){
+            .findOne({_id: subscriptionId}, {name: 1}, function(err, subscription){
+                var expirationDate = new Date();
+                var saveObj;
+                var subscriptionModel;
 
                 if (err){
                     return callback(err);
                 }
 
-                async.each(subscriptionColl,
+                if (!subscription){
+                    return callback(badRequests.NotFound({target: 'SubscriptionType'}));
+                }
 
-                    function(subscription, cb){
-                        var expirationDate = new Date();
-                        var saveObj;
-                        var subscriptionModel;
+                expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
 
-                        expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
-
-                        saveObj = {
-                            client: {
-                                id: clientId,
-                                firstName: clientName.firstName,
-                                lastName: clientName.lastName
-                            },
-                            subscriptionType : {
-                                id: subscription._id,
-                                name: subscription.name
-                            },
-                            //TODO: price: 111,
-                            expirationDate: expirationDate
-                        };
-
-                        subscriptionModel = new Subscription(saveObj);
-
-                        subscriptionModel
-                            .save(function(err){
-                                if (err){
-                                    return cb(err);
-                                }
-
-                                cb();
-                            });
+                saveObj = {
+                    client: {
+                        id: clientId,
+                        firstName: clientName.firstName,
+                        lastName: clientName.lastName
                     },
+                    subscriptionType : {
+                        id: subscription._id,
+                        name: subscription.name
+                    },
+                    //TODO: price: 111,
+                    expirationDate: expirationDate,
+                    stripeSubId: stripeSubId
+                };
 
-                    function(err){
+                subscriptionModel = new Subscription(saveObj);
+
+                subscriptionModel
+                    .save(function(err){
                         if (err){
                             return callback(err);
                         }
 
                         callback(null);
                     });
+            });
+    };
 
+    this.updateSubscription = function(sId, subscriptionId, stripeSubId, callback){
+
+        SubscriptionType
+            .findOne({_id: subscriptionId}, {name: 1}, function(err, subscription) {
+                var expirationDate;
+
+                if (err) {
+                    return callback(err);
+                }
+
+                if (!subscription) {
+                    err = new Error('Subscription not found');
+                    err.status = 400;
+                    return callback(err);
+                }
+
+                Subscription
+                    .findOne({_id: sId}, function(err, subModel){
+
+                        if (err){
+                            return callback(err);
+                        }
+
+                        if (!subModel){
+                            return callback(badRequests.DatabaseError());
+                        }
+
+                        expirationDate = new Date(subModel.expirationDate);
+                        expirationDate = expirationDate.setMonth(expirationDate.getMonth() + 1);
+
+                        subModel.expirationDate = expirationDate;
+                        subModel.subscriptionType.id = subscription._id;
+                        subModel.subscriptionType.name = subscription.name;
+                        subModel.stripeSubId = stripeSubId;
+
+                        subModel.save(function(err){
+                            if (err){
+                               return callback(err);
+                            }
+
+                            callback(null);
+                        });
+
+                    });
 
             });
-
     };
 
     this.buySubscriptionsByClient = function(req, res, next){
@@ -226,7 +267,7 @@ var ClientsHandler = function (app, db) {
          *
          * @example Body example:
          * {
-         *  "ids": ["5638b946f8c11d9c0408133f"]
+         *  "id": "5638b946f8c11d9c0408133f"
          * }
          *
          * @example Response example:
@@ -237,60 +278,145 @@ var ClientsHandler = function (app, db) {
          *      "success": "Subscriptions bought successfully"
          *  }
          *
-         * @method buySubscriptions
+         * @method buySubscriptionsByClient
          * @instance
          */
 
         var clientId = req.session.uId;
-        var body = req.body;
-        var ids;
+        var subscriptionId = req.body.id;
 
-        if (!body.ids) {
-            return next(badRequests.NotEnParams({reqParams: 'ids'}));
+        if (!subscriptionId) {
+            return next(badRequests.NotEnParams({reqParams: 'id'}));
         }
 
-        if (req.session.role === CONSTANTS.USER_ROLE.ADMIN){
-            if (!req.params.clientId){
-                return next(badRequests.NotEnParams({reqParams: 'clientId'}));
-            }
-
-            clientId = req.params.clientId;
-
-            if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
-                return next(badRequests.InvalidValue({value: clientId, param: 'clientId'}));
-            }
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(subscriptionId)){
+            return next(badRequests.InvalidValue({value: subscriptionId, param: 'id'}));
         }
 
-        ids = body.ids.toObjectId();
+        subscriptionId = ObjectId(subscriptionId);
 
-        User
-            .findOne({_id: clientId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1}, function(err, userModel){
-                var clientName;
+        self.buySubscription(clientId, subscriptionId, function(err){
+            if (err){
+                return next(err);
+            }
 
-                if (err){
-                    return next(err);
-                }
+            res.status(200).send({success: 'Subscriptions bought successfully'});
+        });
+    };
 
-                if (!userModel){
-                    return next(badRequests.NotFound({target: 'Client'}));
-                }
+    this.buySubscription = function(clientId, subscriptionId, callback){
 
-                clientName = {
-                    firstName: userModel.personalInfo.firstName,
-                    lastName: userModel.personalInfo.lastName
-                };
+        subscriptionId = ObjectId(subscriptionId);
 
-                self.buySubscriptions(clientId, clientName, ids, function(err){
+        async
+            .waterfall([
+                function(cb){
+                    Subscription
+                        .findOne({'client.id': clientId}, {_id: 1}, function(err, subscriptionModel){
 
-                    if (err){
-                        return next(err);
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, subscriptionModel);
+
+                        });
+                },
+
+                function(subscription, cb){
+                    User.findOne({_id: clientId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'payments.customerId': 1}, function(err, clientModel){
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        if (!clientModel){
+                            return cb(badRequests.NotFound({target: 'Client'}));
+                        }
+
+                        cb(null, subscription, clientModel.toJSON());
+                    });
+                },
+
+                function(subscriptionModel, client, cb){
+                    var customerId = client.payments.customerId;
+
+                    if (!customerId){
+                        return cb(badRequests.DatabaseError());
                     }
 
-                    res.status(200).send({success: 'Subscriptions bought successfully'});
+                    if (!subscriptionModel){
+                        return cb(null, true, null, customerId, client, null);
+                    }
 
-                });
+                    stripe
+                        .getSubscription(customerId, function(err, subscription){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!subscription.data.length){
+                                return cb(badRequests.NotFound({target: 'Subscription'}));
+                            }
+
+                            cb(null, false, subscription.data[0].id, customerId, client, subscriptionModel);
+
+                        });
+                },
+
+                function (isNew, stripeSubscriptionId, customerId, client, subscriptionModel, cb){
+                    if (isNew){
+                        stripe.createSubscription(customerId, {plan: subscriptionId.toString()}, function(err, stripeSub){
+                                if (err){
+                                    return cb(err);
+                                }
+
+                                cb(null, subscriptionModel, client, stripeSub.id);
+                            });
+                    } else {
+                        stripe.updateSubscription(customerId, stripeSubscriptionId, {plan: subscriptionId.toString()},function(err, stripeSub){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, subscriptionModel, client, stripeSub.id);
+                        });
+                    }
+                },
+
+                function(subscription, client, stripeSubId, cb){
+                    var clientName = {
+                        firstName: client.personalInfo.firstName || '',
+                        lastName: client.personalInfo.lastName || ''
+                    };
+
+                    if (!subscription){
+                        self.createSubscription(clientId, clientName, subscriptionId, stripeSubId, function(err){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, true, client.payments.customerId);
+                        });
+                    } else {
+                        self.updateSubscription(subscription._id, subscriptionId, stripeSubId, function(err){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, false, client.payments.customerId);
+                        });
+                    }
+                }
+
+            ], function(err){
+                if (err){
+                    return callback(err);
+                }
+
+                callback();
             });
-
     };
 
     this.createAppointment = function (req, res, next) {
@@ -399,6 +525,8 @@ var ClientsHandler = function (app, db) {
                         }
 
                         clientLoc = clientModel.get('loc');
+                        clientLoc.address = '';
+
                         clientFirstName = clientModel.personalInfo.firstName || '';
                         clientLastName = clientModel.personalInfo.lastName || '';
 
@@ -415,6 +543,7 @@ var ClientsHandler = function (app, db) {
                                 }
 
                                 clientLoc.coordinates = coordinates;
+                                clientLoc.address = locationAddress;
 
                                 cb(null, clientLoc.coordinates);
                             });
@@ -575,7 +704,7 @@ var ClientsHandler = function (app, db) {
          * @param {string} appointmentId - Appointment id
          * @param {number} rate - Booking rate for appointment 0-9
          * @param {string} [rateComment] - rate comment for appointment
-         * @param {number} tip - tip payed to stylist (>=0)
+         * @param {number} [tip] - tip payed to stylist (>=0)
          *
          * @example Response example:
          *
@@ -594,8 +723,9 @@ var ClientsHandler = function (app, db) {
         var rateComment = '';
         var appointmentId;
         var tip;
+        var appointmentModel;
 
-        if (!body.appointmentId || isNaN(body.rate) || isNaN(body.tip)) {
+        if (!body.appointmentId || isNaN(body.rate)) {
             return next(badRequests.NotEnParams({reqParams: 'appointmentId and rate and tip'}));
         }
 
@@ -610,25 +740,121 @@ var ClientsHandler = function (app, db) {
             rateComment = body.rateComment;
         }
 
-        Appointment
-            .findOneAndUpdate({_id: appointmentId, 'client.id': ObjectId(clientId)}, {
-                $set: {
-                    rate: body.rate,
-                    rateComment: rateComment,
-                    tip: tip
+        async
+            .waterfall([
+                function(cb){
+                    Appointment
+                        .findOne({_id: appointmentId, 'client.id': ObjectId(clientId)}, function(err, appModel){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!appModel){
+                                return cb(badRequests.NotFound({target: 'Appointment'}));
+                            }
+
+                            appointmentModel = appModel;
+
+                            cb(null);
+                        });
+                },
+
+                function(cb){
+                    var paymentsData;
+
+                    if (tip === 0){
+                        return cb(null, null);
+                    }
+
+                    paymentsData = {
+                        amount: tip * 100,
+                        currency: 'usd'
+                    };
+
+                    stylist
+                        .createCharge(clientId, paymentsData, function(err, charge){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, charge);
+
+                        });
+
+                },
+
+                function(charge, cb){
+                    var paymentData;
+                    var stylistPaymentModel;
+
+                    if (!charge){
+                        return cb(null);
+                    }
+
+                    paymentData = {
+                        paymentType: 'tip',
+                        realAmount: tip * 100,
+                        stylistAmount: tip * 100,
+                        stylist: appointmentModel.stylist._id
+                    };
+
+                    stylistPaymentModel = new StylistPayments(paymentData);
+
+                    stylistPaymentModel.save(function(err){
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null);
+
+                    });
+
+                },
+
+                function(cb){
+                    var paymentHistory;
+                    var paymentModel;
+
+                    if (tip === 0){
+                        return cb(null);
+                    }
+
+                    paymentHistory = {
+                        paymentType: 'tip',
+                        amount: tip * 100,
+                        fee: tip * 100 * 0.029 + 30,
+                        totalAmount: tip * 100 * (1 - 0.029) - 30,
+                        user: ObjectId(clientId),
+                        role: 'client'
+                    };
+
+                    paymentModel = new Payments(paymentHistory);
+
+                    paymentModel.save(function(err){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null);
+                    });
+                },
+
+                function(cb){
+                    appointmentModel.rate = body.rate;
+                    appointmentModel.rateComment = rateComment;
+                    appointmentModel.tip = tip;
+
+                    appointmentModel.save(cb);
                 }
-            }, function (err, appointmentModel) {
-                if (err) {
+
+            ], function(err){
+                if (err){
                     return next(err);
                 }
 
-                if (!appointmentModel) {
-                    return next(badRequests.NotFound({target: 'Appointment'}));
-                }
-
-                //TODO: write off tip from clients card
-
                 res.status(200).send({success: 'Your appointment rated successfully'});
+
             });
     };
 
@@ -727,7 +953,7 @@ var ClientsHandler = function (app, db) {
                                 return next(err);
                             }
 
-                            res.status(200).send({success: 'Your photo was added to gallery'});
+                            res.status(200).send({success: 'Your photo was added to gallery', photoId: imageName});
                         });
                     });
             });
@@ -876,6 +1102,7 @@ var ClientsHandler = function (app, db) {
         });
 
     };
+
 
 
 

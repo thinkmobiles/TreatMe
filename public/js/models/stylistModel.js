@@ -8,6 +8,7 @@ define([
         urlRoot : '/admin/stylist',
         idAttribute: "_id",
         defaults: {
+            email: '',
             personalInfo: {},
             salonInfo: {}
         },
@@ -67,8 +68,6 @@ define([
                 'state': 'State is required',
                 'zipCode': 'Zip Code is required'
             };*/
-
-            console.log(attrs);
 
             /*  --- email --- */
             if (!email) {

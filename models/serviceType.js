@@ -7,7 +7,8 @@ module.exports = function (db) {
 
     var ServiceType = new Schema({
         name: String,
-        logo: String
+        logo: String,
+        price: Number
 
     }, {
         collection: 'ServiceTypes'

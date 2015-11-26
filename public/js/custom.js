@@ -91,9 +91,38 @@ define([],function () {
         img.src = currentImage;
     };
 
+    var getSrc = function (event, callback) {
+        event.preventDefault();
+
+        var inputFile = $(event.target)[0];
+        var file = inputFile.files[0];
+        var filesExt = ['jpg','png','jpeg', 'bmp'];
+        var parts = $(inputFile).val().split('.');
+        var ext = parts[parts.length - 1].toLowerCase();
+        var fr;
+
+        if (filesExt.join().search(ext) != -1) {
+            fr = new FileReader();
+            fr.onload = function () {
+                var src = fr.result;
+
+                if (callback && (typeof callback === 'function')) {
+                    callback(null, src);
+                }
+            };
+            fr.readAsDataURL(file);
+        } else {
+            if (callback && (typeof callback === 'function')) {
+                callback('Invalid file type');
+            }
+        }
+    };
+
     return {
         runApplication : runApplication,
         canvasDraw     : canvasDraw,
-        canvasDrawing  : canvasDrawing
+        canvasDrawing  : canvasDrawing,
+        getSrc         : getSrc
+
     };
 });

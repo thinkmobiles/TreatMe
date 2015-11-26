@@ -45,6 +45,8 @@ module.exports = function(db){
     require('./subscriptionType')(db);
     require('./appointment')(db);
     require('./gallery')(db);
-
+    require('./inbox')(db);
+    require('./paymentHistory')(db);
+    require('./stylistPayments')(db);
 
 };
