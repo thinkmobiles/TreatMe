@@ -9,9 +9,39 @@ var SchedulerHelper = function(app, db){
     var stylistHandler = new StylistHandler(app, db);
     var Services = db.model('Service');
     var User = db.model('User');
+    var Payments = db.model('Payment');
+    var StylistPayments = db.model('StylistPayments');
     var io = app.get('io');
     var ObjectId = mongoose.Types.ObjectId;
 
+    function getStylistsPaymentsByPeriod (starDate, endDate, callback){
+        var start = new Date(starDate);
+        var end = new Date(endDate);
+
+        StylistPayments
+            .aggregate([
+                {
+                    $match: {
+                        $and: [
+                            {date: {$gte: start}},
+                            {date: {$lte: end}}
+                        ]
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$stylist',
+                        total: {$sum: '$stylistAmount'}
+                    }
+                }
+            ], function(err, result){
+                if (err){
+                    return callback(err);
+                }
+
+                callback(null, result);
+            });
+    }
 
     this.startLookStylistForAppointment = function (appointmentId, userCoordinates, serviceTypeId) {
 

@@ -3626,7 +3626,6 @@ var AdminHandler = function (app, db) {
         });
     };
 
-
     //payments
 
     this.createTransfer = function(req, res, next){
