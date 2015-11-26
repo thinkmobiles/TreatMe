@@ -108,7 +108,7 @@ var AdminHandler = function (app, db) {
                 }
 
                 stylist = result[0];
-                stylist.service = result[1] || [];
+                stylist.services = result[1] || [];
                 stylist.overallRating = result[2] || 0;
 
                 if (stylist.personalInfo.avatar.length){
@@ -2126,17 +2126,17 @@ var AdminHandler = function (app, db) {
          */
 
         var clientId = req.params.id;
-        var resultObj = {};
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(clientId)){
             return next(badRequests.InvalidValue({value: clientId, param: 'id'}));
         }
 
         async.parallel([
-
                 function(cb){
+                    var client;
+
                     User
-                        .findOne({_id: clientId, role: CONSTANTS.USER_ROLE.CLIENT}, function(err, clientModel){
+                        .findOne({_id: clientId, role: CONSTANTS.USER_ROLE.CLIENT}, {__V: 0, approved: 0, token: 0, forgotToken: 0, activeSubscriptions: 0, online: 0, payments: 0}, function(err, clientModel){
                             var avatarName;
 
                             if (err){
@@ -2147,21 +2147,17 @@ var AdminHandler = function (app, db) {
                                 return cb(badRequests.DatabaseError());
                             }
 
-                            resultObj.firstName = clientModel.personalInfo.firstName;
-                            resultObj.lastName = clientModel.personalInfo.lastName;
-                            resultObj.phone = clientModel.personalInfo.phone;
-                            resultObj.email = clientModel.email;
-                            resultObj.suspend = clientModel.suspend;
+                            client = clientModel.toJSON();
 
                             avatarName = clientModel.personalInfo.avatar;
 
-                            if (avatarName){
-                                resultObj.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                            if (avatarName.length){
+                                client.personalInfo.avatar = image.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
                             } else {
-                                resultObj.avatar = '';
+                                client.personalInfo.avatar = '';
                             }
 
-                            cb();
+                            cb(null, client);
                         });
                 },
 
@@ -2194,20 +2190,22 @@ var AdminHandler = function (app, db) {
                                 return modelJSON;
                             });
 
-                            resultObj.currentSubscriptions = currentSubscriptions;
 
-                            cb();
+                            cb(null, currentSubscriptions);
 
                         });
                 }
             ],
 
-            function(err){
+            function(err, result){
+                var client = result[0] || {};
+                client.currentSubscriptions = result[1] || {};
+
                 if (err){
                     return next(err);
                 }
 
-                res.status(200).send(resultObj);
+                res.status(200).send(client);
         });
     };
 

@@ -38,7 +38,7 @@ module.exports = function(app, db){
     // CRUD Clients
     router.get('/client/', sessionHandler.isAdmin, admin.getClientList);
     router.get('/client/:id', sessionHandler.isAdmin, admin.getClientById);
-    router.put('/client/', sessionHandler.isAdmin, admin.updateClient);
+    router.put('/client/:userId', sessionHandler.isAdmin, user.updateUserProfile);
     router.post('/client/', sessionHandler.isAdmin, admin.createClient);
 
     // CRUD Inbox

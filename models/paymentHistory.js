@@ -1,7 +1,3 @@
-/**
- * Created by migal on 25.11.15.
- */
-var CONSTANTS = require('../constants');
 
 module.exports = function (db) {
     'use strict';
