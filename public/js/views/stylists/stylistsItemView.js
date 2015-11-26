@@ -148,10 +148,10 @@ define([
         },
 
         updateNavigation: function (user) {
-            var bradcrumbs;
+            var breadcrumbs;
 
             if (!user._id) {
-                bradcrumbs = [{
+                breadcrumbs = [{
                     name: 'New Applications',
                     path: '#newApplications'
                 }, {
@@ -159,7 +159,7 @@ define([
                     path: '#newApplications/add'
                 }];
             } else if (user.approved) {
-                bradcrumbs = [{
+                breadcrumbs = [{
                     name: 'Stylist List',
                     path: '#stylists'
                 }, {
@@ -170,7 +170,7 @@ define([
                     path: '#stylists/' + user._id + '/edit'
                 }];
             } else {
-                bradcrumbs = [{
+                breadcrumbs = [{
                     name: 'New Applications',
                     path: '#newApplications'
                 }, {
@@ -182,7 +182,7 @@ define([
                 }];
             }
 
-            App.Breadcrumbs.reset(bradcrumbs);
+            App.Breadcrumbs.reset(breadcrumbs);
         },
 
         prepareSaveData: function (callback) {
