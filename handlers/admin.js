@@ -34,6 +34,7 @@ var AdminHandler = function (app, db) {
     var Gallery = db.model('Gallery');
     var Appointment = db.model('Appointment');
     var Inbox = db.model('Inbox');
+    var Payments = db.model('Payment');
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
@@ -3178,6 +3179,36 @@ var AdminHandler = function (app, db) {
 
                 res.status(200).send(resultModels);
             });
+    };
+
+    this.getMonthlyRevenue = function(req, res, next){
+
+        var currentDate = new Date();
+        var currentYear = currentDate.getFullYear();
+        var startOfYear = new Date(currentYear, 0, 1);
+
+        Payments
+            .aggregate([
+                {
+                    $match: {
+                        date: {$gte: startOfYear},
+                        totalAmount: {$gte: 0}
+                    }
+                },
+                {
+                    $group: {
+                        _id: {$month: '$date'},
+                        total: {$sum: {$divide: ['$totalAmount', 100]}}
+                    }
+                }
+            ], function (err, resultModels) {
+                if (err) {
+                    return next(err);
+                }
+
+                res.status(200).send(resultModels);
+            });
+
     };
 
     this.getInboxList = function(req, res, next){
