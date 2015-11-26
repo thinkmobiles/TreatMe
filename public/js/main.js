@@ -11,6 +11,7 @@ require.config({
         Backbone        : './libs/backbone/backbone',
         Moment          : './libs/moment/moment',
         async           : './libs/requirejs-plugins/src/async',
+        asyncjs         : './libs/async/lib/async',
         googlemaps      : './libs/googlemaps-amd/src/googlemaps',
         timepicker      : './libs/jt.timepicker/jquery.timepicker.min',
         gmaps           : './libs/gmaps/gmaps',
