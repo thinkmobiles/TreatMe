@@ -47,5 +47,6 @@ module.exports = function(db){
     require('./gallery')(db);
     require('./inbox')(db);
     require('./paymentHistory')(db);
+    require('./stylistPayments')(db);
 
 };

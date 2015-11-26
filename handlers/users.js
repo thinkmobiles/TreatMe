@@ -1246,7 +1246,7 @@ var UserHandler = function (app, db) {
                 async
                     .parallel([
 
-                        /*function(cb){ TODO: update credit card or create new
+                        /*function(cb){ //TODO: update credit card or create new
                             var data = {};
 
                             if (!body.stripeToken){

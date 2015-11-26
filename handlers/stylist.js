@@ -15,6 +15,7 @@ var StylistHandler = function (app, db) {
     var Services = db.model('Service');
     var Appointment = db.model('Appointment');
     var Payments = db.model('Payment');
+    var StylistPayments = db.model('StylistPayments');
     var User = db.model('User');
     var imageHandler = new ImageHandler();
     var stripe = new StripeModule();
@@ -298,18 +299,31 @@ var StylistHandler = function (app, db) {
             },
 
             function(appointmentModel, serviceType, cb){
-                appointmentModel
+                /*appointmentModel
                     .update({$set: updateObj}, function (err) {
                         if (err) {
                             return cb(err);
                         }
 
                         cb(null, appointmentModel, serviceType);
+                    });*/
+
+                appointmentModel.price = updateObj.price;
+                appointmentModel.stylist = updateObj.stylist;
+                appointmentModel.status = updateObj.status;
+
+                appointmentModel
+                    .save(function(err, model){
+                        if (err){
+                            return cb(err);
+                        }
+
+                       cb(null, model, serviceType);
                     });
+
             },
 
             function (appointmentModel, serviceType, cb){
-                var price;
 
                 ServiceType.findOne({_id: serviceType}, {price: 1}, function(err, serviceModel){
 
@@ -336,7 +350,7 @@ var StylistHandler = function (app, db) {
                 };
 
                 if (!isOneTime){
-                    return cb(null, true, null);
+                    return cb(null, true, appointmentModel, null);
                 }
 
                 self.createCharge(clientId, paymentData, function(err, charge){
@@ -344,18 +358,18 @@ var StylistHandler = function (app, db) {
                         return cb(err);
                     }
 
-                    cb(null, false, charge);
+                    cb(null, false, appointmentModel, charge);
                 });
 
             },
 
-            function(isOneTime, charge, cb){
+            function(isOneTime, appointmentModel, charge, cb){
                 var err;
                 var payment;
                 var paymentModel;
 
                 if (isOneTime){
-                    return cb(null);
+                    return cb(null, appointmentModel, 0);
                 }
 
                 if (!cb && typeof charge === 'function'){
@@ -382,8 +396,22 @@ var StylistHandler = function (app, db) {
                             return cb(err);
                         }
 
-                        cb(null);
+                        cb(null, appointmentModel, charge.amount);
                     });
+            },
+
+            function(appointmentModel, amount, cb){
+                var stylistPaymentsModel;
+                var paymentsData = {
+                    paymentType: 'service',
+                    realAmount: amount,
+                    stylistAmount: appointmentModel.price * 100,
+                    stylist: appointmentModel.stylist.id
+                };
+
+                stylistPaymentsModel = new StylistPayments(paymentsData);
+
+                stylistPaymentsModel.save(cb);
             }
 
         ], function(err){
