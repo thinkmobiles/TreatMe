@@ -15,6 +15,7 @@ var geocoder = require('geocoder');
 var SchedulerHelper = require('../helpers/scheduler');
 var StripeModule = require('../helpers/stripe');
 var _ = require('lodash');
+var StylistHandler = require('./stylist');
 
 var ClientsHandler = function (app, db) {
 
@@ -27,9 +28,12 @@ var ClientsHandler = function (app, db) {
     var Subscription = db.model('Subscription');
     var ServiceType = db.model('ServiceType');
     var SubscriptionType = db.model('SubscriptionType');
+    var StylistPayments = db.model('StylistPayments');
+    var Payments = db.model('Payment');
     var imageHandler = new ImageHandler(db);
     var ObjectId = mongoose.Types.ObjectId;
     var schedulerHelper = new SchedulerHelper(app, db);
+    var stylist = new StylistHandler(app, db);
 
     this.getCoordinatesByLocation = function(locationAddress, callback){
         geocoder.geocode(locationAddress, function(err, data){
@@ -700,7 +704,7 @@ var ClientsHandler = function (app, db) {
          * @param {string} appointmentId - Appointment id
          * @param {number} rate - Booking rate for appointment 0-9
          * @param {string} [rateComment] - rate comment for appointment
-         * @param {number} tip - tip payed to stylist (>=0)
+         * @param {number} [tip] - tip payed to stylist (>=0)
          *
          * @example Response example:
          *
@@ -719,6 +723,7 @@ var ClientsHandler = function (app, db) {
         var rateComment = '';
         var appointmentId;
         var tip;
+        var appointmentModel;
 
         if (!body.appointmentId || isNaN(body.rate) || isNaN(body.tip)) {
             return next(badRequests.NotEnParams({reqParams: 'appointmentId and rate and tip'}));
@@ -735,25 +740,121 @@ var ClientsHandler = function (app, db) {
             rateComment = body.rateComment;
         }
 
-        Appointment
-            .findOneAndUpdate({_id: appointmentId, 'client.id': ObjectId(clientId)}, {
-                $set: {
-                    rate: body.rate,
-                    rateComment: rateComment,
-                    tip: tip
+        async
+            .waterfall([
+                function(cb){
+                    Appointment
+                        .findOne({_id: appointmentId, 'client.id': ObjectId(clientId)}, function(err, appModel){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!appModel){
+                                return cb(badRequests.NotFound({target: 'Appointment'}));
+                            }
+
+                            appointmentModel = appModel;
+
+                            cb(null);
+                        });
+                },
+
+                function(cb){
+                    var paymentsData;
+
+                    if (tip === 0){
+                        return cb(null, null);
+                    }
+
+                    paymentsData = {
+                        amount: tip * 100,
+                        currency: 'usd'
+                    };
+
+                    stylist
+                        .createCharge(clientId, paymentsData, function(err, charge){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, charge);
+
+                        });
+
+                },
+
+                function(charge, cb){
+                    var paymentData;
+                    var stylistPaymentModel;
+
+                    if (!charge){
+                        return cb(null);
+                    }
+
+                    paymentData = {
+                        paymentType: 'tip',
+                        realAmount: tip * 100,
+                        stylistAmount: tip * 100,
+                        stylist: appointmentModel.stylist._id
+                    };
+
+                    stylistPaymentModel = new StylistPayments(paymentData);
+
+                    stylistPaymentModel.save(function(err){
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null);
+
+                    });
+
+                },
+
+                function(cb){
+                    var paymentHistory;
+                    var paymentModel;
+
+                    if (tip === 0){
+                        return cb(null);
+                    }
+
+                    paymentHistory = {
+                        paymentType: 'tip',
+                        amount: tip * 100,
+                        fee: tip * 100 * 0.029 + 30,
+                        totalAmount: tip * 100 * (1 - 0.029) - 30,
+                        user: ObjectId(clientId),
+                        role: 'client'
+                    };
+
+                    paymentModel = new Payments(paymentHistory);
+
+                    paymentModel.save(function(err){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null);
+                    });
+                },
+
+                function(cb){
+                    appointmentModel.rate = body.rate;
+                    appointmentModel.rateComment = rateComment;
+                    appointmentModel.tip = tip;
+
+                    appointmentModel.save(cb);
                 }
-            }, function (err, appointmentModel) {
-                if (err) {
+
+            ], function(err){
+                if (err){
                     return next(err);
                 }
 
-                if (!appointmentModel) {
-                    return next(badRequests.NotFound({target: 'Appointment'}));
-                }
-
-                //TODO: write off tip from clients card
-
                 res.status(200).send({success: 'Your appointment rated successfully'});
+
             });
     };
 
