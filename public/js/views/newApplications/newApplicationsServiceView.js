@@ -62,6 +62,9 @@ define([
                 var serviceContainer = $(checkbox).closest('.service');
                 var id = serviceContainer.data('id');
                 var price = serviceContainer.find('#price').val() || 0;
+                var name = serviceContainer.find('label').html();
+                var obj;
+
                 serviceContainer.find('.prompt').html('');
 
                 if (price == 0 || !price || !validator.isNumeric(price))  {
@@ -69,12 +72,14 @@ define([
                     isValid = false;
                 }
 
-                var obj = {
+                obj = {
                     id: id,
-                    price: price
+                    price: price,
+                    name: name,
+                    status: 'approved'
                 };
 
-                return 'obj';
+                return obj;
             });
 
             if (isValid === false) {

@@ -64,26 +64,26 @@ define([
 
             var ticks = new Date().valueOf();
             /*var data = {
-                email       : 'test_' + ticks + '@mail.com',
-                personalInfo: {
-                    firstName : 'nazarovits',
-                    lastName  : 'istvan',
-                    phone     : '+38 093 000 0000',
-                    profession: 'profession'
-                },
-                salonInfo   : {
-                    salonName    : 'mySalon',
-                    businessRole : 'Stylist',
-                    phone        : '+38 093 111 1111',
-                    email        : 'test_' + ticks + '@mail.com',
-                    address      : 'PS street, ...',
-                    licenseNumber: 'License 123',
-                    zipCode      : '88000',
-                    state        : 'Закарпаття',
-                    country      : 'Ukraine',
-                    city         : 'Ужгород'
-                }
-            };*/
+             email       : 'test_' + ticks + '@mail.com',
+             personalInfo: {
+             firstName : 'nazarovits',
+             lastName  : 'istvan',
+             phone     : '+38 093 000 0000',
+             profession: 'profession'
+             },
+             salonInfo   : {
+             salonName    : 'mySalon',
+             businessRole : 'Stylist',
+             phone        : '+38 093 111 1111',
+             email        : 'test_' + ticks + '@mail.com',
+             address      : 'PS street, ...',
+             licenseNumber: 'License 123',
+             zipCode      : '88000',
+             state        : 'Закарпаття',
+             country      : 'Ukraine',
+             city         : 'Ужгород'
+             }
+             };*/
             this.model = new StylistModel();
             this.model.on('invalid', this.handleModelValidationError, this);
 
@@ -129,9 +129,9 @@ define([
             return userName;
         },
 
-        renderUserInfo: function () {
+        renderUserInfo: function (model, response, options) {
             var user = this.model.toJSON();
-            var services = user.service;
+            var services = user.services;
 
             //var userName = this.getUserName(user);
             var $el = this.$el;
@@ -237,7 +237,7 @@ define([
                     country      : country,
                     licenseNumber: licenseNumber
                 },
-                //services    : dataService //TODO: !!!
+                services    : dataService
             };
 
             callback(null, data);
@@ -253,7 +253,6 @@ define([
             } else {
                 this.avatarBASE64 = null;
             }
-
 
             self.prepareSaveData(function (err, data) {
                 var model;
@@ -325,15 +324,15 @@ define([
             }
 
             $.ajax({
-                type: 'POST',
-                dataType: 'json',
+                type       : 'POST',
+                dataType   : 'json',
                 contentType: 'application/json',
-                url: '/avatar',
-                data: JSON.stringify(data),
-                success: function (res) {
+                url        : '/avatar',
+                data       : JSON.stringify(data),
+                success    : function (res) {
                     callback(res);
                 },
-                error: self.handleErrorResponse
+                error      : self.handleErrorResponse
             });
         }
 
