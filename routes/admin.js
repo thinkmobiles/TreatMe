@@ -38,7 +38,7 @@ module.exports = function(app, db){
     // CRUD Clients
     router.get('/client/', sessionHandler.isAdmin, admin.getClientList);
     router.get('/client/:id', sessionHandler.isAdmin, admin.getClientById);
-    router.put('/client/', sessionHandler.isAdmin, admin.updateClient);
+    router.put('/client/:userId', sessionHandler.isAdmin, user.updateUserProfile);
     router.post('/client/', sessionHandler.isAdmin, admin.createClient);
 
     // CRUD Inbox
@@ -67,8 +67,10 @@ module.exports = function(app, db){
     router.delete('/gallery/:id',  sessionHandler.isAdmin, admin.removePhotoFromGallery);
     router.get('/gallery/accept/:id',  sessionHandler.isAdmin, admin.acceptPhotoFromGallery);
 
+    // statistic (dashboard)
     router.get('/statistic/overview', sessionHandler.isAdmin, admin.getOverviewByPeriod);
     router.get('/statistic/appointments', sessionHandler.isAdmin, admin.getAppointmentsStatistic);
+    router.get('/statistic/revenue', sessionHandler.isAdmin, admin.getMonthlyRevenue);
 
     router.post('/transfer', sessionHandler.isAdmin, admin.createTransfer);
     router.get('/transfer/:transferId?', sessionHandler.isAdmin, admin.getTransfer);

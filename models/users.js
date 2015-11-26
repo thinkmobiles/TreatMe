@@ -1,6 +1,8 @@
 
 module.exports = function (db) {
+
     'use strict';
+
     var mongoose = require('mongoose');
     var Schema = mongoose.Schema;
     var CONSTANTS = require('../constants');

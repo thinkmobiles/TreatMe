@@ -30,7 +30,7 @@ var Session = function (db) {
         req.session.uId = userId;
         req.session.role = role;
 
-        if (typeof isNew === 'boolean' && isNew) {
+        if (!!isNew) {
             return res.status(201).send({success: 'User created successful', id: userId});
         }
 
@@ -64,11 +64,11 @@ var Session = function (db) {
 
             if (req.session.role === CONSTANTS.USER_ROLE.STYLIST) {
 
-              next();
-
-            } else {
-                next(badRequests.AccessError({'message': 'Only Stylist does have permissions for do this'}));
+                return next();
             }
+
+            next(badRequests.AccessError({'message': 'Only Stylist does have permissions for do this'}));
+
         });
 
     };
@@ -82,10 +82,11 @@ var Session = function (db) {
             }
 
             if (req.session.role === CONSTANTS.USER_ROLE.CLIENT) {
-                next();
-            } else {
-                next(badRequests.AccessError({'message': 'Only Client does have permissions for do this'}));
+                return next();
             }
+
+            next(badRequests.AccessError({'message': 'Only Client does have permissions for do this'}));
+
         });
 
     };
@@ -99,10 +100,11 @@ var Session = function (db) {
             }
 
             if (req.session.role === CONSTANTS.USER_ROLE.ADMIN) {
-                next();
-            } else {
-                next(badRequests.AccessError({'message': 'Only Admin does have permissions for do this'}));
+                return next();
             }
+
+            next(badRequests.AccessError({'message': 'Only Admin does have permissions for do this'}));
+
         });
 
     };
@@ -116,10 +118,10 @@ var Session = function (db) {
             }
 
             if (req.session.role === CONSTANTS.USER_ROLE.CLIENT || req.session.role === CONSTANTS.USER_ROLE.STYLIST) {
-                next();
-            } else {
-                next(badRequests.AccessError({'message': 'Only Client or Stylist does have permissions for do this'}));
+                return next();
             }
+
+            next(badRequests.AccessError({'message': 'Only Client or Stylist does have permissions for do this'}));
 
         });
 
@@ -134,10 +136,11 @@ var Session = function (db) {
             }
 
             if (req.session.role === CONSTANTS.USER_ROLE.CLIENT || req.session.role === CONSTANTS.USER_ROLE.ADMIN) {
-                next();
-            } else {
-                next(badRequests.AccessError({'message': 'Only Client or Admin does have permissions for do this'}));
+                return next();
             }
+
+            next(badRequests.AccessError({'message': 'Only Client or Admin does have permissions for do this'}));
+
         });
 
     };
@@ -151,10 +154,11 @@ var Session = function (db) {
             }
 
             if (req.session.role === CONSTANTS.USER_ROLE.STYLIST || req.session.role === CONSTANTS.USER_ROLE.ADMIN) {
-                next()
-            } else {
-                next(badRequests.AccessError({'message': 'Only Stylist or Admin does have permissions for do this'}));
+                return next()
             }
+
+            next(badRequests.AccessError({'message': 'Only Stylist or Admin does have permissions for do this'}));
+
         });
 
     };
@@ -178,6 +182,7 @@ var Session = function (db) {
             if (!approved) {
                 err = new Error('Your account must be approved by admin');
                 err.status = 403;
+
                 return next(err);
             }
             next();

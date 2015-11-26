@@ -15,6 +15,7 @@ module.exports = function (db) {
 
         },
         clientLoc: {
+            _id: false,
             type: {
                 type: String,
                 match: /^Point$/,
