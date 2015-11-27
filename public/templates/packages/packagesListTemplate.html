@@ -1,0 +1,12 @@
+<% _.forEach(items, function (item, index) {%>
+<tr class="item" data-id="<%= item._id%>">
+    <td>
+        <img class="logo" width="90" height="90" alt="logo" src="<%= item.logo %>"/>
+        <input style="display: none" type="file" value="Logo" class="changeLogo" accept="image/*"><br/>
+    </td>
+    <td class="name"><%= item.name %></td>
+    <td class="price"><%= item.price %></td>
+    <td class="editOrSave"><button class="editBtn edit">Edit</button></td>
+    <td class="removeOrCancel"><button class="removeCurrentBtn delete">Delete</button></td>
+</tr>
+<%});%>

@@ -142,6 +142,10 @@ define([
                 options.status = 'Services';
             }
 
+            if (type === 'packages') {
+                options.status = 'Packages';
+            }
+
             this.loadWrapperView(type, options, REDIRECT.whenNOTAuthorized);
         },
 

@@ -2,7 +2,7 @@
 
 define([], function () {
     var Model = Backbone.Model.extend({
-        urlRoot : '/admin/subscriptions',
+        urlRoot : '/subscriptiontype',
         idAttribute: "_id"
     });
 
