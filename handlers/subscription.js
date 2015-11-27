@@ -151,6 +151,12 @@ var SubscriptionsHandler = function (db) {
             });
     }
 
+    function getSubscriptionTypeCount(criteria, callback){
+        SubscriptionType
+            .count(criteria)
+            .exec(callback);
+    }
+
     this.getSubscriptionTypes = function(req, res, next){
 
         /**
@@ -230,7 +236,15 @@ var SubscriptionsHandler = function (db) {
                     return next(err);
                 }
 
-                res.status(200).send(result);
+                getSubscriptionTypeCount({}, function(err, count){
+
+                    if (err){
+                        return next(err)
+                    }
+
+                    res.status(200).send({total: count, data: result});
+                });
+
             })
         }
     };
@@ -539,6 +553,7 @@ var SubscriptionsHandler = function (db) {
 
         async
             .waterfall([
+                // find Client by customerId
                 function(cb){
                      User.findOne({'payments.customerId': customerId}, {_id: 1}, function(err, clientModel){
 
@@ -557,6 +572,7 @@ var SubscriptionsHandler = function (db) {
                      });
                 },
 
+                //
                 function(cb){
                     stripe.getSubscription(customerId, subscriptionId, function(err, subscription){
 
