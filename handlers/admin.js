@@ -732,7 +732,7 @@ var AdminHandler = function (app, db) {
                         });
                 },
                 function(clientId, cb){
-                    if (!subscriptionId || !stripeToken){
+                    if (!stripeToken || !subscriptionId){
                         return cb();
                     }
 
