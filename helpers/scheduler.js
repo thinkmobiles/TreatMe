@@ -89,7 +89,7 @@ var SchedulerHelper = function(app, db){
                     if (appointmentModel) {
                         room = stylistId.toString();
 
-                        io.to(room).send('new appointment', appointmentModel);
+                        io.to(room).emit('new appointment', appointmentModel);
                         return console.log('==> Sent appointment to stylist with id: ' + stylistId);
                     }
                 })
@@ -182,7 +182,7 @@ var SchedulerHelper = function(app, db){
                                     if (appointmentModel) {
                                         room = stylistId.toString();
 
-                                        io.to(room).send('new appointment', appointmentModel);
+                                        io.to(room).emit('new appointment', appointmentModel);
                                         console.log('==> Sent appointment to stylist with id: ' + stylistId);
                                     }
 

@@ -35,6 +35,7 @@ var AdminHandler = function (app, db) {
     var Appointment = db.model('Appointment');
     var Inbox = db.model('Inbox');
     var Payments = db.model('Payment');
+    var io = app.get('io');
 
     function getEncryptedPass(pass) {
         var shaSum = crypto.createHash('sha256');
@@ -796,7 +797,7 @@ var AdminHandler = function (app, db) {
         var body = req.body;
         var ids;
 
-        if (!body.ids) {
+        if (!body.ids || !body.ids.length) {
             return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
 
@@ -807,15 +808,22 @@ var AdminHandler = function (app, db) {
                 _id: {$in: ids},
                 approved: false,
                 role: CONSTANTS.USER_ROLE.STYLIST
-            }, {$set: {approved: true}}, {multi: true}, function (err) {
+            }, {$set: {approved: true}}, {multi: true},
+                function (err) {
+                var room;
+
                 if (err) {
                     return next(err);
                 }
 
+                for (var i = body.ids.length; i > 0; i--){
+                    room = body.ids[i - 1];
+
+                    io.to(room).emit('account approved', {success: 'Your account was approved successfully'});
+                }
+
                 res.status(200).send({success: 'Stylists approved successfully'});
             });
-
-
     };
 
     this.removeStylist = function (req, res, next) {
@@ -1097,17 +1105,29 @@ var AdminHandler = function (app, db) {
             return next(badRequests.NotEnParams({reqParams: 'serviceId or stylistId or price'}));
         }
 
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(serviceId)){
+            return next(badRequests.InvalidValue({value: serviceId, param: 'serviceId'}));
+        }
+
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(stylistId)){
+            return next(badRequests.InvalidValue({value: stylistId, param: 'stylistId'}));
+        }
+
         Services
             .findOneAndUpdate({stylist: stylistId, serviceId: serviceId}, {$set: {approved: true, price: body.price}}, function (err) {
+                var socketData = {
+                    serviceId: serviceId,
+                    price: body.price
+                };
 
                 if (err) {
                     return next(err);
                 }
 
+                io.to(stylistId).emit('service approved', socketData);
+
                 res.status(200).send({success: 'Service approved successfully'});
-
             });
-
     };
 
     this.addService = function (req, res, next) {

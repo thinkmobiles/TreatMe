@@ -210,6 +210,13 @@ var StylistHandler = function (app, db) {
         var appointmentId = req.params.id;
         var updateObj;
         var clientId;
+        var socketData = {};
+        var avatarName;
+        var avatarUrl = '';
+        var serviceTypeName;
+        var serviceTypeLogoName;
+        var serviceTypeLogoUrl = '';
+        var bookingDate;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)) {
             return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
@@ -219,7 +226,7 @@ var StylistHandler = function (app, db) {
 
             function(cb){
                 User
-                    .findOne({_id: stylistId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1}, function(err, stylistModel){
+                    .findOne({_id: stylistId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'personalInfo.avatar': 1}, function(err, stylistModel){
                         var stylistFirstName;
                         var stylistLastName;
 
@@ -233,6 +240,11 @@ var StylistHandler = function (app, db) {
 
                         stylistFirstName = stylistModel.get('personalInfo.firstName');
                         stylistLastName = stylistModel.get('personalInfo.lastName');
+                        avatarName = stylistModel.get('personalInfo.avatar');
+
+                        if (avatarName){
+                            avatarUrl = imageHandler.computeUrl(avatarName, CONSTANTS.BUCKET.IMAGES);
+                        }
 
                         updateObj = {
                             stylist: {
@@ -270,6 +282,7 @@ var StylistHandler = function (app, db) {
                         }
 
                         serviceType = appointmentModel.get('serviceType.id');
+                        bookingDate = appointmentModel.get('bookingDate');
 
                         cb(null, serviceType, appointmentModel);
                     });
@@ -321,17 +334,23 @@ var StylistHandler = function (app, db) {
 
             function (appointmentModel, serviceType, cb){
 
-                ServiceType.findOne({_id: serviceType}, {price: 1}, function(err, serviceModel){
-
+                ServiceType.findOne({_id: serviceType}, {price: 1, name: 1, logo: 1}, function(err, serviceTypeModel){
                     if (err){
                         return cb(err);
                     }
 
-                    if (!serviceModel){
+                    if (!serviceTypeModel){
                         return cb(badRequests.DatabaseError());
                     }
 
-                    cb(null, appointmentModel, serviceModel.price);
+                    serviceTypeLogoName = serviceTypeModel.get('logo');
+                    serviceTypeName = serviceTypeModel.get('name');
+
+                    if (serviceTypeLogoName){
+                        serviceTypeLogoUrl = imageHandler.computeUrl(serviceTypeLogoName, CONSTANTS.BUCKET.IMAGES);
+                    }
+
+                    cb(null, appointmentModel, serviceTypeModel.price);
 
                 });
             },
@@ -411,9 +430,23 @@ var StylistHandler = function (app, db) {
             }
 
         ], function(err){
+            var room = clientId.toString();
+
             if (err) {
                 return next(err);
             }
+
+            socketData = {
+                _id: appointmentId,
+                avatar: avatarUrl,
+                service: {
+                    name: serviceTypeName,
+                    logo: serviceTypeLogoUrl
+                },
+                bookingDate: bookingDate
+            };
+
+            io.to(room).emit('appointment accepted', socketData);
 
             res.status(200).send({success: 'Appointment accepted successfully'});
         });
@@ -493,7 +526,7 @@ var StylistHandler = function (app, db) {
                             return next(err);
                         }
 
-                        io.to(room).send('rate stylist', socketData);
+                        io.to(room).emit('rate stylist', socketData);
 
                         res.status(200).send({success: 'Appointment finished successfully'});
                     });
