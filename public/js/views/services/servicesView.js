@@ -62,6 +62,7 @@ define([
         },
 
         save: function (e) {
+            var self = this;
             var target = $(e.target);
             var tr = target.closest('tr');
             var id = tr.data('id');
@@ -118,6 +119,7 @@ define([
                     console.log(savedModel);
                     alert('success');
                     if (!id) {
+                        self.collection.add(savedModel);
                         tr.attr('data-id', savedModel.id);
                     }
                     tr.find('.cancelBtn').click();
@@ -144,15 +146,16 @@ define([
 
                 tr.find('.editOrSave').html('<button class="editBtn"></button>');
                 tr.find('.removeOrCancel').html('<button class="removeCurrentBtn delete"></button>');
+            } else if (!id) {
+                tr.remove();
             }
             this.$el.find('.buttons').html('<button class="add">Add New Service</button>');
-            this.$el.find('.newServices').remove();
 
             e.stopPropagation();
         },
 
         add: function (e) {
-                this.$el.find('.items').append('<tr class="newServices">' +
+                this.$el.find('.items').append('<tr>' +
                 '<td ><img class="logo" width="90" height="90" alt="logo" src="<%= item.logo %>"/>' +
                     '<input style="display: none" type="file" value="Logo" class="changeLogo" accept="image/*"><br/></td>' +
                 '<td class="name"><input class="newName"></td>' +
