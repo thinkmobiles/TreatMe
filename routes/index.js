@@ -50,8 +50,6 @@ module.exports = function (app, db) {
     app.delete('/avatar/:id?', sessionHandler.authenticatedUser, user.removeAvatar);
     app.put('/coordinates', sessionHandler.authenticatedUser, user.updateLocation);
 
-
-
     app.get('/service/:stylistId?', sessionHandler.isAdmin, user.getStylistServices);
 
     app.get('/gallery/:clientId?', sessionHandler.authenticatedUser, user.getGalleryPhotos);

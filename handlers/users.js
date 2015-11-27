@@ -512,7 +512,7 @@ var UserHandler = function (app, db) {
          *      "success": "User created successful. For using your account you must verify it. Please check email."
          *  }
          *
-         * @param {string} [fbId] - FaceBook Id for signup User
+         * @param {string} [fbId] - `User` FaceBook Id for signUp
          * @param {string} [email] - `User` email
          * @param {string} password - `User` password
          * @param {string} firstName - `User` firstName
@@ -741,7 +741,6 @@ var UserHandler = function (app, db) {
                 }
 
                 uId = userModel.get('_id');
-
 
                 if (checkHeader(header)){
                     url = 'treatme://';
