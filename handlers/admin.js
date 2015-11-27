@@ -3145,7 +3145,8 @@ var AdminHandler = function (app, db) {
          * {
          *       requestSent: 9,
          *       appointmentBooked: 2,
-         *       packageSold: 7
+         *       packageSold: 7,
+         *       projectedRevenue: 319
          *  }
          *
          * @method getOverviewByPeriod
@@ -3192,7 +3193,37 @@ var AdminHandler = function (app, db) {
                     Subscription
                         .count({purchaseDate: {$gte: date}})
                         .exec(cb);
+                },
+
+                projectedRevenue: function(cb){
+                    Payments
+                        .aggregate([
+                            {
+                                $match: {
+                                    amount: {$gt: 0},
+                                    date: {$gte: date}
+                                }
+                            },
+                            {
+                                $group: {
+                                    _id: null,
+                                    total: {$sum: '$amount'}
+                                }
+                            }
+                        ], function(err, revenue){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!revenue.length){
+                                return cb(null, 0);
+                            }
+
+                            cb(null, revenue[0].total / 100);
+                        })
+
                 }
+
             }, function(err, result){
                 if (err){
                     return next(err);
