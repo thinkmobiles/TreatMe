@@ -17,8 +17,10 @@ module.exports = function(app, db){
 
     router.post('/card', sessionHandler.isClient, clientsHandler.addCardInfo);
     router.get('/card', sessionHandler.isClient, clientsHandler.getListCards);
+    router.put('/card/default/:clientId?', sessionHandler.clientOrAdmin, clientsHandler.changeDefault);
     router.put('/card/:cardId', sessionHandler.isClient, clientsHandler.updateCard);
     router.delete('/card/:cardId', sessionHandler.isClient, clientsHandler.removeCard);
+
 
     //router.post('/charge', sessionHandler.isClient, clientsHandler.createCharge);
 

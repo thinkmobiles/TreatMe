@@ -1034,6 +1034,88 @@ var ClientsHandler = function (app, db) {
 
     this.getListCards = function (req, res, next) {
 
+        /**
+         * __Type__ __`GET`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/card`__
+         *
+         * This __method__ allows to get list credit card to _Client_ profile
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/card
+         *
+         * @example Body example:
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *   {
+         *       object: "list",
+         *       data: [
+         *           {
+         *               id: "card_17ALikBmJOuEPWhpXN0CC2Rx",
+         *               object: "card",
+         *               address_city: "test",
+         *               address_country: null,
+         *               address_line1: "test",
+         *               address_line1_check: "pass",
+         *               address_line2: null,
+         *               address_state: "test",
+         *               address_zip: "89634",
+         *               address_zip_check: "pass",
+         *               brand: "Visa",
+         *               country: "US",
+         *               customer: "cus_7P8FqHpCkImXyv",
+         *               cvc_check: "pass",
+         *               dynamic_last4: null,
+         *               exp_month: 8,
+         *               exp_year: 2020,
+         *               fingerprint: "b7fKqS1R0dW7RZdp",
+         *               funding: "credit",
+         *               last4: "4242",
+         *               metadata: { },
+         *               name: "My test card",
+         *               tokenization_method: null
+         *           },
+         *           {
+         *               id: "card_17BiA2BmJOuEPWhpN3mlqQPI",
+         *               object: "card",
+         *               address_city: null,
+         *               address_country: null,
+         *               address_line1: null,
+         *               address_line1_check: null,
+         *               address_line2: null,
+         *               address_state: null,
+         *               address_zip: null,
+         *               address_zip_check: null,
+         *               brand: "Visa",
+         *               country: "US",
+         *               customer: "cus_7P8FqHpCkImXyv",
+         *               cvc_check: "pass",
+         *               dynamic_last4: null,
+         *               exp_month: 11,
+         *               exp_year: 2016,
+         *               fingerprint: "A3tyG7VOiqUXNWjA",
+         *               funding: "credit",
+         *               last4: "1881",
+         *               metadata: { },
+         *               name: null,
+         *               tokenization_method: null
+         *           }
+         *       ],
+         *       has_more: false,
+         *       url: "/v1/customers/cus_7P8FqHpCkImXyv/cards"
+         *    }
+         *
+         * @method getListCards
+         * @instance
+         */
+
         var userId = req.session.uId;
 
         getCustomerId(userId, function (err, customerId) {
@@ -1055,6 +1137,78 @@ var ClientsHandler = function (app, db) {
     };
 
     this.updateCard = function(req, res, next){
+
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/card`__
+         *
+         * This __method__ allows to edit credit card to _Client_ profile
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/card
+         *
+         * @example Body example:
+         *
+         * {
+         *      name: "test"
+         *      exp_month: "07"
+         *      exp_year: "2020"
+         *      address_line1: "test"
+         *      address_city: "test"
+         *      address_zip: "test"
+         *      address_state: "test"
+         * }
+         *
+         * @param {string} [name] - name of card
+         * @param {string} [exp_month] - expiration month of card
+         * @param {string} [exp_year] - expiration year of card
+         * @param {string} [address_line1] - address
+         * @param {string} [address_city] - city
+         * @param {string} [address_zip] - zip code
+         * @param {string} [address_state] - state
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *   {
+         *      success: 'Card updated successfully',
+         *      card:{
+         *          "id": "card_17ALikBmJOuEPWhpXN0CC2Rx",
+         *          "object": "card",
+         *          "address_city": "test",
+         *          "address_country": null,
+         *          "address_line1": "test",
+         *          "address_line1_check": "pass",
+         *          "address_line2": null,
+         *          "address_state": "test",
+         *          "address_zip": "89634",
+         *          "address_zip_check": "pass",
+         *          "brand": "Visa",
+         *          "country": "US",
+         *          "customer": "cus_7P8FqHpCkImXyv",
+         *          "cvc_check": "pass",
+         *          "dynamic_last4": null,
+         *          "exp_month": 8,
+         *          "exp_year": 2020,
+         *          "fingerprint": "b7fKqS1R0dW7RZdp",
+         *          "funding": "credit",
+         *          "last4": "4242",
+         *          "metadata": {},
+         *          "name": "My card",
+         *          "tokenization_method": null
+         *      }
+         *   }
+         *
+         * @method updateCard
+         * @instance
+         */
+
         var body = req.body;
         var cardId = req.params.cardId;
         var userId = req.session.uId;
@@ -1072,7 +1226,7 @@ var ClientsHandler = function (app, db) {
                         return next(err);
                     }
 
-                    res.status(200).send({success: 'Card updated successfully'});
+                    res.status(200).send({success: 'Card updated successfully', card: card});
 
                 });
         });
@@ -1080,6 +1234,32 @@ var ClientsHandler = function (app, db) {
     };
 
     this.removeCard = function(req, res, next){
+
+        /**
+         * __Type__ __`DELETE`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/card`__
+         *
+         * This __method__ allows to delete credit card of _Client_ profile
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/card
+         *
+         *  Response status: 200
+         *
+         *   {
+         *       "success": "Card deleted successfully",
+         *       "cardId": "card_17Bj3GBmJOuEPWhpm8NNvqiO"
+         *   }
+         *
+         * @method removeCard
+         * @instance
+         */
+
         var cardId = req.params.cardId;
         var userId = req.session.uId;
 
@@ -1096,11 +1276,117 @@ var ClientsHandler = function (app, db) {
                         return next(err);
                     }
 
-                    res.status(200).send(confirmation);
+                    res.status(200).send({success: 'Card deleted successfully', cardId: confirmation.id});
 
                 });
 
         });
+
+    };
+
+    this.changeDefault = function(req, res, next){
+
+        /**
+         * __Type__ __`PUT`__
+         *
+         * __Content-Type__ `application/json`
+         *
+         * __HOST: `http://projects.thinkmobiles.com:8871`__
+         *
+         * __URL: `/client/card/default/:clientId?`__
+         *
+         * This __method__ allows to change default credit card to _Client_ profile
+         *
+         * @example Request example:
+         *         http://projects.thinkmobiles.com:8871/client/card/default
+         *
+         * @example Body example:
+         *
+         * {
+         *   "cardId": "card_17BiA2BmJOuEPWhpN3mlqQPI"
+         * }
+         *
+         * @param {string} cardId - card id which you want be a default
+         *
+         * @example Response example:
+         *
+         *  Response status: 200
+         *
+         *   {
+         *       "success": "Changed default card successfully",
+         *       "defaultCard": "card_17ALikBmJOuEPWhpXN0CC2Rx"
+         *   }
+         *
+         * @method changeDefault
+         * @instance
+         */
+
+        var role = req.session.role;
+        var clientId = req.session.uId;
+        var body = req.body;
+        var cardId;
+
+        if (!body.cardId){
+            return next(badRequests.NotEnParams({reqParams: 'cardId'}));
+        }
+
+        cardId = body.cardId;
+
+        if (role === CONSTANTS.USER_ROLE.ADMIN){
+            clientId = req.params.clientId;
+        }
+
+        async
+            .waterfall([
+
+                // get customerId from clientModel
+                function(cb){
+                    User
+                        .findOne({_id: clientId}, {'payments.customerId': 1}, function(err, clientModel){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!clientModel){
+                                return cb(badRequests.NotFound({target: 'Client'}));
+                            }
+
+                            cb(null, clientModel.payments.customerId || null);
+                        });
+                },
+
+                // change default card
+
+                function(customerId, cb){
+                    var err;
+
+                    if (!customerId){
+                        err = new Error('You haven\'t customerId on the Stripe');
+                        err.status = 400;
+
+                        return cb(err);
+                    }
+
+                    stripe
+                        .updateCustomer(customerId, {default_card: cardId}, function(err, updatedCustomer){
+                            if (err){
+                                return cb(err);
+                            }
+
+                            cb(null, updatedCustomer.default_source);
+                        });
+                }
+
+            ], function(err, defaultCard){
+
+                if (err){
+                    return next(err);
+                }
+
+
+                res.status(200).send({success: 'Changed default card successfully', defaultCard: defaultCard});
+            });
 
     };
 
