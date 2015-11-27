@@ -19,7 +19,10 @@ define([
         events: {
             'click .saveBtn'      : 'saveClient',
             'click .avatar'       : 'changeAvatar',
-            'change .changeAvatar': 'changeInputFile'
+            'change .changeAvatar': 'changeInputFile',
+            'click #errorBtn': 'testError',
+            'click #warningBtn': 'testWarning',
+            'click #successBtn': 'testSuccess'
         },
 
         initialize: function (options) {
@@ -217,6 +220,18 @@ define([
                 avatar.attr('data-changed', 'true');
             });
 
+        },
+
+        testError: function () {
+            
+        },
+        
+        testWarning: function () {
+            
+        },
+        
+        testSuccess: function () {
+            
         }
 
     });

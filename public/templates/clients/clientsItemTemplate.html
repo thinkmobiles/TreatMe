@@ -40,7 +40,7 @@
                 Add credit card
             <% } %>
         </span>
-        <form id="payment-form">
+        <form id="payment-form" style="display: none">
             <input type="text" class="nameOnCard" name="nameOnCard" placeholder="Name on card"/><span class="prompt"></span><br/>
             <input type="text" class="cardNumber" name="cardNumber" placeholder="Card number"/><span class="prompt"></span><br/>
             <input type="text" class="month" name="month" placeholder="Month"/><span class="prompt"></span><br/>
@@ -71,5 +71,8 @@
 
 
     <button class="saveBtn">Save</button>
+        || <button class="errorBtn">Error</button>
+        || <button class="warningBtn">Warning</button>
+        || <button class="successBtn">Success</button>
 
 </div>
