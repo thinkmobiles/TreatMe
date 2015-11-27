@@ -3338,13 +3338,13 @@ var AdminHandler = function (app, db) {
                 {
                     $match: {
                         date: {$gte: startOfYear},
-                        totalAmount: {$gte: 0}
+                        amount: {$gte: 0}
                     }
                 },
                 {
                     $group: {
                         _id: {$month: '$date'},
-                        total: {$sum: {$divide: ['$totalAmount', 100]}}
+                        total: {$sum: {$divide: ['$amount', 100]}}
                     }
                 }
             ], function (err, resultModels) {

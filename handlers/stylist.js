@@ -42,8 +42,8 @@ var StylistHandler = function (app, db) {
                     return callback(err);
                 }
 
-                if (!appointmentModel) {
-                    return callback(badRequests.DatabaseError());
+                if (!appointmentModel || !appointmentModel.client.id || !appointmentModel.client.id._id) {
+                    return callback(badRequests.NotFound({target: 'Appointment'}));
                 }
 
                 status = appointmentModel.get('status');

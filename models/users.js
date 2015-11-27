@@ -46,13 +46,13 @@ module.exports = function (db) {
             country: {type: String, default: ''},
             licenseNumber: {type: String, default: ''},
             availability: {
-                0: [{from: '', to: ''}], //Sunday
-                1: [{from: '', to: ''}], //Monday
-                2: [{from: '', to: ''}],
-                3: [{from: '', to: ''}],
-                4: [{from: '', to: ''}],
-                5: [{from: '', to: ''}],
-                6: [{from: '', to: ''}]
+                0: [{_id: false, from: '', to: ''}], //Sunday
+                1: [{_id: false, from: '', to: ''}], //Monday
+                2: [{_id: false, from: '', to: ''}],
+                3: [{_id: false, from: '', to: ''}],
+                4: [{_id: false, from: '', to: ''}],
+                5: [{_id: false, from: '', to: ''}],
+                6: [{_id: false, from: '', to: ''}]
             }
         },
         payments: {
