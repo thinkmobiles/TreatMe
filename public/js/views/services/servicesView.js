@@ -1,12 +1,13 @@
 'use strict';
 
 define([
+    'custom',
     'views/customElements/ListView',
     'models/serviceModel',
     'collections/serviceCollection',
     'text!templates/services/servicesTemplate.html', //TODO: ...
     'text!templates/services/servicesListTemplate.html' //TODO: ...
-], function (ListView, Model, Collection, MainTemplate, ListTemplate) {
+], function (custom, ListView, Model, Collection, MainTemplate, ListTemplate) {
 
     var View = ListView.extend({
         Collection: Collection,
@@ -15,10 +16,12 @@ define([
 
         events: _.extend({
             //put events here ...
-            'click .editBtn'  : 'edit',
-            'click .saveBtn'  : 'save',
-            'click .cancelBtn': 'cancel',
-            'click .add'      : 'add'
+            'click .editBtn'         : 'edit',
+            'click .saveBtn'         : 'save',
+            'click .cancelBtn'       : 'cancel',
+            'click .add'             : 'add',
+            'click .logo'            : 'changeLogo',
+            'change .changeLogo'     : 'changeInputFile'
         }, ListView.prototype.events),
 
         initialize: function (options) {
@@ -44,7 +47,7 @@ define([
                 var modelJSON = model.toJSON();
 
                 tr.find('.name').html('<input class="newName" value="'+modelJSON.name+'">');
-                tr.find('.discount').html('<input class="newDiscount" value="">');
+                tr.find('.discount').html('<input class="newDiscount" value="'+modelJSON.price+'">');
                 tr.find('.editBtn').remove();
                 tr.find('.removeCurrentBtn').remove();
 
@@ -62,16 +65,29 @@ define([
             var target = $(e.target);
             var tr = target.closest('tr');
             var id = tr.data('id');
+            var logo = tr.find('.logo');
             var error = false;
             var data;
+            var model;
+            var name;
+            var discount;
+            var logoBASE64;
 
             if (id) {
-                var model = this.collection.get(id);
+                model = this.collection.get(id);
             }
-            var name = tr.find('.newName').val();
-            var discount = tr.find('.newDiscount').val();
+
+            name = tr.find('.newName').val();
+            discount = tr.find('.newDiscount').val();
+            logoBASE64 = tr.find('.logo').attr('src');
 
             tr.find('.prompt').remove();
+
+            if (logo.data('changed')) {
+                logoBASE64 = logo.attr('src');
+            } else {
+                logoBASE64 = null;
+            }
 
             if (!name) {
                 tr.find('.name').append('<span class="prompt">Please fill Service Name field</span>');
@@ -89,16 +105,18 @@ define([
 
             data = {
                 name     : name,
-                discount : discount
+                price    : discount,
+                logo     : logoBASE64
             };
 
             if (!id) {
-                var model = new Model(data);
+                model = new Model(data);
             }
 
             model.save(data, {
                 success: function () {
                     alert('success');
+                    tr.find('.cancelBtn').click();
                 },
                 error: self.handleModelError
             });
@@ -115,7 +133,7 @@ define([
                 var modelJSON = model.toJSON();
 
                 tr.find('.name').html(modelJSON.name);
-                tr.find('.discount').html();
+                tr.find('.discount').html(modelJSON.price);
                 tr.find('.newDiscount').remove();
                 tr.find('.saveBtn').remove();
                 tr.find('.cancelBtn').remove();
@@ -131,7 +149,8 @@ define([
 
         add: function (e) {
                 this.$el.find('.items').append('<tr class="newServices">' +
-                '<td></td>' +
+                '<td ><img class="logo" width="90" height="90" alt="logo" src="<%= item.logo %>"/>' +
+                    '<input style="display: none" type="file" value="Logo" class="changeLogo" accept="image/*"><br/></td>' +
                 '<td class="name"><input class="newName"></td>' +
                 '<td class="discount"><input class="newDiscount"></td>' +
                 '<td class="editOrSave"><button class="saveBtn">Save</button></td>' +
@@ -141,6 +160,56 @@ define([
 
             e.stopPropagation();
 
+        },
+
+        deleteCurrentItem: function (e) {
+            var self = this;
+
+            e.stopPropagation();
+
+            this.removeConfirm({
+                onConfirm: function () {
+                    var target = $(e.target);
+                    var tr = target.closest('tr');
+                    var id = tr.data('id');
+                    var model = self.collection.get(id);
+
+                    $("#dialog").dialog('close');
+                    model.destroy({
+                        success: function () {
+                            alert('success');
+                        },
+                        error: self.handleModelError
+                    });
+                }
+            });
+        },
+
+        changeLogo: function (e) {
+            var target = $(e.target);
+            var tr = target.closest('tr');
+            tr.find('.changeLogo').click();
+        },
+
+        changeInputFile: function (e) {
+            var target = $(e.target);
+            var tr = target.closest('tr');
+            var logo = tr.find('.logo');
+            var self = this;
+
+            custom.getSrc(e, function (err, src) {
+                if (err) {
+                    return self.handleError(err);
+                }
+
+                logo.attr('src', src);
+                logo.attr('data-changed', 'true');
+            });
+
+        },
+
+        saveTheLogo: function () {
+            
         }
     });
 
