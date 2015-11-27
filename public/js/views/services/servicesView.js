@@ -114,8 +114,12 @@ define([
             }
 
             model.save(data, {
-                success: function () {
+                success: function (savedModel) {
+                    console.log(savedModel);
                     alert('success');
+                    if (!id) {
+                        tr.attr('data-id', savedModel.id);
+                    }
                     tr.find('.cancelBtn').click();
                 },
                 error: self.handleModelError
