@@ -33,7 +33,12 @@ define([
         },
 
         addClient: function (options) {
-            this.model = new ClientModel();
+            var model = new ClientModel();
+
+            model.on('error', this.handleModelError, this);
+            model.on('invalid', this.handleModelValidationError, this);
+
+            this.model = model;
             this.render();
         },
 
@@ -143,7 +148,6 @@ define([
 
                         self.model.save(data, {
                             success: function (model) {
-                                alert('success');
                                 cb(null, model);
                             },
                             error  : function (model, res) {

@@ -110,7 +110,7 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
     App.errorNotification = function (data) {
         var container = this.__errorContainer__;
         var messageClass = data.type || 'error';
-        var text = data.message || 'Something went wrong';
+        var text = (typeof data === 'string') ? data : (data.message || 'Something went wrong');
         var renderEl = '<div class="animate ' + messageClass + '">' + text + '</div>';
 
         container.append(renderEl);

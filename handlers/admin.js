@@ -650,6 +650,7 @@ var AdminHandler = function (app, db) {
         var stripeToken = body.stripeToken;
         var password = body.password || passGen(12, false);
         var subscriptionId = body.subscriptionId;
+        var model;
 
         if (!firstName || !lastName || !phone || !email){
             return next(badRequests.NotEnParams({reqParams: 'firstName and lastName and phone and email'}))
@@ -726,6 +727,7 @@ var AdminHandler = function (app, db) {
                                 return cb(err);
                             }
 
+                            model = userModel;
                             cb(null, userModel._id);
                         });
                 },
@@ -755,7 +757,7 @@ var AdminHandler = function (app, db) {
                     return next(err);
                 }
 
-                res.status(200).send({success: 'Client created successfully'});
+                res.status(200).send({success: 'Client created successfully', _id: model._id});
 
             });
 
