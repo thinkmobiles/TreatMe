@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script type="text/javascript">
+    // This identifies your website in the createToken call below
+    Stripe.setPublishableKey('pk_test_LiHJS3e5fHRCtVm7sAgmkrbE');
+    jQuery(function($) {
+        var bankAccountData;
+        $('#payment-form').submit(function(event) {
+            var $form = $(this);
+
+            // Disable the submit button to prevent repeated clicks
+            $form.find('button').prop('disabled', true);
+
+            bankAccountData = {
+                country: $('.country').val(),
+                currency: $('.currency').val(),
+                routing_number: $('.routing_number').val(),
+                account_number: $('.account_number').val()
+            };
+
+            Stripe.bankAccount.createToken(bankAccountData, stripeResponseHandler);
+
+            // Prevent the form from submitting with the default action
+            return false;
+        });
+    });
+
+    function stripeResponseHandler(status, response) {
+        var $form = $('#payment-form');
+
+        if (response.error) {
+            // Show the errors on the form
+            $form.find('.payment-errors').text(response.error.message);
+            $form.find('button').prop('disabled', false);
+        } else {
+            // response contains id and card, which contains additional card details
+            var token = response.id;
+            // Insert the token into the form so it gets submitted to the server
+            $form.append($('<input type="hidden" name="stripeToken" />').val(token));
+            // and submit
+            $form.get(0).submit();
+        }
+    };
+
+</script>
+<form action="/stylist/bankAccount" method="POST" id="payment-form">
+    <span class="payment-errors"></span>
+
+    <div class="form-row">
+        <label>
+            <span>Country</span>
+            <input type="text" size="20" class="country" />
+        </label>
+    </div>
+
+    <div class="form-row">
+        <label>
+            <span>Currency</span>
+            <input type="text" size="3" class="currency" />
+        </label>
+    </div>
+
+    <div class="form-row">
+        <label>
+            <span>Routing number</span>
+            <input type="text" size="20" class="routing_number" />
+        </label>
+    </div>
+
+    <div class="form-row">
+        <label>
+            <span>Account number</span>
+            <input type="text" size="20" class="account_number" />
+        </label>
+    </div>
+
+    <button type="submit">Submit Payment</button>
+</form>
+</body>
+</html>
