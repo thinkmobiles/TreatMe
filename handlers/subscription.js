@@ -19,6 +19,7 @@ var SubscriptionsHandler = function (db) {
     var SubscriptionType = db.model('SubscriptionType');
     var Subscription = db.model('Subscription');
     var User = db.model('User');
+    var Payments = db.model('Payment');
     var imageHandler = new ImageHandler();
     var stripe = new StripeModule();
 
@@ -532,10 +533,30 @@ var SubscriptionsHandler = function (db) {
         var body = req.body;
         var customerId = body.data.object.customer;
         var subscriptionId = body.data.object.subscription;
+        var price = body.data.object.total;
         var currentPeriodEnd;
+        var clientId;
 
         async
             .waterfall([
+                function(cb){
+                     User.findOne({'payments.customerId': customerId}, {_id: 1}, function(err, clientModel){
+
+                         if (err){
+                             return cb(err);
+                         }
+
+                         if (!clientModel){
+                             return cb(badRequests.DatabaseError());
+                         }
+
+                         clientId = clientModel._id;
+
+                         cb(null);
+
+                     });
+                },
+
                 function(cb){
                     stripe.getSubscription(customerId, subscriptionId, function(err, subscription){
 
@@ -565,7 +586,25 @@ var SubscriptionsHandler = function (db) {
                             cb(null);
 
                         });
+                },
+
+                function(cb){
+                    var fee = price * 0.029 + 30;
+                    var paymentModel;
+                    var paymentData = {
+                        paymentType: 'subscription',
+                        amount: price,
+                        fee: fee,
+                        totalAmount: price - fee,
+                        user: clientId,
+                        role: 'client'
+                    };
+
+                    paymentModel = new Payments(paymentData);
+
+                    paymentModel.save(cb);
                 }
+
             ], function(err){
 
                 if (err){

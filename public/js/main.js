@@ -11,6 +11,7 @@ require.config({
         Backbone        : './libs/backbone/backbone',
         Moment          : './libs/moment/moment',
         async           : './libs/requirejs-plugins/src/async',
+        asyncjs         : './libs/async/lib/async',
         googlemaps      : './libs/googlemaps-amd/src/googlemaps',
         timepicker      : './libs/jt.timepicker/jquery.timepicker.min',
         gmaps           : './libs/gmaps/gmaps',
@@ -109,7 +110,7 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
     App.errorNotification = function (data) {
         var container = this.__errorContainer__;
         var messageClass = data.type || 'error';
-        var text = data.message || 'Something went wrong';
+        var text = (typeof data === 'string') ? data : (data.message || 'Something went wrong');
         var renderEl = '<div class="animate ' + messageClass + '">' + text + '</div>';
 
         container.append(renderEl);

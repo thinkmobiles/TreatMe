@@ -795,7 +795,7 @@ var ClientsHandler = function (app, db) {
                         paymentType: 'tip',
                         realAmount: tip * 100,
                         stylistAmount: tip * 100,
-                        stylist: appointmentModel.stylist._id
+                        stylist: appointmentModel.stylist.id
                     };
 
                     stylistPaymentModel = new StylistPayments(paymentData);
@@ -815,6 +815,7 @@ var ClientsHandler = function (app, db) {
                 function(cb){
                     var paymentHistory;
                     var paymentModel;
+                    var fee = tip * 100 * 0.029 + 30;
 
                     if (tip === 0){
                         return cb(null);
@@ -824,7 +825,7 @@ var ClientsHandler = function (app, db) {
                         paymentType: 'tip',
                         amount: tip * 100,
                         fee: tip * 100 * 0.029 + 30,
-                        totalAmount: tip * 100 * (1 - 0.029) - 30,
+                        totalAmount: tip * 100  - fee,
                         user: ObjectId(clientId),
                         role: 'client'
                     };
@@ -1102,8 +1103,6 @@ var ClientsHandler = function (app, db) {
         });
 
     };
-
-
 
 
 };

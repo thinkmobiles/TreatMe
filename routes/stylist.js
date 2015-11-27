@@ -86,5 +86,9 @@ module.exports = function(app, db){
     router.post('/bankAccount', /*sessionHandler.isStylist, */stylistHandler.addBankAccount);
     //router.get('/appointment/:id', sessionHandler.authenticatedUser, sessionHandler.isBusiness, businessHandler.getBusinessAppointmentById);
 
+    //test
+
+    router.post('/pay', stylistHandler.getStylistsPaymentsByPeriod);
+
     return router;
 };

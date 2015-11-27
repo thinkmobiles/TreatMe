@@ -30,9 +30,12 @@ define([
                 model = new Model({_id: options.id});
                 model.fetch({
                     success: function (userModel) {
+                        var personalInfo = userModel.get('personalInfo');
+
                         self.model = userModel;
-                        App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {
-                            name: userModel.toJSON().firstName + ' ' + userModel.toJSON().lastName,
+                        App.Breadcrumbs.reset([{
+                            name: 'Clients List', path: '#clients'}, {
+                            name: personalInfo.firstName + ' ' + personalInfo.lastName,
                             path: '#clients/:id'
                         }]);
                         self.renderClient();
@@ -65,10 +68,11 @@ define([
         },
 
         renderClient: function () {
-            var container = this.$el.find('.stylistForm');
             var model = this.model;
-            var item = model.toJSON();
             var $el = this.$el;
+            var container = $el.find('.stylistForm');
+            var item = model.toJSON();
+            var personalInfo = item.personalInfo;
 
             $el.find('.clientName').html(item.name);
 
@@ -79,8 +83,8 @@ define([
             }
 
             container.find('#avatar').attr('src', item.avatar);
-            container.find('.name').html(item.firstName + ' ' + item.lastName);
-            container.find('.phone').html(item.phone);
+            container.find('.name').html(personalInfo.firstName + ' ' + personalInfo.lastName);
+            container.find('.phone').html(personalInfo.phone);
             container.find('.email').html(item.email);
         }
 
