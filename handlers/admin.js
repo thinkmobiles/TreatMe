@@ -1303,30 +1303,109 @@ var AdminHandler = function (app, db) {
         var sId = req.params.id;
         var body = req.body;
         var updateObj = {};
+        var imageName = image.createImageName();
+        var imageString;
+        var globalServiceModel;
+        var logo;
 
         if (body.name) {
             updateObj.name = body.name;
         }
 
         if (body.logo) {
-            updateObj.logo = body.logo;
+            updateObj.logo = imageName;
+            logo = body.logo;
+            imageString = logo;
         }
 
         if (body.price){
             updateObj.price = body.price;
         }
 
-        ServiceType
-            .findOneAndUpdate({_id: sId}, {$set: updateObj}, function (err) {
+        async
+            .waterfall([
 
-                if (err) {
+                // get ServiceType
+                function(cb){
+
+                    ServiceType
+                        .findOne({_id: sId}, function (err, serviceModel) {
+
+                            if (err) {
+                                return cb(err);
+                            }
+
+                            if (!serviceModel){
+                                return cb(badRequests.NotFound({target: 'service'}));
+                            }
+
+                            globalServiceModel = serviceModel;
+
+                            cb(null);
+
+                        });
+                },
+
+                //remove old logo
+                function(cb){
+                    var currentImageName = globalServiceModel.logo;
+
+                    if (!logo){
+                        return cb(null);
+                    }
+
+                    if (!currentImageName.length){
+                        return cb(null);
+                    }
+
+                    image.deleteImage(currentImageName, CONSTANTS.BUCKET.IMAGES, function(err){
+
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null);
+                    });
+
+                },
+
+                //upload new logo
+                function(cb){
+
+                    if(!logo){
+                        return cb(null);
+                    }
+
+                    image.uploadImage(imageString, imageName, CONSTANTS.BUCKET.IMAGES, function(err){
+
+                        if(err){
+                            return cb(err);
+                        }
+
+                        cb(null);
+                    });
+                },
+
+                //update serviceType model
+                function(cb){
+                    globalServiceModel.update({$set: updateObj}, function(err){
+                        if (err){
+                            return cb(err);
+                        }
+
+                        cb(null);
+                    });
+                }
+
+            ], function(err){
+
+                if (err){
                     return next(err);
                 }
 
                 res.status(200).send({success: 'Service updated successfully'});
 
             });
-
     };
 
     this.removeService = function (req, res, next) {
