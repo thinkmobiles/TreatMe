@@ -223,7 +223,7 @@ define([
         },
 
         testError: function () {
-            
+            aadmin
         },
         
         testWarning: function () {
@@ -231,7 +231,7 @@ define([
         },
         
         testSuccess: function () {
-            
+
         }
 
     });
