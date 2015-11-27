@@ -1,9 +1,13 @@
 <% _.forEach(items, function (user, index) {%>
 <tr class="item" data-id="<%= user._id%>">
-    <td><input type="checkbox"></td>
+    <td><input type="checkbox" class="checkItem"></td>
     <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
     <td><%= user.email %></td>
     <td><button class="editBtn edit">Edit</button></td>
-    <td><button class="suspendCurrentBtn suspend">Suspend</button></td>
+    <% if (user.suspend && user.suspend.isSuspended) {%>
+        <td><button class="activateCurrentBtn activate">Activate</button></td>
+    <% } else {%>
+        <td><button class="suspendCurrentBtn suspend">Suspend</button></td>
+    <% }%>
 </tr>
 <%});%>

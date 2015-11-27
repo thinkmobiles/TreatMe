@@ -41,18 +41,45 @@ define([], function () {
         totalRecords: null,
         pageSize: 25,
 
-        initialize: function (options) {
+        initialize: function (options, params) { //TODO: use only options
+            var _opts   = options || {};
+            var _params = params  || {};
             var page;
 
-            options = options || {};
-            page = options.page;
-            options.reset = true;
+            page = _opts.page;
+            _opts.reset = true;
 
-            this.getPage(page, options);
+            if (_params.fetch !== false) {
+                this.getPage(page, _opts);
+            }
         },
 
         offset: function () {
             return this.currentPage * this.pageSize;
+        },
+
+        deleteRequest: function (options) {
+            var opts = options || {};
+            var url = this.url();
+            var ids;
+            var data;
+
+            if (opts.data) {
+                data = opts.data;
+            } else {
+                ids = this.pluck('id');
+                data = JSON.stringify({ids: ids});
+            }
+
+            $.ajax({
+                type: 'DELETE',
+                dataType: 'json',
+                contentType: 'application/json',
+                url: url,
+                data: data,
+                success: opts.success,
+                error: opts.error
+            });
         },
 
         dataComposer: function (page, options) {

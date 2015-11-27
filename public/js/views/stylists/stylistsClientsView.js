@@ -19,7 +19,6 @@ define([
         }, ListView.prototype.events),
 
         initialize: function (options) {
-            console.log(options);
             ListView.prototype.initialize.call(this, options);
         }
 

@@ -884,3 +884,35 @@ input[type=text] {
   display: inline-block;
   margin-right: 20px;
 }
+
+.notification {
+/*  padding: 20px;*/
+  z-index: 20000;
+  position: fixed;
+  top: 5px;
+  width: 100vw;
+  margin: 0 auto;
+}
+.notification .error {
+  padding: 20px;
+  left: 85%;
+  width: 15%;
+  position: relative;
+  background: darkred;
+  color: #fff;
+}
+.notification .animate {
+  position: absolute;
+  /*height: 100%;*/
+  width: 15%;
+  /*padding-top: 10px;
+  padding-bottom: 10px;*/
+  /**/
+  margin-top: 0px;
+  margin-left: 0px;
+  left: 100%;
+  opacity: 0;
+}
+.notification .animate .error {
+  background: darkred;
+}

@@ -1,6 +1,4 @@
-/**
- * Created by andrey on 16.07.15.
- */
+'use strict';
 
 var App = {};
 
@@ -8,11 +6,12 @@ require.config({
     paths: {
         jQuery          : './libs/jquery/dist/jquery',
         jQueryUI        : './libs/jqueryui/jquery-ui',
-        Validator       : './libs/validator-js/validator',
+        Validator       : './libs/validator-js/validator', //TODO
         Underscore      : './libs/underscore/underscore',
         Backbone        : './libs/backbone/backbone',
         Moment          : './libs/moment/moment',
         async           : './libs/requirejs-plugins/src/async',
+        asyncjs         : './libs/async/lib/async',
         googlemaps      : './libs/googlemaps-amd/src/googlemaps',
         timepicker      : './libs/jt.timepicker/jquery.timepicker.min',
         gmaps           : './libs/gmaps/gmaps',
@@ -66,6 +65,8 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
     };
 
     Backbone.View.prototype.handleErrorResponse = function (xhr) {
+        var errMessage;
+
         if (xhr) {
             if (xhr.status === 401 || xhr.status === 403) {
                 if (xhr.status === 401) {
@@ -75,12 +76,58 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
                 }
             } else {
                 if (xhr.responseJSON) {
-                    alert(xhr.responseJSON.error);
-                } else {
-                    Backbone.history.navigate("users", { trigger: true });
-                }
+                    errMessage = xhr.responseJSON.error || xhr.responseJSON.message;
+                    alert(errMessage);
+                } /*else {
+                    Backbone.history.navigate("dashboard", { trigger: true });
+                }*/
             }
         }
+    };
+
+    Date.prototype.toLocaleDateString = function () {
+        function padding(x) {
+            if (x.length < 2) {
+                return '0' + x;
+            } else {
+                return x;
+            }
+        }
+
+        var year = this.getFullYear().toString();
+        var month = (this.getMonth() + 1).toString();
+        var date  = this.getDate().toString();
+
+        var yy = year.slice(2, 4);
+        var mm = padding(month);
+        var dd = padding(date);
+
+        return dd + '/' + mm + '/' + yy;
+    };
+
+    App.__errorContainer__ = $('#errorNotifications');
+
+    App.errorNotification = function (data) {
+        var container = this.__errorContainer__;
+        var messageClass = data.type || 'error';
+        var text = (typeof data === 'string') ? data : (data.message || 'Something went wrong');
+        var renderEl = '<div class="animate ' + messageClass + '">' + text + '</div>';
+
+        container.append(renderEl);
+
+        container.find('div.animate').delay(10).animate({
+            left   : "85%",
+            opacity: 0.9
+        }, 500, function () {
+            var self = $(this);
+
+            self.removeClass('animate').delay(5000).animate({
+                left   : "100%",
+                opacity: 0
+            }, 1000, function () {
+                self.remove();
+            });
+        });
     };
 
     app.initialize(io);

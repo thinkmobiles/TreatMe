@@ -1,0 +1,28 @@
+<div class="services">
+    <p>Please contact stylist and negotiate services available and prices before approving the application</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Services available*</th>
+                <th>Service Price*</th>
+            </tr>
+        </thead>
+        <tbody>
+        <% _.forEach(services, function (service) {%>
+            <% var name = service.name; %>
+            <tr class="service" data-id="<%=service.id%>">
+                <td>
+                    <input id="<%= name %>" type="checkbox" class="checkbox" <%= (service.status === 'approved') ? 'checked' : '' %>>
+                    <label for="<%= name %>"><%= name %></label>
+                </td>
+                <td>
+                    <span class="currency">$</span>
+                    <input type="text" id="price" placeholder="<%= service.price%>" value="<%= (service.price) ? service.price : 0%>"><span class="prompt"></span>
+                </td>
+            </tr>
+        <%});%>
+        </tbody>
+    </table>
+
+    <p>*To be filled in by TreatMe team based on negotiations with stylist</p>
+</div>

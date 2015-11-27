@@ -1,11 +1,11 @@
-<% _.forEach(items, function (user, index) {%>
+<% _.forEach(items, function (user) {%>
 <tr class="item" data-id="<%= user._id%>">
     <td><input type="checkbox" class="checkItem"></td>
     <td><%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName %></td>
     <td><%= user.salonInfo.salonName %></td>
     <td><span class="<%= (user.approved) ? 'confirmed' : 'pending' %>"></span></td>
     <!--<td><a href="#stylists/<%= user._id%>/edit" class="edit">Edit</a></td>-->
-    <td><button class="edit">Edit</button></td>
+    <td><button class="editBtn edit">Edit</button></td>
     <td><button class="suspendCurrentBtn suspend">Suspend</button></td>
 </tr>
 <%});%>

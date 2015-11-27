@@ -2,9 +2,8 @@
 
 define([
     'models/stylistModel',
-    'text!templates/stylists/stylistsItemTemplate.html',
     'text!templates/newApplications/itemTemplate.html'
-], function (StylistModel, MainTemplate, ItemTemplate) {
+], function (StylistModel, MainTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -21,6 +20,7 @@ define([
         },
 
         initialize: function (options) {
+            console.log(options);
             var self = this;
             var userId = (options && options.id) ? options.id: null;
             var model;

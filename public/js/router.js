@@ -3,17 +3,17 @@
 define([
     'views/menu/topBarView',
     'constants/redirect'
-], function (TopMenuView , REDIRECT) {
+], function (TopMenuView, REDIRECT) {
 
-    var appRouter  = Backbone.Router.extend({
+    var appRouter = Backbone.Router.extend({
 
-        wrapperView : null,
-        topBarView  : null,
+        wrapperView: null,
+        topBarView : null,
 
         routes: {
-            "clients/:id/edit"          : "clientsEdit",
-            "clients/add"               : "clientsAddDetails",
-            "clients/:id"               : "clientsDetails",
+            //"clients/:id/edit"          : "clientsEdit",
+            //"clients/add"               : "clientsAddDetails",
+            //"clients/:id"               : "clientsDetails",
             "login(/:type/*value)"      : "login",
             "signup"                    : "signup",
             "dashboard"                 : "dashboard",
@@ -26,11 +26,11 @@ define([
             //"stylists/:id"              : "stylistDetails",
             //"stylists/:id/edit"         : "editStylistDetails",
             "gallery"                   : "gallery",
-            ":type/add"                 : "showItemView",       //newApplications, stylists
-            ":type/:id/edit"            : "showItemView",       //newApplications, stylists
-            ":type/:id"                 : "showDetailsView",    //newApplications, stylists
-            ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/search=:search)":  "list",
-            "*any"                      :  "any"
+            ":type/add"                 : "showItemView",       //newApplications, stylists, clients
+            ":type/:id/edit"            : "showItemView",       //newApplications, stylists, clients
+            ":type/:id"                 : "showDetailsView",    //newApplications, stylists, clients
+            ":type(/p=:page)(/c=:countPerPage)(/orderBy=:orderBy)(/order=:order)(/search=:search)": "list",
+            "*any"                      : "any"
         },
 
         initialize: function () {
@@ -40,25 +40,25 @@ define([
         loadWrapperView: function (argName, argParams, argRedirect, argType) {
             var self = this;
             var name = argName;
-            var nameView = argType ? name+argType+'View' : name + 'View';
-            var params =  argParams;
+            var nameView = argType ? name + argType + 'View' : name + 'View';
+            var params = argParams;
             var redirect = argRedirect;
             var newUrl;
 
             if (redirect === REDIRECT.whenNOTAuthorized) {
-                if (!App.sessionData.get('authorized')){
+                if (!App.sessionData.get('authorized')) {
                     newUrl = "login/success/" + window.location.hash.slice(1);
-                    return Backbone.history.navigate(newUrl , {trigger: true});
+                    return Backbone.history.navigate(newUrl, {trigger: true});
                 }
             }
 
             if (redirect === REDIRECT.whenAuthorized) {
-                if (App.sessionData.get('authorized')){
+                if (App.sessionData.get('authorized')) {
                     return Backbone.history.navigate("dashboard", {trigger: true});
                 }
             }
 
-            require(['views/'+name+'/'+nameView], function (View) {
+            require(['views/' + name + '/' + nameView], function (View) {
                 self[nameView] = new View(params);
 
                 if (self.wrapperView) {
@@ -86,7 +86,7 @@ define([
         },
 
         login: function (type, value) {
-            this.loadWrapperView('login', {type : type, value : value}, REDIRECT.whenAuthorized);
+            this.loadWrapperView('login', {type: type, value: value}, REDIRECT.whenAuthorized);
         },
 
         signup: function () {
@@ -94,7 +94,7 @@ define([
         },
 
         confirmEmail: function (token) {
-            this.loadWrapperView('confirmEmail',{token : token}, REDIRECT.whenAuthorized);
+            this.loadWrapperView('confirmEmail', {token: token}, REDIRECT.whenAuthorized);
         },
 
         forgotPassword: function () {
@@ -102,7 +102,7 @@ define([
         },
 
         resetPassword: function (token) {
-            this.loadWrapperView('resetPassword', {token : token}, REDIRECT.whenAuthorized);
+            this.loadWrapperView('resetPassword', {token: token}, REDIRECT.whenAuthorized);
         },
 
         dashboard: function () {
@@ -123,11 +123,11 @@ define([
 
         list: function (type, page, countPerPage, orderBy, order, search) {
             var options = {
-                page: parseInt(page),
+                page        : parseInt(page),
                 countPerPage: parseInt(countPerPage),
-                orderBy: orderBy,
-                order: order,
-                search: search
+                orderBy     : orderBy,
+                order       : order,
+                search      : search
             };
 
             if (type === 'pendingRequests') {
@@ -152,20 +152,23 @@ define([
         showDetailsView: function (type, id) {
             var options = {
                 type: type,
-                id: id
+                id  : id
             };
+            var path;
 
-            this.loadWrapperView('stylists', options, REDIRECT.whenNOTAuthorized, 'Details');
-        },
+            if (type === 'newApplications') {
+                path = 'stylists'
+            } else {
+                path = type;
+            }
 
-        editStylistDetails: function (id) {
-            this.loadWrapperView('stylists', {id: id}, REDIRECT.whenNOTAuthorized, 'Edit');
+            this.loadWrapperView(path, options, REDIRECT.whenNOTAuthorized, 'Details');
         },
 
         showItemView: function (type, id) {
             var options = {
                 type: type,
-                id: id
+                id  : id
             };
             var path;
 

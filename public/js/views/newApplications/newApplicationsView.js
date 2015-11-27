@@ -11,19 +11,21 @@ define([
 
     var View = ListView.extend({
 
-        Collection: StylistCollection,
+        Collection  : StylistCollection,
         mainTemplate: _.template(MainTemplate),
         listTemplate: _.template(ListTemplate),
         itemTemplate: _.template(ItemTemplate),
-        url: '#newApplications',
-        query: {
+        url         : '#newApplications',
+        query       : {
             status: 'requested'
         },
+        removeConfirmMessage: 'Are You sure want to delete this profile(s)?',
 
         events: _.extend({
-            "click #acceptCurrentBtn, #acceptSelectedBtn": "acceptStylist",
-            "click #removeCurrentBtn, #removeSelectedBtn": "deleteRequest",
-            //"click .table td": "showDetails"
+            "click .acceptCurrentBtn" : "acceptStylist",
+            "click #acceptSelectedBtn": "acceptStylists",
+            "click .removeCurrentBtn" : "deleteStylist",
+            "click #removeSelectedBtn": "deleteStylists"
         }, ListView.prototype.events),
 
         initialize: function (options) {
@@ -38,39 +40,53 @@ define([
         },
 
         acceptStylist: function (e) {
-            var el = e.target;
-            var self = this;
-            var checkboxes;
-            var modelId;
-            var models = [];
-            var data = {
-                ids: []
-            };
+            var target = $(e.target);
+            var id = target.closest('tr').data('id');
+            var ids = [id];
 
-            if (el.id === 'acceptCurrentBtn') {
-                modelId = $(el).closest('tr').attr('data-id');
-                data.ids.push(modelId);
-                models.push(self.collection.get(modelId));
-                data = JSON.stringify(data);
+            e.stopPropagation();
 
-            } else if (el.id === 'acceptSelectedBtn') {
-                checkboxes = $(':checkbox:checked:not(\'.checkAll\')');
-
-                $(checkboxes).each(function (index, element) {
-                    modelId = $(element).closest('tr').attr('data-id');
-                    models.push(self.collection.get(modelId));
-                    data.ids.push(modelId);
-                });
-
-                data = JSON.stringify(data);
-            }
-
-            self.collection.approve(data, function () {
-                self.collection.remove(models)
-            })
+            this.accept(ids);
         },
 
-        deleteRequest: function (e) {
+        acceptStylists: function (e) {
+            var ids = this.getSelectedIds();
+
+            this.accept(ids);
+        },
+
+        accept: function (ids) {
+            var self = this;
+
+            this.collection.acceptRequest({
+                data   : JSON.stringify({ids: ids}),
+                success: function () {
+                    self.collection.remove(ids);
+                }
+            });
+        },
+
+        deleteStylist: function (e) {
+            var target = $(e.target);
+            var id = target.closest('tr').data('id');
+            var ids = [id];
+
+            e.stopPropagation();
+
+            this.deleteRequest(ids);
+        },
+
+        deleteStylists: function () {
+            var ids = this.getSelectedIds();
+
+            this.deleteRequest(ids);
+        },
+
+        deleteRequest: function (ids) {
+            console.log('>>> delete request');
+        },
+
+        deleteRequest__: function (e) {
             var el = e.target;
             var self = this;
             var checkboxes;

@@ -2,10 +2,13 @@
 
 define([
     'models/stylistModel',
+    'collections/stylistCollection',
+    'views/newApplications/newApplicationsServiceView',
+    'views/stylists/stylistsClientsView',
     'text!templates/stylists/stylistsDetailsTemplate.html',
     'text!templates/newApplications/itemTemplate.html',
     'text!templates/stylists/previewStylistTemplate.html'
-], function (StylistModel, MainTemplate, ItemTemplate, StylistsItemTemplate) {
+], function (StylistModel, StylistCollection, ApplicationsServiceView, StylistsClientsView, MainTemplate, ItemTemplate, StylistsItemTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -18,7 +21,7 @@ define([
         events: {
             "click .saveBtn"   : 'saveStylist',
             "click #editBtn"   : 'edit',
-            "click #acceptBtn" : 'saveStylist',
+            "click #acceptBtn" : 'acceptStylist',
             "click #removeBtn" : 'remove',
             "click #suspendBtn": 'suspend'
         },
@@ -51,6 +54,10 @@ define([
             this.model = model;
             this.path = path;
             this.render();
+
+            if (path === 'stylists') {
+                this.clientsView = new StylistsClientsView({id: userId});
+            }
 
             model.fetch();
         },
@@ -192,44 +199,100 @@ define([
             });
         },
 
-        suspend: function (options) {
+        acceptStylist: function () {
+            var collection = new StylistCollection(this.model, {fetch: false});
+            var self = this;
+
+            collection.acceptRequest({
+                success : function () {
+                    console.log('success accepted');
+                    var html = '';
+
+                    html += '<p class="successAccepted">';
+                    html +=   '<span class="accept"></span>';
+                    html +=   'Thank you! Application is accepted, stylist account will be activated immediately.';
+                    html += '</p>';
+
+                    self.$el.html(html);
+
+                }, error: this.handleErrorResponse
+            });
+        },
+
+        suspendConfirm: function (options) {
             var self = this;
             var opts = options || {};
             var onConfirm = opts.onConfirm;
+            var onSaveClick = function () {
+                var params;
+                var reasonString = reason.val();
+
+                if (!reasonString) {  //validation
+                    event.preventDefault();
+                    prompt.html('Please input the reason of suspension');
+                } else {
+                    params = {
+                        reason: reasonString
+                    };
+                    onConfirm(params);
+                }
+            };
+
+            var onClose = function () {
+                form[0].reset();
+                prompt.html('');
+            };
             var buttons = {
-                "Save": onConfirm
+                "Save": onSaveClick
             };
             var dialogOptions = {
+                autoOpen: false,
                 resizable: false,
                 modal    : true,
                 width: 500,
-                buttons  : buttons
+                buttons  : buttons,
+                close: onClose
             };
             var dialogContainer = $('#dialog-form').dialog(dialogOptions);
-            var form = dialogContainer.find( "form" ).on( "submit", function( event ) {
-                event.preventDefault();
-                var reason = self.$el.find('#reason').text();
-                console.log(' >>> reason', reason, reason.length);
+            var prompt = dialogContainer.find('.prompt');
+            var reason = dialogContainer.find('#reason');
+            var form = dialogContainer.find("form");
 
-                if (!reason) {
-                    self.$el.find('.prompt').html('Please input the reason of suspension');
+            reason.text('');
+
+            /*form = dialogContainer.find( "form" ).on( "submit", function( event ) {
+                event.preventDefault();
+
+                if (!reason.text()) {
+                    prompt.html('Please input the reason of suspension');
                 } else {
                     console.log('success');
                 }
 
-            });
+            });*/
             dialogContainer.dialog('open');
         },
 
-        remove: function () {
+        suspend: function () {
             var self = this;
 
-            this.removeConfirm({
-                message  : 'Are you sure want to delete this profile?',
-                onConfirm: function () {
-                    $("#dialog").dialog('close');
-                    self.removeStylist();
+            this.suspendConfirm({
+                onConfirm: function (params) {
+                    $("#dialog-form").dialog('close');
+                    self.suspendStylist(params);
                 }
+            });
+        },
+
+        suspendStylist: function(options) {
+            var reason = (options && options.reason) ? options.reason : '';
+
+            console.log('>>> suspend stylist');
+            this.model.suspendRequest({
+                reason: reason,
+                success : function () {
+                    console.log('success suspended');
+                }, error: this.handleErrorResponse
             });
         },
 
@@ -262,6 +325,18 @@ define([
             dialogContainer.find('.message').html(message);
             dialogContainer.dialog(dialogOptions);
         },
+
+        remove: function () {
+            var self = this;
+
+            this.removeConfirm({
+                message  : 'Are you sure want to delete this profile?',
+                onConfirm: function () {
+                    $("#dialog").dialog('close');
+                    self.removeStylist();
+                }
+            });
+        }
 
     });
 

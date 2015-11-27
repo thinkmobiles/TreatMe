@@ -29,11 +29,11 @@ define([
             search: '',
             status: '' //TODO: ???
         },
-        removeParams      : {
+/*        removeParams      : {
             url           : null,
             confirmMessage: 'Are You sure want to delete?'
-        },
-
+        },*/
+        removeConfirmMessage: 'Are You sure want to delete this profile(s)?',
         events: {
             'click .item'             : 'showItem',
             'click .showPage'         : 'gotoPage',
@@ -45,7 +45,7 @@ define([
             'click .checkAll'         : 'checkAllClick',
             'click .checkItem'        : 'checkItemClick',
             'click #removeSelectedBtn': 'removeSelectedItems',
-            'click .deleteCurrentBtn' : 'deleteCurrentItem'
+            'click .removeCurrentBtn' : 'deleteCurrentItem'
         },
 
         initialize: function (options) {
@@ -81,6 +81,7 @@ define([
             this.collection.on('reset remove', function () {
                 self.renderList();
             });
+            this.collection.on('error', this.handleModelError, this);
 
             if (opts.search) {
                 this.$el.find('.search').val(opts.search);
@@ -108,7 +109,7 @@ define([
                 order = order || ASC;
 
                 if (order === ASC) {
-                    orderClassName = 'asc';
+                    orderClassName = 'asc'; //TODO:...
                 } else {
                     orderClassName = 'desc';
                 }
@@ -278,13 +279,15 @@ define([
             var paginationContent;
 
             if (totalCount) {
-
                 currentPage = currentPage || 1;
                 totalPages = Math.ceil(totalCount / count);
                 this.totalPages = totalPages;
 
-                if (totalPages >= 1) {
+                if (totalPages > 1) {
                     paginationContent = this.getPaginationContent(1, totalPages + 1);
+                    this.$el.find('#pageList .showFirst').after(paginationContent);
+                } else {
+                    this.$el.find('#pageList').hide();
                 }
 
                 /*if (totalPages <= itemsOnPage) {
@@ -297,7 +300,6 @@ define([
                  paginationContent = this.getPaginationContent(totalPages - 6, totalPages);
                  }*/
 
-                this.$el.find('#pageList .showFirst').after(paginationContent);
 
                 /*if (totalPages <= 1) {
                  $("#nextPage").prop("disabled", true);
@@ -306,6 +308,7 @@ define([
                  this.$el.find('#pageList .showFirst').after(paginationContent);
                  }*/
             } else {
+                this.$el.find('#pageList').hide();
 
             }
         },
@@ -380,6 +383,8 @@ define([
         checkItemClick: function (e) {
             var state = $(e.target).prop('checked');
 
+            e.stopPropagation();
+
             if (!state) {
                 this.$el.find('.checkAll').prop('checked', false);
             }
@@ -410,7 +415,7 @@ define([
                 buttons  : buttons
             };
             var dialogContainer = $('#dialog');
-            var message = this.removeParams.confirmMessage;
+            var message = this.removeConfirmMessage;
 
             dialogContainer.find('.message').html(message);
             dialogContainer.dialog(dialogOptions);
@@ -432,6 +437,8 @@ define([
         deleteCurrentItem: function (e) {
             var self = this;
 
+            e.stopPropagation();
+
             this.removeConfirm({
                 onConfirm: function () {
                     var target = $(e.target);
@@ -445,7 +452,16 @@ define([
         },
 
         remove: function (ids) {
-            var data = {
+            var self = this;
+
+            self.collection.deleteRequest({
+                data: JSON.stringify({ids: ids}),
+                success: function () {
+                    self.collection.remove(ids);
+                }
+            });
+
+            /*var data = {
                 packagesArray: ids
             };
             var dataStr = JSON.stringify(data);
@@ -470,7 +486,7 @@ define([
                     self.collection.getPage(page, fetchParams); //fetch and re-render
                 },
                 error      : self.handleErrorResponse //TODO
-            });
+            });*/
         },
 
         showItem: function (e) {

@@ -22,7 +22,7 @@
         <div class="suspendStatus">
             <p>
                 <%if (user.suspend.isSuspend) { %>
-                SUSPENDED FROM <%= new Date(user.suspend.history[0].from).getDate() + '/' + new Date(user.suspend.history[0].from).getMonth()  + '/' + String.prototype.slice.call(new Date(user.suspend.history[0].from).getFullYear(),2,4) %>
+                SUSPENDED FROM <%= new Date(user.suspend.history[user.suspend.history.length - 1].from).toLocaleDateString() %>
                 <% } %>
             </p>
         </div>
@@ -30,7 +30,9 @@
     <% } %>
 
     <div class="accountInfo">
-        <div class="avatar"></div>
+        <img class="avatar" width="90" height="90" alt="avatar" src="<%= user.personalInfo.avatar %>"/>
+        <input style="display: none" type="file" value="Avatar" class="changeAvatar" accept="image/*">
+        <br/>
         <span class="title">Your Name</span><span class="infoField"> <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%> </span></br>
         <span class="title">Profession</span><span class="infoField"> <%= user.personalInfo.profession%> </span></br>
         <span class="title">Personal Number</span><span class="infoField"> <%= user.personalInfo.phone%> </span></br>
@@ -51,16 +53,20 @@
         <% if (user.approved) {%>
         <div class="suspendHistory">
             <span>HISTORY</span>
+            <ul>
             <% _.forEach(user.suspend.history, function (suspend) {%>
-            <span>
-            <%= new Date(suspend.from).toLocaleDateString()%> - Suspension
-            </span>
-            <span><%= suspend.reason %></span>
+                <li class="history">
+                    <p class="suspensionDate"><%= new Date(suspend.from).toLocaleDateString()%> - Suspension</p>
+                    <p class="reason"><%= suspend.reason %></p>
+                </li>
             <% }) %>
+            </ul>
         </div>
         <% } %>
 
     </div>
+
+    <div id="serviceApplications"></div>
 
 </div>
 

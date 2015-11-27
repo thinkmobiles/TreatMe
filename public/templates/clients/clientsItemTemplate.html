@@ -9,26 +9,29 @@
         </span>
     </div>
     <div class="infoAccount">
-        <img class="avatar" width="90" height="90" alt="avatar" src=""/>
+        <img class="avatar" width="90" height="90" alt="avatar" src="<%= item.personalInfo.avatar%>"/>
         <input style="display: none" type="file" value="Avatar" class="changeAvatar" accept="image/*">
 
-        <% if (item._id) { %>
-            <br class="accountInfo">
-            <div class="avatar"></div>
-            <input type="text" class="firstName" name="firstName" placeholder="First Name" value="<%= item.firstName%>"/><span class="prompt"></span><br/>
-            <input type="text" class="lastName" name="lastName" placeholder="Last Name" value="<%= item.lastName%>"/><span class="prompt"></span><br/>
-            <input type="text" class="phone" name="phone" placeholder="Phone Number" value="<%= item.phone%>"/><span class="prompt"></span><br/>
+        <div class="accountInfo">
+            <% if (item._id) { %>
+
+            <input type="text" class="firstName" name="firstName" placeholder="First Name" value="<%= item.personalInfo.firstName%>"/><span class="prompt"></span><br/>
+            <input type="text" class="lastName" name="lastName" placeholder="Last Name" value="<%= item.personalInfo.lastName%>"/><span class="prompt"></span><br/>
+            <input type="text" class="phone" name="phone" placeholder="Phone Number" value="<%= item.personalInfo.phone%>"/><span class="prompt"></span><br/>
             <input type="text" class="email" name="email" placeholder="Email" value="<%= item.email%>"/><span class="prompt"></span><br/>
-        <% } else {%>
-            <br class="accountInfo">
-            <div class="avatar"></div>
+
+            <% } else {%>
+
             <input type="text" class="firstName" name="firstName" placeholder="First Name"/><span class="prompt"></span><br/>
             <input type="text" class="lastName" name="lastName" placeholder="Last Name"/><span class="prompt"></span><br/>
             <input type="text" class="phone" name="phone" placeholder="Phone Number"/><span class="prompt"></span><br/>
             <input type="text" class="email" name="email" placeholder="Email"/><span class="prompt"></span><br/>
             <input type="text" class="password" name="password" placeholder="Password"/><span class="prompt"></span><br/>
-        <% } %>
+
+            <% } %>
+        </div>
     </div>
+
     <div class="infoCard">
         <span>
             <% if (item._id) { %>
@@ -70,6 +73,3 @@
     <button class="saveBtn">Save</button>
 
 </div>
-
-</div>
-

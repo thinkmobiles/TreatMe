@@ -8,6 +8,7 @@ define([
         urlRoot : '/admin/stylist',
         idAttribute: "_id",
         defaults: {
+            email: '',
             personalInfo: {},
             salonInfo: {}
         },
@@ -16,6 +17,7 @@ define([
             var email = attrs.email;
             var personalInfo = attrs.personalInfo;
             var salonInfo = attrs.salonInfo;
+            var services = attrs.services;
             var firstName = personalInfo.firstName;
             var lastName = personalInfo.lastName;
             var personalPhone = personalInfo.phone;
@@ -29,6 +31,7 @@ define([
             var zipCode = salonInfo.zipCode;
             var state = salonInfo.state;
             var country = salonInfo.country;
+
             /*var requiredFields = [
                 /!*'firstName',
                 'lastName',
@@ -65,8 +68,6 @@ define([
                 'state': 'State is required',
                 'zipCode': 'Zip Code is required'
             };*/
-
-            console.log(attrs);
 
             /*  --- email --- */
             if (!email) {
@@ -251,10 +252,32 @@ define([
             return Backbone.Model.prototype.save.call(this, options, callbackObj);
         },
 
+        suspendRequest: function (options) {
+            var opts = options || {};
+            var ids;
+            var data;
+
+            if (opts.data) {
+                data = opts.data;
+            } else {
+                ids = [this.id];
+                data = JSON.stringify({ids: ids, reason: opts.reason});
+            }
+
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                contentType: 'application/json',
+                url: '/admin/suspend',
+                data: data,
+                success: opts.success,
+                error: opts.error
+            })
+        },
+
         //deleteRequest: function (data, callback) {
         deleteRequest: function (options) {
             var opts = options || {};
-            var len = arguments.length;
             var ids;
             var data;
 

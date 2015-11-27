@@ -1,8 +1,10 @@
 'use strict';
 
 define([
+    'custom',
     'models/stylistModel',
     'views/services/servicesView',
+    'views/newApplications/newApplicationsServiceView',
     //'text!templates/stylists/itemTemplate.html',
     'text!templates/stylists/stylistsItemTemplate.html',
     'text!templates/customElements/servicesTemplate.html',
@@ -10,7 +12,7 @@ define([
     //'views/stylists/stylistsEditView',
     //'views/stylists/stylistsClientsView',
     'text!templates/stylists/editStylistTemplate.html'
-], function (StylistModel, ServicesView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
+], function (custom, StylistModel, ServicesView, ApplicationsServiceView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -24,8 +26,9 @@ define([
         previewStylistTemplate: _.template(PreviewStylistTemplate),
 
         events: {
-            "click .saveBtn": "saveStylist"
-            //"click .edit"   : "edit"
+            'click .saveBtn'      : 'saveStylist',
+            'click .avatar'       : 'changeAvatar',
+            'change .changeAvatar': 'changeInputFile'
         },
 
         initialize: function (options) {
@@ -44,6 +47,8 @@ define([
             } else {
                 App.menu.select('#nav_stylists');
             }
+
+            //this.servicesView = new ApplicationsServiceView();
         },
 
         addStylist: function (options) {
@@ -58,32 +63,34 @@ define([
             App.menu.select('#nav_new_applications');
 
             var ticks = new Date().valueOf();
-            var data = {
-                email       : 'test_' + ticks + '@mail.com',
-                personalInfo: {
-                    firstName : 'nazarovits',
-                    lastName  : 'istvan',
-                    phone     : '+38 093 000 0000',
-                    profession: 'profession'
-                },
-                salonInfo   : {
-                    salonName: 'mySalon',
-                    businessRole     : 'Stylist',
-                    phone     : '+38 093 111 1111',
-                    email       : 'test_' + ticks + '@mail.com',
-                    address: 'PS street, ...',
-                    licenseNumber: 'License 123',
-                    zipCode: '88000',
-                    state: 'Закарпаття',
-                    country: 'Ukraine',
-                    city: 'Ужгород'
-                }
-            };
-            this.model = new StylistModel(data);
+            /*var data = {
+             email       : 'test_' + ticks + '@mail.com',
+             personalInfo: {
+             firstName : 'nazarovits',
+             lastName  : 'istvan',
+             phone     : '+38 093 000 0000',
+             profession: 'profession'
+             },
+             salonInfo   : {
+             salonName    : 'mySalon',
+             businessRole : 'Stylist',
+             phone        : '+38 093 111 1111',
+             email        : 'test_' + ticks + '@mail.com',
+             address      : 'PS street, ...',
+             licenseNumber: 'License 123',
+             zipCode      : '88000',
+             state        : 'Закарпаття',
+             country      : 'Ukraine',
+             city         : 'Ужгород'
+             }
+             };*/
+            this.model = new StylistModel();
             this.model.on('invalid', this.handleModelValidationError, this);
 
             this.render();
             this.renderUserInfo();
+            //this.serviceApplications = new ApplicationsServiceView();
+            //this.servicesView = new ApplicationsServiceView();
         },
 
         editStylist: function (options) { // load edit for stylists and new applications.
@@ -122,24 +129,29 @@ define([
             return userName;
         },
 
-        renderUserInfo: function () {
+        renderUserInfo: function (model, response, options) {
             var user = this.model.toJSON();
+            var services = user.services;
+
             //var userName = this.getUserName(user);
             var $el = this.$el;
 
             $el.find('.info').html(this.itemTemplate(user));
             //$el.find('.userName').html(userName);
+            //custom.canvasDraw({imageSrc: user.avatar}, self);
 
+            this.servicesView = new ApplicationsServiceView({services: services});
+            this.servicesView.render();
             this.updateNavigation(user);
 
             return this;
         },
 
         updateNavigation: function (user) {
-            var bradcrumbs;
+            var breadcrumbs;
 
             if (!user._id) {
-                bradcrumbs = [{
+                breadcrumbs = [{
                     name: 'New Applications',
                     path: '#newApplications'
                 }, {
@@ -147,7 +159,7 @@ define([
                     path: '#newApplications/add'
                 }];
             } else if (user.approved) {
-                bradcrumbs = [{
+                breadcrumbs = [{
                     name: 'Stylist List',
                     path: '#stylists'
                 }, {
@@ -158,7 +170,7 @@ define([
                     path: '#stylists/' + user._id + '/edit'
                 }];
             } else {
-                bradcrumbs = [{
+                breadcrumbs = [{
                     name: 'New Applications',
                     path: '#newApplications'
                 }, {
@@ -170,7 +182,7 @@ define([
                 }];
             }
 
-            App.Breadcrumbs.reset(bradcrumbs);
+            App.Breadcrumbs.reset(breadcrumbs);
         },
 
         prepareSaveData: function (callback) {
@@ -192,22 +204,20 @@ define([
             var state = form.find('.state').val();
             var zipCode = form.find('.zipCode').val();
             var country = form.find('.country').val();
-            var services = [];
-            var service;
+            var avatarBASE64 = form.find('.avatar').attr('src');
+
             var data;
 
-            serviceList.each(function (index, element) {
-                service = {};
-                service.price = $(element).siblings('input:text')[index].value || 0;
-                service.id = $(element).data('id');
+            var dataService = this.servicesView.getData();
 
-                services.push(service);
+            if (dataService === false) {
+                return callback('Please fill Price field or Incorrect format Price');
+            }
 
-                console.log(5);
-            });
             //validation ...
 
             data = {
+                avatar      : avatarBASE64,
                 email       : email,
                 personalInfo: {
                     firstName : firstName,
@@ -227,7 +237,7 @@ define([
                     country      : country,
                     licenseNumber: licenseNumber
                 },
-                services    : services
+                services    : dataService
             };
 
             callback(null, data);
@@ -235,22 +245,43 @@ define([
 
         saveStylist: function (event) {
             var self = this;
+            var form = this.$el.find('.stylistForm');
+            var image = form.find('.avatar');
+
+            if (image.data('changed')) {
+                this.avatarBASE64 = image.attr('src');
+            } else {
+                this.avatarBASE64 = null;
+            }
 
             self.prepareSaveData(function (err, data) {
                 var model;
 
                 if (err) {
-                    self.handleError(err)
+                    return self.handleError(err)
                 }
 
                 model = self.model;
                 model.save(data, {
                     success: function () {
-                        alert('success');
+                        var src = self.avatarBASE64;
+
+                        if (src) {
+                            console.log('>>> change the avatar');
+                            self.saveTheAvatar(src, function (res) {
+                                alert('success saved the user + avatar');
+                            });
+                        } else {
+                            alert('success saved');
+                        }
+
                     },
                     error  : self.handleModelError
                 });
             });
+
+            /*var services = this.servicesView.getData();
+             console.log(services);*/
         },
 
         edit: function (e) {
@@ -258,6 +289,51 @@ define([
             var url = this.path + '/' + id + '/edit';
 
             Backbone.history.navigate(url, {trigger: true});
+        },
+
+        changeAvatar: function (e) {
+            this.$el.find('.changeAvatar').click();
+        },
+
+        changeInputFile: function (e) {
+            var avatar = this.$el.find('.avatar');
+            var self = this;
+
+            custom.getSrc(e, function (err, src) {
+                if (err) {
+                    return self.handleError(err);
+                }
+
+                avatar.attr('src', src);
+                avatar.attr('data-changed', 'true');
+            });
+
+        },
+
+        saveTheAvatar: function (src, callback) {
+            var userId = this.model.id;
+            var src = src;
+            var data = {
+                userId: userId,
+                avatar: src
+            };
+            var self = this;
+
+            if (!userId || !src) {
+                return console.error('Not enough incoming parameters.');
+            }
+
+            $.ajax({
+                type       : 'POST',
+                dataType   : 'json',
+                contentType: 'application/json',
+                url        : '/avatar',
+                data       : JSON.stringify(data),
+                success    : function (res) {
+                    callback(res);
+                },
+                error      : self.handleErrorResponse
+            });
         }
 
     });
