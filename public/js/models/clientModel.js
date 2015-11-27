@@ -20,11 +20,12 @@ define([
 
         validate: function (attrs, options) {
             var errors = [];
-            var firstName = attrs.firstName;
-            var lastName = attrs.lastName;
-            var phone = attrs.phone;
             var email = attrs.email;
             var password = attrs.password;
+            var personalInfo = attrs.personalInfo;
+            var firstName = personalInfo.firstName;
+            var lastName = personalInfo.lastName;
+            var phone = personalInfo.phone;
 
             /* ---email ---*/
             if (!email) {

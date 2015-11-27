@@ -2,7 +2,7 @@
 
 define([
     'custom',
-    'async',
+    'asyncjs',
     'models/clientModel',
     //'text!templates/clients/newAndEditClientsTemplate.html',
     'text!templates/clients/clientsItemTemplate.html',
@@ -19,7 +19,10 @@ define([
         events: {
             'click .saveBtn'      : 'saveClient',
             'click .avatar'       : 'changeAvatar',
-            'change .changeAvatar': 'changeInputFile'
+            'change .changeAvatar': 'changeInputFile',
+            'click #errorBtn': 'testError',
+            'click #warningBtn': 'testWarning',
+            'click #successBtn': 'testSuccess'
         },
 
         initialize: function (options) {
@@ -33,57 +36,35 @@ define([
         },
 
         addClient: function (options) {
-            this.model = new ClientModel();
+            var model = new ClientModel();
+
+            model.on('error', this.handleModelError, this);
+            model.on('invalid', this.handleModelValidationError, this);
+
+            this.model = model;
             this.render();
         },
 
         editClient: function (options) {
             var userId = options.id;
             var model = new ClientModel({_id: userId});
+            var self = this;
 
             this.model = model;
 
-            model.on('sync', this.render, this);
             model.on('error', this.handleModelError, this);
             model.on('invalid', this.handleModelValidationError, this);
 
-            model.fetch();
-        },
+            model.fetch({
+                success: function () {
+                    self.render();
+                },
+                error  : function (model, res) {
+                    var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
 
-        initialize__: function (options) {
-            var userId = (options && options.id) ? options.id : null;
-            var self = this;
-            var model;
-
-            if (!userId) {
-                this.model = new ClientModel();
-                App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {
-                    name: 'Add client',
-                    path: '#client/add'
-                }]);
-                App.menu.select('#nav_clients');
-                return self.render();
-            } else {
-                model = new ClientModel({_id: userId});
-                model.fetch({
-                    success: function (userModel) {
-                        self.model = userModel;
-                        App.Breadcrumbs.reset([{name: 'Clients List', path: '#clients'}, {
-                            name: self.model.toJSON().firstName + ' ' + self.model.toJSON().lastName,
-                            path: '#clients/:id'
-                        }, {
-                            name: 'Edit',
-                            path: '#clients/:id/edit'
-                        }]);
-                        App.menu.select('#nav_clients');
-
-                        self.model.on('invalid', self.handleModelValidationError, self);
-
-                        return self.render();
-                    },
-                    error  : self.handleModelError
-                });
-            }
+                    App.errorNotification(err);
+                }
+            });
         },
 
         render: function () {
@@ -144,11 +125,13 @@ define([
             var password = thisEl.find('.password').val();
 
             data = {
-                firstName: firstName,
-                lastName : lastName,
-                phone    : phone,
-                email    : email,
-                password : password
+                email       : email,
+                password    : password,
+                personalInfo: {
+                    firstName: firstName,
+                    lastName : lastName,
+                    phone    : phone
+                }
             };
 
             callback(null, data)
@@ -157,42 +140,67 @@ define([
         saveClient: function (e) {
             var self = this;
 
-            App.errorNotification('Hello world');
+            async.waterfall([
 
-            /*self.prepareSaveData(function (err, data) {
-                var model;
-
-                if (err) {
-                    self.handleError(err);
-                }
-
-                async.parallel({
-
-                        //try save the client model:
-                        savedModel: function (cb) {
-                            cb();
-                        },
-
-                        //try to change the avatar:
-                        avatar: function (cb) {
-                            cb();
+                //try save the client model:
+                function (cb) {
+                    self.prepareSaveData(function (err, data) {
+                        if (err) {
+                            return cb(err);
                         }
 
-                    }, function (err, result) {
-                        if (err) {
+                        self.model.save(data, {
+                            success: function (model) {
+                                cb(null, model);
+                            },
+                            error  : function (model, res) {
+                                err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
+                                cb(err);
+                            }
+                        });
+                    });
+                },
 
+                //try to change the avatar:
+                function (model, cb) {
+                    var image = self.$el.find('.avatar');
+                    var src;
+                    var data;
+
+                    if (image.attr('data-changed') !== 'true') {
+                        return cb(); //the avatar was not changed
+                    }
+
+                    src = image.attr('src');
+                    data = {
+                        userId: model.id,
+                        avatar: src
+                    };
+
+                    $.ajax({
+                        type       : 'POST',
+                        dataType   : 'json',
+                        contentType: 'application/json',
+                        url        : '/avatar',
+                        data       : JSON.stringify(data),
+                        success    : function () {
+                            cb(null, model);
+                        },
+                        error      : function (xhr) {
+                            var err = xhr.responseJSON.error || xhr.responseJSON.message;
+                            cb(err);
                         }
                     });
 
+                }
 
-                model = self.model;
-                model.save(data, {
-                    success: function () {
-                        alert('success');
-                    },
-                    error  : self.handleModelError
-                });
-            });*/
+            ], function (err, result) {
+                if (err) {
+                    return App.errorNotification(err);
+                }
+                console.log('async.parallel: success saved');
+            });
+
         },
 
         changeAvatar: function (e) {
@@ -209,7 +217,20 @@ define([
                 }
 
                 avatar.attr('src', src);
+                avatar.attr('data-changed', 'true');
             });
+
+        },
+
+        testError: function () {
+            aadmin
+        },
+        
+        testWarning: function () {
+            
+        },
+        
+        testSuccess: function () {
 
         }
 
