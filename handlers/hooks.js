@@ -6,10 +6,10 @@ var _ = require('lodash');
 var StripeModule = require('../helpers/stripe');
 var mongoose = require('mongoose');
 var ObjectId = mongoose.Types.ObjectId;
-var Payments = db.model('Payment');
-var StylistPayments = db.model('StylistPayments');
 
 var HooksHandler = function (db) {
+    var Payments = db.model('Payment');
+    var StylistPayments = db.model('StylistPayments');
 
     this.fireOnInvoiceHook = function(req, res, next){
         var body = req.body;
