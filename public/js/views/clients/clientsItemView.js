@@ -157,7 +157,7 @@ define([
                 function (cb) {
                     self.prepareSaveData(function (err, data) {
                         if (err) {
-                            return cb(err);
+                            return cb(self.handleModelErrorerr);
                         }
 
                         self.model.save(data, {

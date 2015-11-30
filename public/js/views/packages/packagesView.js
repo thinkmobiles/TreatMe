@@ -34,6 +34,7 @@ define([
         showItem: function (e) {
             var target = $(e.target);
             var itemId = target.closest('tr').data('id');
+
         },
 
         edit: function (e) {
@@ -113,15 +114,19 @@ define([
             }
 
             model.save(data, {
-                success: function (savedModel) {
-                    alert('success');
+                success: function (savedModel, res) {
+                    var success = res.responseJSON ? res.responseJSON.success : 'Package created successfully!';
                     if (!id) {
                         self.collection.add(savedModel);
                         tr.attr('data-id', savedModel.id);
                     }
                     tr.find('.cancelBtn').click();
                 },
-                error: self.handleModelError
+                error  : function (model, res) {
+                    var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
+
+                    App.notification(err);
+                }
             });
 
         },
@@ -180,10 +185,16 @@ define([
 
                     $("#dialog").dialog('close');
                     model.destroy({
-                        success: function () {
-                            alert('success');
+                        success: function (model, res) {
+                            var success = res.responseJSON ? res.responseJSON.success : 'Package removed successfully!';
+                            App.notification({message: success, type: 'success'});
+
                         },
-                        error: self.handleModelError
+                        error: function (model, res) {
+                            var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
+
+                            App.notification(err);
+                        }
                     });
                 }
             });
@@ -203,7 +214,11 @@ define([
 
             custom.getSrc(e, function (err, src) {
                 if (err) {
-                    return self.handleError(err);
+                    return function (model, res) {
+                        var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
+
+                        App.notification(err);
+                    };
                 }
 
                 logo.attr('src', src);
