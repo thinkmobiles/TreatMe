@@ -323,8 +323,23 @@ var StylistHandler = function (app, db) {
 
                 appointmentModel
                     .save(function(err, model){
+                        var stylistRoom;
+                        var sentTo;
+
                         if (err){
                             return cb(err);
+                        }
+
+                        sentTo = appointmentModel.sentTo;
+
+                        if (sentTo && sentTo.length){
+                            for (var i = sentTo.length; i>0; i--){
+                                stylistRoom = sentTo[i - 1];
+
+                                console.log('=> Remove appointment from map. Send socket event to room: ' + stylistRoom);
+
+                                io.to(stylistRoom).emit('remove appointment from map', {appointmentId: appointmentModel._id.toString()});
+                            }
                         }
 
                        cb(null, model, serviceType);
