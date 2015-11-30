@@ -56,9 +56,7 @@ var AdminHandler = function (app, db) {
                             }
 
                             if (!stylistModel){
-                                err = new Error('Stylist not found');
-                                err.status = 404;
-                                return cb(err);
+                                return cb(badRequests.NotFound({target: 'Stylist'}));
                             }
 
                             cb(null, stylistModel.toJSON());
@@ -80,6 +78,7 @@ var AdminHandler = function (app, db) {
                 function(cb){
                     var count = 0;
                     var overallRating = 0;
+
                     Appointment
                         .find({'stylist.id': sId, status: CONSTANTS.STATUSES.APPOINTMENT.SUCCEEDED}, {rate: 1}, function(err, appColl){
                             if (err){
@@ -189,7 +188,7 @@ var AdminHandler = function (app, db) {
                             salonInfo: resultModel[i].salonInfo || {},
                             createdAt: resultModel[i].createdAt,
                             approved:  resultModel[i].approved,
-                            suspend: resultModel[i].suspend ? resultModel[i].suspend.isSuspend : false
+                            suspend: resultModel[i].suspend.isSuspend
                         };
                     } else {
 
@@ -197,7 +196,7 @@ var AdminHandler = function (app, db) {
                             _id: resultModel[i]._id,
                             personalInfo: resultModel[i].personalInfo,
                             email: resultModel[i].email,
-                            suspend: resultModel[i].suspend ? resultModel[i].suspend.isSuspend : false
+                            suspend: resultModel[i].suspend.isSuspend
                         }
                     }
 
@@ -208,15 +207,6 @@ var AdminHandler = function (app, db) {
                 callback(null, resultArray.reverse());
 
             });
-
-       /* User
-            .find(criteria, projection)
-            .sort(sortObj)
-            .skip(limit * (page - 1))
-            .limit(limit)
-            .exec(function(err, resultModel){
-
-            });*/
     };
 
     function getCountByCriterion(findObj, callback){
@@ -231,7 +221,7 @@ var AdminHandler = function (app, db) {
                 callback(null, resultCount);
 
             });
-    };
+    }
 
     this.getStylistList = function(req, res, next){
 
@@ -479,6 +469,10 @@ var AdminHandler = function (app, db) {
 
         var sId = req.params.id;
 
+        if (!CONSTANTS.REG_EXP.OBJECT_ID.test(sId)){
+            return next(badRequests.InvalidValue({value: sId, param: 'id'}));
+        }
+
         getStylistById(sId, function (err, resultUser) {
             if (err) {
                 return next(err);
@@ -487,8 +481,6 @@ var AdminHandler = function (app, db) {
             res.status(200).send(resultUser);
 
         });
-
-
     };
 
     this.createStylist = function (req, res, next) {
@@ -577,6 +569,10 @@ var AdminHandler = function (app, db) {
             }
 
             services = services.map(function (service) {
+
+                if (!CONSTANTS.REG_EXP.OBJECT_ID.test(service.serviceId)){
+                    return next(badRequests.InvalidValue({value: service.serviceId, param: 'services'}));
+                }
 
                 service.serviceId = ObjectId(service.serviceId);
                 service.stylist = uId;
@@ -911,7 +907,7 @@ var AdminHandler = function (app, db) {
         var ids;
         var reason = body.reason || 'Suspended by admin';
 
-        if (!body.ids) {
+        if (!body.ids || !body.ids.length) {
             return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
 
@@ -972,7 +968,7 @@ var AdminHandler = function (app, db) {
         var body = req.body;
         var ids;
 
-        if (!body.ids) {
+        if (!body.ids || !body.ids.length) {
             return next(badRequests.NotEnParams({reqParams: 'ids'}));
         }
 
@@ -1168,7 +1164,7 @@ var AdminHandler = function (app, db) {
         var createObj;
 
         if (!body.name || !body.logo || !body.price) {
-            return next(badRequests.NotEnParams({params: 'name or logo'}));
+            return next(badRequests.NotEnParams({reqParams: 'name and logo and price'}));
         }
 
         createObj = {
