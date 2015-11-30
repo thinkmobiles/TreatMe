@@ -885,7 +885,7 @@ input[type=text] {
   margin-right: 20px;
 }
 
-.notification {
+#notifications {
 /*  padding: 20px;*/
   z-index: 20000;
   position: fixed;
@@ -893,26 +893,46 @@ input[type=text] {
   width: 100vw;
   margin: 0 auto;
 }
-.notification .error {
+
+#notifications div {
+  margin-bottom: 1px;
+}
+
+#notifications .error {
   padding: 20px;
   left: 85%;
   width: 15%;
   position: relative;
-  background: darkred;
+  background: #cc2800;
   color: #fff;
 }
-.notification .animate {
-  position: absolute;
-  /*height: 100%;*/
+
+#notifications .warning {
+  padding: 20px;
+  left: 85%;
   width: 15%;
-  /*padding-top: 10px;
-  padding-bottom: 10px;*/
-  /**/
+  position: relative;
+  background: #ffba33;
+  color: #111;
+}
+
+#notifications .success {
+  padding: 20px;
+  left: 85%;
+  width: 15%;
+  position: relative;
+  background: #40bf40;
+  color: #fff;
+}
+
+#notifications .animate {
+  position: absolute;
+  width: 15%;
   margin-top: 0px;
   margin-left: 0px;
   left: 100%;
   opacity: 0;
 }
-.notification .animate .error {
+#notifications .animate .error {
   background: darkred;
 }

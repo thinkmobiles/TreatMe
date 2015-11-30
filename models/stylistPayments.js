@@ -11,6 +11,7 @@ module.exports = function (db) {
         realAmount: {type: Number, default: 0},
         stylistAmount: {type: Number, default: 0},
         stylist: {type: ObjectId, ref: 'User'},
+        recipientId: {type: String, default: null},
         date: {type: Date, default: Date.now}
     }, {
         collection: 'StylistPayments'

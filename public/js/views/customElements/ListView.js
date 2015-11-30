@@ -81,7 +81,10 @@ define([
             this.collection.on('reset remove', function () {
                 self.renderList();
             });
-            this.collection.on('error', this.handleModelError, this);
+            this.collection.on('error', function (model, res) {
+                var err = res.responseJSON || res.responseJSON.message;
+                App.notification(err);
+            }, this);
 
             if (opts.search) {
                 this.$el.find('.search').val(opts.search);

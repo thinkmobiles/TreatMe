@@ -1388,7 +1388,7 @@ var UserHandler = function (app, db) {
 
                         function(cb){
 
-                            // TODO update subscription when update client profile
+                            // TODO update packages when update client profile
                             if (userObj !== CONSTANTS.USER_ROLE.CLIENT){
                                 return cb(null);
                             }
@@ -2183,7 +2183,7 @@ var UserHandler = function (app, db) {
 
                         if (ind !== -1){
                             serviceObj = {
-                                id: stylistServiceModel[ind].serviceId._id,
+                                _id: stylistServiceModel[ind].serviceId._id,
                                 name: stylistServiceModel[ind].serviceId.name,
                                 logo: image.computeUrl(stylistServiceModel[ind].serviceId.logo, CONSTANTS.BUCKET.IMAGES),
                                 status: stylistServiceModel[ind].approved ? 'approved' : 'pending',
@@ -2193,7 +2193,7 @@ var UserHandler = function (app, db) {
                             serviceArray.push(serviceObj);
                         } else {
                             serviceObj = {
-                                id: allServiceModels[i]._id,
+                                _id: allServiceModels[i]._id,
                                 name: allServiceModels[i].name,
                                 logo: image.computeUrl(allServiceModels[i].logo, CONSTANTS.BUCKET.IMAGES),
                                 status: 'new',

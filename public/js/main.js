@@ -105,10 +105,11 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
         return dd + '/' + mm + '/' + yy;
     };
 
-    App.__errorContainer__ = $('#errorNotifications');
+    App.$notifications = $('#notifications');
 
-    App.errorNotification = function (data) {
-        var container = this.__errorContainer__;
+    //App.errorNotification = function (data) {
+    App.notification = function (data) {
+        var container = this.$notifications;
         var messageClass = data.type || 'error';
         var text = (typeof data === 'string') ? data : (data.message || 'Something went wrong');
         var renderEl = '<div class="animate ' + messageClass + '">' + text + '</div>';
@@ -129,6 +130,32 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
             });
         });
     };
+
+    Date.prototype.toLocaleDateTimeString = function () {
+        function padding(x) {
+            if (x.length < 2) {
+                return '0' + x;
+            } else {
+                return x;
+            }
+        }
+
+        var year = this.getFullYear().toString();
+        var month = (this.getMonth() + 1).toString();
+        var date  = this.getDate().toString();
+        var hour = this.getHours().toString();
+        var minutes = this.getMinutes().toString();
+        var format  = this.getDate();
+
+        var yy = year.slice(2, 4);
+        var mm = padding(month);
+        var dd = padding(date);
+        var hh = padding(hour);
+        var min = padding(minutes);
+
+        return dd + '/' + mm + '/' + yy + ' ' + hh + ':' + min;
+    };
+
 
     app.initialize(io);
 });

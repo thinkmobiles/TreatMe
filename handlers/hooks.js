@@ -6,6 +6,8 @@ var _ = require('lodash');
 var StripeModule = require('../helpers/stripe');
 var mongoose = require('mongoose');
 var ObjectId = mongoose.Types.ObjectId;
+var Payments = db.model('Payment');
+var StylistPayments = db.model('StylistPayments');
 
 var HooksHandler = function (db) {
 
@@ -103,10 +105,41 @@ var HooksHandler = function (db) {
     this.fireOnTransferPaidHook = function(req, res, next){
 
         var body = req.body;
+        var recipientId = body.recipient;
 
-        console.dir(body);
+        //console.dir(body);
 
-        res.status(200).send();
+        async
+            .waterfall([
+                function(cb){
+                    User
+                        .findOne({'payments.recipientId': recipientId}, {_id: 1}, function(err, stylistModel){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!stylistModel){
+                                return cb(badRequests.NotFound({target: 'Stylist not found'}));
+                            }
+
+                            cb(null, stylistModel);
+
+                        });
+                },
+
+                function(cb){
+                    cb(null);
+                }
+            ], function(err){
+                if (err){
+                    return next(err);
+                }
+
+                res.status(200).send();
+
+            });
+
     };
 
 };

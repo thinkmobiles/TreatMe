@@ -724,6 +724,7 @@ var ClientsHandler = function (app, db) {
         var appointmentId;
         var tip;
         var appointmentModel;
+        var recipientId;
 
         if (!body.appointmentId || isNaN(body.rate)) {
             return next(badRequests.NotEnParams({reqParams: 'appointmentId and rate and tip'}));
@@ -756,6 +757,27 @@ var ClientsHandler = function (app, db) {
                             appointmentModel = appModel;
 
                             cb(null);
+                        });
+                },
+
+                function(cb){
+                    var stylistId = appointmentModel.stylist.id;
+
+                    User
+                        .find({_id: stylistId}, {'payments.recipientId': 1}, function(err, stylistModel){
+
+                            if (err){
+                                return cb(err);
+                            }
+
+                            if (!stylistModel){
+                                return cb(badRequests.NotFound({target: 'Stylist'}));
+                            }
+
+                            recipientId = stylistModel.payments.recipientId;
+
+                            cb(null);
+
                         });
                 },
 
@@ -795,7 +817,8 @@ var ClientsHandler = function (app, db) {
                         paymentType: 'tip',
                         realAmount: tip * 100,
                         stylistAmount: tip * 100,
-                        stylist: appointmentModel.stylist.id
+                        stylist: appointmentModel.stylist.id,
+                        recipientId: recipientId
                     };
 
                     stylistPaymentModel = new StylistPayments(paymentData);

@@ -2,7 +2,7 @@
 
 define([], function () {
     var Model = Backbone.Model.extend({
-        urlRoot : '/admin/services/requested',
+        urlRoot : '/admin/services',
         idAttribute: "_id"
     });
 

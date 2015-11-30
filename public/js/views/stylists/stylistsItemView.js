@@ -2,6 +2,7 @@
 
 define([
     'custom',
+    'asyncjs',
     'models/stylistModel',
     'views/services/servicesView',
     'views/newApplications/newApplicationsServiceView',
@@ -12,7 +13,7 @@ define([
     //'views/stylists/stylistsEditView',
     //'views/stylists/stylistsClientsView',
     'text!templates/stylists/editStylistTemplate.html'
-], function (custom, StylistModel, ServicesView, ApplicationsServiceView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
+], function (custom, async, StylistModel, ServicesView, ApplicationsServiceView, MainTemplate, ServicesTemplate, PreviewStylistTemplate, /*EditView, StylistsClientsView,*/ EditStylistTemplate) {
 
     var View = Backbone.View.extend({
 
@@ -47,8 +48,6 @@ define([
             } else {
                 App.menu.select('#nav_stylists');
             }
-
-            //this.servicesView = new ApplicationsServiceView();
         },
 
         addStylist: function (options) {
@@ -63,7 +62,7 @@ define([
             App.menu.select('#nav_new_applications');
 
             var ticks = new Date().valueOf();
-            /*var data = {
+            var data = {
              email       : 'test_' + ticks + '@mail.com',
              personalInfo: {
              firstName : 'nazarovits',
@@ -83,25 +82,31 @@ define([
              country      : 'Ukraine',
              city         : 'Ужгород'
              }
-             };*/
-            this.model = new StylistModel();
+             };
+            this.model = new StylistModel(data);
+            //this.model = new StylistModel();
             this.model.on('invalid', this.handleModelValidationError, this);
 
             this.render();
             this.renderUserInfo();
-            //this.serviceApplications = new ApplicationsServiceView();
-            //this.servicesView = new ApplicationsServiceView();
         },
 
         editStylist: function (options) { // load edit for stylists and new applications.
             var userId = options.id;
             var model = new StylistModel({_id: userId});
+            var self = this;
 
-            model.on('sync', this.renderUserInfo, this);
-            model.on('error', this.handleModelError, this);
+            //model.on('sync', this.renderUserInfo, this);
+            model.on('error', function (model, res, options) {
+                var err = res.responseJSON || res.responseJSON.message;
+                App.notification(err);
+            }, this);
+
             model.on('invalid', this.handleModelValidationError, this);
 
-            model.fetch();
+            model.fetch({success: function () {
+                self.renderUserInfo();
+            }});
 
             this.model = model;
             this.render();
@@ -129,16 +134,12 @@ define([
             return userName;
         },
 
-        renderUserInfo: function (model, response, options) {
+        renderUserInfo: function () {
             var user = this.model.toJSON();
             var services = user.services;
-
-            //var userName = this.getUserName(user);
             var $el = this.$el;
 
             $el.find('.info').html(this.itemTemplate(user));
-            //$el.find('.userName').html(userName);
-            //custom.canvasDraw({imageSrc: user.avatar}, self);
 
             this.servicesView = new ApplicationsServiceView({services: services});
             this.servicesView.render();
@@ -208,9 +209,9 @@ define([
 
             var data;
 
-            var dataService = this.servicesView.getData();
+            var services = this.servicesView.getData();
 
-            if (dataService === false) {
+            if (!services) {
                 return callback('Please fill Price field or Incorrect format Price');
             }
 
@@ -237,14 +238,14 @@ define([
                     country      : country,
                     licenseNumber: licenseNumber
                 },
-                services    : dataService
+                services    : services
             };
 
             callback(null, data);
         },
 
         saveStylist: function (event) {
-            var self = this;
+            /*var self = this;
             var form = this.$el.find('.stylistForm');
             var image = form.find('.avatar');
 
@@ -278,10 +279,68 @@ define([
                     },
                     error  : self.handleModelError
                 });
-            });
+            });*/
 
-            /*var services = this.servicesView.getData();
-             console.log(services);*/
+            var self = this;
+
+            async.waterfall([
+
+                //prepare the save data for model:
+                function (cb) {
+                    self.prepareSaveData(cb);
+                },
+
+                //try to save the model:
+                function (data, cb) {
+                    self.model.save(data, {
+                        success: function (model, res) {
+                            cb(null, model);
+                        },
+                        error: function (model, res) {
+                            var err = res.responseJSON || res.responseJSON.message;
+                            cb(err);
+                        }
+                    });
+                },
+
+                //try to save the avatar (if changed)
+                function (model, cb) {
+                    var image = self.$el.find('.avatar');
+                    var src;
+                    var data;
+
+                    if (image.attr('data-changed') !== 'true') {
+                        return cb(); //the avatar was not changed
+                    }
+
+                    src = image.attr('src');
+                    data = {
+                        userId: model.id,
+                        avatar: src
+                    };
+
+                    $.ajax({
+                        type       : 'POST',
+                        dataType   : 'json',
+                        contentType: 'application/json',
+                        url        : '/avatar',
+                        data       : JSON.stringify(data),
+                        success    : function () {
+                            cb(null, model);
+                        },
+                        error      : function (xhr) {
+                            var err = xhr.responseJSON.error || xhr.responseJSON.message;
+                            cb(err);
+                        }
+                    });
+                }
+
+            ], function (err, model) {
+                if (err) {
+                    return App.notification(err);
+                }
+                App.notification({message: 'Stylist was saved success', type: 'success'});
+            });
         },
 
         edit: function (e) {

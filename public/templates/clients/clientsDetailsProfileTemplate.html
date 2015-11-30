@@ -1,0 +1,14 @@
+<img id="avatar" width="90" height="90" alt="avatar" src="<%= personalInfo.avatar || '/images/avatar.png'%>" />
+<div class="accountInfo">
+    <dl>
+        <dt>Name</dt>
+        <dd class="name"><%= personalInfo.firstName + ' ' + personalInfo.lastName %></dd>
+        <dt>Phone Number</dt>
+        <dd class="phone"><%= personalInfo.phone %></dd>
+        <dt>Email Address</dt>
+        <dd class="email"><%= personalInfo.email %></dd>
+    </dl>
+</div>
+<div class="clientHistory">
+    <ol>Client History</ol>
+</div>

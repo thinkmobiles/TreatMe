@@ -19,7 +19,7 @@ define([
         events: {
             'click .saveBtn'      : 'saveClient',
             'click .avatar'       : 'changeAvatar',
-            'change .changeAvatar': 'changeInputFile'
+            'change .changeAvatar': 'changeInputFile',
         },
 
         initialize: function (options) {
@@ -35,7 +35,13 @@ define([
         addClient: function (options) {
             var model = new ClientModel();
 
-            model.on('error', this.handleModelError, this);
+            //model.on('error', this.handleModelError, this);
+            //model.on('error', this.handleModelError, this);
+            model.on('error', function (model, res, options) {
+                var err = res.responseJSON || res.responseJSON.message;
+                App.notification(err);
+            }, this);
+
             model.on('invalid', this.handleModelValidationError, this);
 
             this.model = model;
@@ -49,7 +55,12 @@ define([
 
             this.model = model;
 
-            model.on('error', this.handleModelError, this);
+            //model.on('error', this.handleModelError, this);
+            model.on('error', function (model, res, options) {
+                var err = res.responseJSON || res.responseJSON.message;
+                App.notification(err);
+            }, this);
+
             model.on('invalid', this.handleModelValidationError, this);
 
             model.fetch({
@@ -59,7 +70,7 @@ define([
                 error  : function (model, res) {
                     var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
 
-                    App.errorNotification(err);
+                    App.notification(err);
                 }
             });
         },
@@ -143,16 +154,12 @@ define([
                 function (cb) {
                     self.prepareSaveData(function (err, data) {
                         if (err) {
-                            return cb(err);
+                            return cb(self.handleModelErrorerr);
                         }
 
                         self.model.save(data, {
                             success: function (model) {
                                 cb(null, model);
-                            },
-                            error  : function (model, res) {
-                                err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
-                                cb(err);
                             }
                         });
                     });
@@ -181,6 +188,7 @@ define([
                         url        : '/avatar',
                         data       : JSON.stringify(data),
                         success    : function () {
+                            //App.notification({message: 'Success updated', type: 'success'});
                             cb(null, model);
                         },
                         error      : function (xhr) {
@@ -193,9 +201,9 @@ define([
 
             ], function (err, result) {
                 if (err) {
-                    return App.errorNotification(err);
+                    return App.notification(err);
                 }
-                console.log('async.parallel: success saved');
+                App.notification({message: 'Client was saved success', type: 'success'});
             });
 
         },

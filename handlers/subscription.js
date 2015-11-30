@@ -260,7 +260,7 @@ var SubscriptionsHandler = function (db) {
          *
          * __URL: `/subscriptionType/`__
          *
-         * This __method__ allows create subscription by _Admin_
+         * This __method__ allows create packages by _Admin_
          *
          * @example Request example:
          *         http://projects.thinkmobiles.com:8871/subscriptionType/
@@ -378,7 +378,7 @@ var SubscriptionsHandler = function (db) {
          *
          * __URL: `/subscriptionType/:id`__
          *
-         * This __method__ allows update subscription by _Admin_
+         * This __method__ allows update packages by _Admin_
          *
          * @example Request example:
          *        http://projects.thinkmobiles.com:8871/subscriptionType/56387644a2e4362617283dc1
@@ -504,7 +504,7 @@ var SubscriptionsHandler = function (db) {
          *
          * __URL: `/subscriptionType/:id`__
          *
-         * This __method__ allows delete subscription by _Admin_
+         * This __method__ allows delete packages by _Admin_
          *
          * @example Request example:
          *        http://projects.thinkmobiles.com:8871/subscriptionType/5638b946f8c11d9c0408133f

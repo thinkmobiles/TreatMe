@@ -87,9 +87,12 @@ define([
                     container.find('.requestsSent').html(res.requestSent);
                     container.find('.appointmentsBooked').html(res.appointmentBooked);
                     container.find('.packagesSold').html(res.packageSold);
-                    console.log(res);
                 },
-                error : self.handleErrorResponse
+                error  : function (res) {
+                    var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
+
+                    App.notification(err);
+                }
             });
         }
 

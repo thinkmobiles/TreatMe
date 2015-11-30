@@ -595,7 +595,7 @@ var AdminHandler = function (app, db) {
 
                 mailer.adminCreateUser(mailOptions);
 
-                res.status(200).send({success: 'Stylist created successfully'});
+                res.status(200).send({success: 'Stylist created successfully', _id: uId});
 
             });
 
@@ -1189,7 +1189,7 @@ var AdminHandler = function (app, db) {
                             return next(err);
                         }
 
-                        res.status(200).send({success: 'Service created successfully'});
+                        res.status(200).send({success: 'Service created successfully', _id: serviceModel._id});
 
                     });
 
