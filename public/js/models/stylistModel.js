@@ -9,7 +9,8 @@ define([
         idAttribute: "_id",
         defaults: {
             email: '',
-            personalInfo: {},
+            personalInfo: {
+            },
             salonInfo: {}
         },
         validate: function (attrs, options) {

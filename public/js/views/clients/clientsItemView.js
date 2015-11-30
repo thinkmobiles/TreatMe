@@ -39,6 +39,12 @@ define([
             var model = new ClientModel();
 
             //model.on('error', this.handleModelError, this);
+            //model.on('error', this.handleModelError, this);
+            model.on('error', function (model, res, options) {
+                var err = res.responseJSON || res.responseJSON.message;
+                App.notification(err);
+            }, this);
+
             model.on('invalid', this.handleModelValidationError, this);
 
             this.model = model;
@@ -52,7 +58,12 @@ define([
 
             this.model = model;
 
-            model.on('error', this.handleModelError, this);
+            //model.on('error', this.handleModelError, this);
+            model.on('error', function (model, res, options) {
+                var err = res.responseJSON || res.responseJSON.message;
+                App.notification(err);
+            }, this);
+
             model.on('invalid', this.handleModelValidationError, this);
 
             model.fetch({
@@ -152,10 +163,6 @@ define([
                         self.model.save(data, {
                             success: function (model) {
                                 cb(null, model);
-                            },
-                            error  : function (model, res) {
-                                err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
-                                cb(err);
                             }
                         });
                     });
