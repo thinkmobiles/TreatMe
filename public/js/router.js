@@ -146,6 +146,10 @@ define([
                 options.status = 'Packages';
             }
 
+            if (type === 'inbox') {
+                options.status = 'Inbox';
+            }
+
             this.loadWrapperView(type, options, REDIRECT.whenNOTAuthorized);
         },
 
