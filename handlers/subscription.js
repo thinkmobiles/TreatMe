@@ -151,6 +151,12 @@ var SubscriptionsHandler = function (db) {
             });
     }
 
+    function getSubscriptionTypeCount(criteria, callback){
+        SubscriptionType
+            .count(criteria)
+            .exec(callback);
+    }
+
     this.getSubscriptionTypes = function(req, res, next){
 
         /**
@@ -230,7 +236,15 @@ var SubscriptionsHandler = function (db) {
                     return next(err);
                 }
 
-                res.status(200).send(result);
+                getSubscriptionTypeCount({}, function(err, count){
+
+                    if (err){
+                        return next(err)
+                    }
+
+                    res.status(200).send({total: count, data: result});
+                });
+
             })
         }
     };
@@ -529,93 +543,6 @@ var SubscriptionsHandler = function (db) {
             });
     };
 
-    this.changeSubscriptionEndDate = function(req, res, next){
-        var body = req.body;
-        var customerId = body.data.object.customer;
-        var subscriptionId = body.data.object.subscription;
-        var price = body.data.object.total;
-        var currentPeriodEnd;
-        var clientId;
-
-        async
-            .waterfall([
-                function(cb){
-                     User.findOne({'payments.customerId': customerId}, {_id: 1}, function(err, clientModel){
-
-                         if (err){
-                             return cb(err);
-                         }
-
-                         if (!clientModel){
-                             return cb(badRequests.DatabaseError());
-                         }
-
-                         clientId = clientModel._id;
-
-                         cb(null);
-
-                     });
-                },
-
-                function(cb){
-                    stripe.getSubscription(customerId, subscriptionId, function(err, subscription){
-
-                        if (err){
-                            return cb(err);
-                        }
-
-                        if (!subscription){
-                            return cb(badRequests.NotFound({target: 'Subscription'}));
-                        }
-
-                        currentPeriodEnd = subscription.current_period_end * 1000;
-
-                        cb(null, currentPeriodEnd);
-
-                    });
-                },
-
-                function(dateOfEnd, cb){
-                    Subscription
-                        .findOneAndUpdate({stripeSubId: subscriptionId}, {$set: {expirationDate: new Date(dateOfEnd)}}, function(err){
-
-                            if (err){
-                                return cb(err);
-                            }
-
-                            cb(null);
-
-                        });
-                },
-
-                function(cb){
-                    var fee = price * 0.029 + 30;
-                    var paymentModel;
-                    var paymentData = {
-                        paymentType: 'subscription',
-                        amount: price,
-                        fee: fee,
-                        totalAmount: price - fee,
-                        user: clientId,
-                        role: 'client'
-                    };
-
-                    paymentModel = new Payments(paymentData);
-
-                    paymentModel.save(cb);
-                }
-
-            ], function(err){
-
-                if (err){
-                    return next(err);
-                }
-
-                res.status(200).send();
-
-            });
-
-    };
 
 };
 

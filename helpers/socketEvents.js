@@ -8,7 +8,7 @@ var socketEvents = function (app) {
 
     io.on('connection', function( socket ) {
 
-        socket.emit('connectedToServer', {success: true});
+        socket.emit('connectedToServer', {success: 'Connected to server successfully'});
 
         socket.on('authorize', function (data){
             var userId = data.userId;
