@@ -39,10 +39,16 @@ define([
 
                     $("#dialog").dialog('close');
                     model.destroy({
-                        success: function () {
-                            alert('success');
+                        success: function (model, res) {
+                            var success = res.responseJSON ? res.responseJSON.success : 'Message removed successfully!';
+                            App.notification({message: success, type: 'success'});
+
                         },
-                        error: self.handleModelError
+                        error: function (model, res) {
+                            var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
+
+                            App.notification(err);
+                        }
                     });
                 }
             });

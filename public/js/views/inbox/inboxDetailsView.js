@@ -20,7 +20,6 @@ define([
 
             if (options && options.id) {
                 model = new Model({_id: options.id});
-                console.log(model);
                 model.fetch({
                     success: function (inboxModel) {
                         var name = inboxModel.get('name');
@@ -34,7 +33,11 @@ define([
                         }]);
                         self.renderInbox();
                     },
-                    error  : self.handleModelError
+                    error  : function (model, res) {
+                        var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
+
+                        App.notification(err);
+                    }
                 });
             } else {
                 model = new Model();

@@ -115,15 +115,22 @@ define([
             }
 
             model.save(data, {
-                success: function (savedModel) {
-                    alert('success');
+                success: function (savedModel, res) {
+                    var success = res.responseJSON ? res.responseJSON.success : 'Service created successfully!';
+                    App.notification({message: success, type: 'success'});
                     if (!id) {
                         self.collection.add(savedModel);
                         tr.attr('data-id', savedModel.id);
                     }
                     tr.find('.cancelBtn').click();
                 },
-                error: self.handleModelError
+                error: function (model, res) {
+                    var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
+
+                    App.notification(err);
+                }
+
+
             });
 
         },
@@ -182,10 +189,16 @@ define([
 
                     $("#dialog").dialog('close');
                     model.destroy({
-                        success: function () {
-                            alert('success');
+                        success: function (model, res) {
+                            var success = res.responseJSON ? res.responseJSON.success : 'Service removed successfully!';
+                            App.notification({message: success, type: 'success'});
+
                         },
-                        error: self.handleModelError
+                        error: function (model, res) {
+                            var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
+
+                            App.notification(err);
+                        }
                     });
                 }
             });
@@ -205,7 +218,11 @@ define([
 
             custom.getSrc(e, function (err, src) {
                 if (err) {
-                    return self.handleError(err);
+                    return function (model, res) {
+                        var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
+
+                        App.notification(err);
+                    };
                 }
 
                 logo.attr('src', src);
