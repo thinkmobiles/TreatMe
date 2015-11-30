@@ -20,9 +20,6 @@ define([
             'click .saveBtn'      : 'saveClient',
             'click .avatar'       : 'changeAvatar',
             'change .changeAvatar': 'changeInputFile',
-            'click .errorBtn': 'testError',
-            'click .warningBtn': 'testWarning',
-            'click .successBtn': 'testSuccess'
         },
 
         initialize: function (options) {
@@ -228,18 +225,6 @@ define([
                 avatar.attr('data-changed', 'true');
             });
 
-        },
-
-        testError: function () {
-            App.notification({message: 'Custom error', type: 'error'});
-        },
-
-        testWarning: function () {
-            App.notification({message: 'Custom warning', type: 'warning'});
-        },
-
-        testSuccess: function () {
-            App.notification({message: 'Custom success', type: 'success'});
         }
 
     });

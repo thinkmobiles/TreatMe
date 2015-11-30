@@ -10,7 +10,7 @@
         <tbody>
         <% _.forEach(services, function (service) {%>
             <% var name = service.name; %>
-            <tr class="service" data-id="<%=service.id%>">
+            <tr class="service" data-id="<%=service._id%>">
                 <td>
                     <input id="<%= name %>" type="checkbox" class="checkbox" <%= (service.status === 'approved') ? 'checked' : '' %>>
                     <label for="<%= name %>"><%= name %></label>

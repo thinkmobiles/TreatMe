@@ -209,9 +209,9 @@ define([
 
             var data;
 
-            var dataService = this.servicesView.getData();
+            var services = this.servicesView.getData();
 
-            if (dataService === false) {
+            if (!services) {
                 return callback('Please fill Price field or Incorrect format Price');
             }
 
@@ -238,7 +238,7 @@ define([
                     country      : country,
                     licenseNumber: licenseNumber
                 },
-                services    : dataService
+                services    : services
             };
 
             callback(null, data);
@@ -341,9 +341,6 @@ define([
                 }
                 App.notification({message: 'Stylist was saved success', type: 'success'});
             });
-
-            /*var services = this.servicesView.getData();
-             console.log(services);*/
         },
 
         edit: function (e) {

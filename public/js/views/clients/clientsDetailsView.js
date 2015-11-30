@@ -6,12 +6,14 @@ define([
     'views/clients/clientsAppointmentView',
     'views/clients/clientsPurchasedView',
     'collections/clientsCollection',
+    'text!/templates/clients/clientsDetailsProfileTemplate.html',
     'text!/templates/clients/clientsProfileTemplate.html'
-], function (custom, Model, ClientsAppointmentView, ClientsPurchasedView, Collection, ClientProfile) {
+], function (custom, Model, ClientsAppointmentView, ClientsPurchasedView, Collection, ProfileTemplate, ClientProfile) {
     var View = Backbone.View.extend({
         el: '#wrapper',
 
         template: _.template(ClientProfile),
+        profileTemplate: _.template(ProfileTemplate),
 
         events: {
             'click #editBtn': 'editProfile'
@@ -25,36 +27,25 @@ define([
             navContainer.find('.active').removeClass('active');
             navContainer.find('#nav_clients').addClass('active');
 
-            if (options && options.id) {
+            model = new Model({_id: options.id});
+            model.fetch({
+                success: function (userModel) {
+                    var personalInfo = userModel.get('personalInfo');
 
-                model = new Model({_id: options.id});
-                model.fetch({
-                    success: function (userModel) {
-                        var personalInfo = userModel.get('personalInfo');
-
-                        self.model = userModel;
-                        App.Breadcrumbs.reset([{
-                            name: 'Clients List', path: '#clients'}, {
-                            name: personalInfo.firstName + ' ' + personalInfo.lastName,
-                            path: '#clients/:id'
-                        }]);
-                        self.renderClient();
-                    },
-                    error  : self.handleModelError
-                });
-
-            } else {
-                model = new Model();
-                this.model = model;
-                this.render();
-            }
+                    self.model = userModel;
+                    App.Breadcrumbs.reset([{
+                        name: 'Clients List', path: '#clients'}, {
+                        name: personalInfo.firstName + ' ' + personalInfo.lastName,
+                        path: '#clients/:id'
+                    }]);
+                    self.renderClient();
+                },
+                error  : self.handleModelError
+            });
 
             this.render();
-
             this.clientsAppointment = new ClientsAppointmentView({id: options.id});
-
             this.clientsPurchased = new ClientsPurchasedView({id: options.id});
-
         },
 
         editProfile: function () {
@@ -70,22 +61,16 @@ define([
         renderClient: function () {
             var model = this.model;
             var $el = this.$el;
-            var container = $el.find('.stylistForm');
-            var item = model.toJSON();
-            var personalInfo = item.personalInfo;
+            var client = model.toJSON();
 
-            $el.find('.clientName').html(item.name);
+            $el.find('.clientName').html(client.name);
+            $el.find('.clientForm').html(this.profileTemplate(client));
 
-            if (item.currentSubscriptions[0]) {
-                $el.find('#currentPackage .purchaseDate').html(item.currentSubscriptions[0].purchaseDate);
-                $el.find('#currentPackage .package').html(item.currentSubscriptions[0].package);
-                $el.find('#currentPackage .price').html(item.currentSubscriptions[0].price);
+            if (client.currentSubscriptions && client.currentSubscriptions.length) {
+                $el.find('#currentPackage .purchaseDate').html(client.currentSubscriptions[0].purchaseDate);
+                $el.find('#currentPackage .package').html(client.currentSubscriptions[0].package);
+                $el.find('#currentPackage .price').html(client.currentSubscriptions[0].price);
             }
-
-            container.find('#avatar').attr('src', item.avatar);
-            container.find('.name').html(personalInfo.firstName + ' ' + personalInfo.lastName);
-            container.find('.phone').html(personalInfo.phone);
-            container.find('.email').html(item.email);
         }
 
     });
