@@ -8,10 +8,6 @@ define([
         model: Model,
         url: function () {
             return '/subscriptiontype';
-        },
-        parse: function (res) {
-            this.totalRecords = res.length;
-            return res;
         }
     });
 
