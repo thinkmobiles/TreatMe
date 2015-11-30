@@ -60,6 +60,13 @@ var SchedulerHelper = function(app, db){
             });
     }
 
+    this.startStylistPayments = function(){
+        var cronString = '0 0 12 7,20 * *';
+        var endDate = new Date();
+        var startDate
+
+    };
+
     this.startLookStylistForAppointment = function (appointmentId, userCoordinates, serviceTypeId) {
 
         var foundedStylists = [];

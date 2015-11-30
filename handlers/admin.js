@@ -3789,7 +3789,6 @@ var AdminHandler = function (app, db) {
                                return cb(err);
                            }
 
-
                            cb(null, resultModel.payments.recipientId);
                        });
                 },
