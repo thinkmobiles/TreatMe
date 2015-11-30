@@ -31,6 +31,7 @@ var UserHandler = function (app, db) {
     var ServiceType = db.model('ServiceType');
     var Services = db.model('Service');
     var Subscription = db.model('Subscription');
+    var io = app.get('io');
 
     var session = new SessionHandler(db);
     var image = new ImageHandler();
@@ -2084,7 +2085,7 @@ var UserHandler = function (app, db) {
         var userId = session.uId;
         var appointmentId = body.appointmentId;
         var cancellationReason = body.cancellationReason;
-        var findObj = {_id: appointmentId};
+        var criteria = {_id: appointmentId, status: {$in : [CONSTANTS.STATUSES.APPOINTMENT.CREATED, CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED]}};
         var updateObj;
 
         if (!appointmentId || !cancellationReason){
@@ -2096,23 +2097,48 @@ var UserHandler = function (app, db) {
         }
 
         if (session.role === CONSTANTS.USER_ROLE.CLIENT){
-            findObj.client = userId;
+            criteria['client.id'] = userId;
             updateObj = {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_CLIENT, cancellationReason: cancellationReason}};
         }
 
         if (session.role === CONSTANTS.USER_ROLE.STYLIST){
-            findObj.stylist = userId;
+            criteria['stylist.id'] = userId;
             updateObj = {$set: {status: CONSTANTS.STATUSES.APPOINTMENT.CANCEL_BY_STYLIST, cancellationReason: cancellationReason}};
         }
 
         Appointment
-            .findOneAndUpdate(findObj, updateObj, function(err, appointmentModel){
+            .findOneAndUpdate(criteria, updateObj, function(err, appointmentModel){
+                var room;
+                var socketData;
+
                 if (err){
                     return next(err);
                 }
 
                 if (!appointmentModel){
                     return next(badRequests.NotFound({target: 'Appointment'}));
+                }
+
+                if (session.role === CONSTANTS.USER_ROLE.CLIENT){
+                    if (appointmentModel.stylist && appointmentModel.stylist.id){
+                        room = appointmentModel.get('stylist.id').toString();
+                    }
+                }
+
+                if (session.role === CONSTANTS.USER_ROLE.STYLIST){
+                    if (appointmentModel.client && appointmentModel.client.id){
+                        room = appointmentModel.get('client.id').toString();
+                    }
+                }
+
+                if (room){
+                    socketData = {
+                        appointmentId: appointmentModel.get('_id').toString(),
+                        canceledBy: updateObj.$set.status,
+                        cancellationReason: cancellationReason
+                    };
+
+                    io.to(room).emit('appointment canceled', socketData);
                 }
 
                 res.status(200).send({success: 'Appointment was canceled successfully'});
