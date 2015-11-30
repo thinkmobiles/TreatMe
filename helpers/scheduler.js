@@ -6,6 +6,7 @@ var schedule = require('node-schedule');
 
 var SchedulerHelper = function(app, db){
 
+    var StripeModule = require('../helpers/stripe');
     var stylistHandler = new StylistHandler(app, db);
     var Services = db.model('Service');
     var User = db.model('User');
@@ -14,6 +15,7 @@ var SchedulerHelper = function(app, db){
     var StylistPayments = db.model('StylistPayments');
     var io = app.get('io');
     var ObjectId = mongoose.Types.ObjectId;
+    var stripe = new StripeModule();
 
     function cancelShedulerAndSocketInform(scheduler, appointmentId, arrayOfRooms) {
         var room;
@@ -47,7 +49,7 @@ var SchedulerHelper = function(app, db){
                 },
                 {
                     $group: {
-                        _id: '$stylist',
+                        _id: '$recipientId',
                         total: {$sum: '$stylistAmount'}
                     }
                 }
@@ -63,8 +65,49 @@ var SchedulerHelper = function(app, db){
     this.startStylistPayments = function(){
         var cronString = '0 0 12 7,20 * *';
         var endDate = new Date();
-        var startDate
+        var startDate;
+        var currentDayOfMonth = endDate.getDate();
 
+        if (currentDayOfMonth === 20){
+            endDate.setHours(0);
+            endDate.setMinutes(0);
+            endDate.setSeconds(0);
+            endDate.setMilliseconds(0);
+
+            startDate = new Date(endDate);
+            startDate.setDate(7);
+        } else {
+            endDate.setHours(0);
+            endDate.setMinutes(0);
+            endDate.setSeconds(0);
+            endDate.setMilliseconds(0);
+
+            startDate = new Date(endDate);
+            startDate.setMonth(startDate.getMonth() - 1);
+            startDate.setDate(20);
+        }
+
+        getStylistsPaymentsByPeriod(startDate, endDate, function(err, paymentsArray){
+
+            if (err){
+                return console.log(err);
+            }
+
+            async
+                .eachLimit(paymentsArray, 5,
+                    function(payment, cb){
+
+                        stripe.createTransfer()
+
+                    },
+
+                    function(err){
+
+
+
+                    });
+
+        });
     };
 
     this.startLookStylistForAppointment = function (appointmentId, userCoordinates, serviceTypeId) {

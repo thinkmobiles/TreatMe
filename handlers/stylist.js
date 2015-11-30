@@ -217,6 +217,7 @@ var StylistHandler = function (app, db) {
         var serviceTypeLogoName;
         var serviceTypeLogoUrl = '';
         var bookingDate;
+        var recipientId;
 
         if (!CONSTANTS.REG_EXP.OBJECT_ID.test(appointmentId)) {
             return next(badRequests.InvalidValue({value: appointmentId, param: 'appointmentId'}));
@@ -226,7 +227,7 @@ var StylistHandler = function (app, db) {
 
             function(cb){
                 User
-                    .findOne({_id: stylistId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'personalInfo.avatar': 1}, function(err, stylistModel){
+                    .findOne({_id: stylistId}, {'personalInfo.firstName': 1, 'personalInfo.lastName': 1, 'personalInfo.avatar': 1, 'payments.recipientId': 1}, function(err, stylistModel){
                         var stylistFirstName;
                         var stylistLastName;
 
@@ -255,6 +256,8 @@ var StylistHandler = function (app, db) {
                             status: CONSTANTS.STATUSES.APPOINTMENT.CONFIRMED
 
                         };
+
+                        recipientId = stylistModel.payments.recipientId;
 
                         cb();
                     });
@@ -436,7 +439,8 @@ var StylistHandler = function (app, db) {
                     paymentType: 'service',
                     realAmount: amount,
                     stylistAmount: appointmentModel.price * 100,
-                    stylist: appointmentModel.stylist.id
+                    stylist: appointmentModel.stylist.id,
+                    recipientId: recipientId
                 };
 
                 stylistPaymentsModel = new StylistPayments(paymentsData);
