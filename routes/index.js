@@ -11,16 +11,19 @@ module.exports = function (app, db) {
     var SubscriptionHandler = require('../handlers/subscription');
     var UserHandler = require('../handlers/users');
     var SessionHandler = require('../handlers/sessions');
+    var HooksHandler = require('../handlers/hooks');
 
     var subscriptionHandler = new SubscriptionHandler(db);
     var user = new UserHandler(app, db);
     var sessionHandler = new SessionHandler(db);
+    var hooks = new HooksHandler(db);
 
     app.get('/', function (req, res, next) {
         res.sendfile('index.html');
     });
 
-    app.post('/invoice', subscriptionHandler.changeSubscriptionEndDate);
+    app.post('/invoice', hooks.fireOnInvoiceHook);
+    app.post('/transfer', hooks.fireOnTransferPaidHook);
 
     app.use('/client', clientsRouter);
     app.use('/admin', adminRouter);
@@ -49,8 +52,6 @@ module.exports = function (app, db) {
     app.post('/avatar', sessionHandler.authenticatedUser, user.uploadAvatar);
     app.delete('/avatar/:id?', sessionHandler.authenticatedUser, user.removeAvatar);
     app.put('/coordinates', sessionHandler.authenticatedUser, user.updateLocation);
-
-
 
     app.get('/service/:stylistId?', sessionHandler.isAdmin, user.getStylistServices);
 

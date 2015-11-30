@@ -5,7 +5,6 @@ var StripeModule = function(){
 
     this.createCustomer = function (data, callback){
 
-
         if (!data || (typeof data !== 'object')) {
 
             if (callback && (typeof callback === 'function')) {
@@ -27,6 +26,20 @@ var StripeModule = function(){
                 callback(null, customer);
             }
         });
+    };
+
+    this.updateCustomer = function(customerId, data, callback){
+
+        stripe
+            .customers
+            .update(customerId, data, function(err, updatedCustomer){
+                if (err){
+                    return callback(err);
+
+                }
+                callback(null, updatedCustomer);
+            })
+
     };
 
     this.deleteCustomer = function(customerId, callback){
@@ -256,8 +269,7 @@ var StripeModule = function(){
                 amount: 4900, //(in cents)
                 interval: 'month',
                 name: 'Unlimited manicure',
-                currency: 'usd',
-                id: 'unlimitedManicure'
+                currency: 'usd'
             }
         */
 
