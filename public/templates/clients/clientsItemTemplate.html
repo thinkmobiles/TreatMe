@@ -9,7 +9,7 @@
         </span>
     </div>
     <div class="infoAccount">
-        <img class="avatar" width="90" height="90" alt="avatar" src="<%= item.personalInfo.avatar%>"/>
+        <img class="avatar" width="90" height="90" alt="avatar" src="<%= item.personalInfo.avatar || '/images/avatar.png'%>"/>
         <input style="display: none" type="file" value="Avatar" class="changeAvatar" accept="image/*">
 
         <div class="accountInfo">
@@ -69,10 +69,6 @@
 
     </div>
 
-
     <button class="saveBtn">Save</button>
-        || <button class="errorBtn">Error</button>
-        || <button class="warningBtn">Warning</button>
-        || <button class="successBtn">Success</button>
 
 </div>

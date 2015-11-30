@@ -599,7 +599,7 @@ var AdminHandler = function (app, db) {
 
                 mailer.adminCreateUser(mailOptions);
 
-                res.status(200).send({success: 'Stylist created successfully'});
+                res.status(200).send({success: 'Stylist created successfully', _id: uId});
 
             });
 

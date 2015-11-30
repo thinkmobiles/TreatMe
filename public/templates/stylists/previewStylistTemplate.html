@@ -30,7 +30,7 @@
     <% } %>
 
     <div class="accountInfo">
-        <img class="avatar" width="90" height="90" alt="avatar" src="<%= user.personalInfo.avatar %>"/>
+        <img class="avatar" width="90" height="90" alt="avatar" src="<%= user.personalInfo.avatar || '/images/avatar.png'%>"/>
         <input style="display: none" type="file" value="Avatar" class="changeAvatar" accept="image/*">
         <br/>
         <span class="title">Your Name</span><span class="infoField"> <%= user.personalInfo.firstName + ' ' + user.personalInfo.lastName%> </span></br>

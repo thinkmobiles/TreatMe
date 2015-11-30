@@ -74,6 +74,7 @@ define([
 
                 obj = {
                     id: id,
+                    serviceId: id,
                     price: price,
                     name: name,
                     status: 'approved'
