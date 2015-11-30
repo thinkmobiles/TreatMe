@@ -142,6 +142,14 @@ define([
                 options.status = 'Services';
             }
 
+            if (type === 'packages') {
+                options.status = 'Packages';
+            }
+
+            if (type === 'inbox') {
+                options.status = 'Inbox';
+            }
+
             this.loadWrapperView(type, options, REDIRECT.whenNOTAuthorized);
         },
 

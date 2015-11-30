@@ -3,11 +3,12 @@
 define([
     'custom',
     'views/customElements/ListView',
-    'models/serviceModel',
-    'collections/serviceCollection',
-    'text!templates/services/servicesTemplate.html', //TODO: ...
-    'text!templates/services/servicesListTemplate.html' //TODO: ...
-], function (custom, ListView, Model, Collection, MainTemplate, ListTemplate) {
+    'models/packagesModel',
+    'collections/packagesCollection',
+    'text!templates/packages/packagesTemplate.html', //TODO: ...
+    'text!templates/packages/packagesListTemplate.html' //TODO: ...
+
+], function (custom, ListView, Model, Collection, MainTemplate, ListTemplate){
 
     var View = ListView.extend({
         Collection: Collection,
@@ -25,8 +26,8 @@ define([
         }, ListView.prototype.events),
 
         initialize: function (options) {
-            App.Breadcrumbs.reset([{name: 'Services', path: '#services'}]);
-            App.menu.select('#nav_services');
+            App.Breadcrumbs.reset([{name: 'Packages', path: '#packages'}]);
+            App.menu.select('#nav_packages');
             ListView.prototype.initialize.call(this, options);
         },
 
@@ -34,7 +35,6 @@ define([
             var target = $(e.target);
             var itemId = target.closest('tr').data('id');
         },
-
 
         edit: function (e) {
             var target = $(e.target);
@@ -46,14 +46,12 @@ define([
                 var modelJSON = model.toJSON();
 
                 tr.find('.name').html('<input class="newName" value="'+modelJSON.name+'">');
-                tr.find('.discount').html('<input class="newDiscount" value="'+modelJSON.price+'">');
+                tr.find('.price').html('<input class="newPrice" value="'+modelJSON.price+'">');
                 tr.find('.editBtn').remove();
                 tr.find('.removeCurrentBtn').remove();
 
                 tr.find('.editOrSave').html('<button class="saveBtn">Save</button>');
                 tr.find('.removeOrCancel').html('<button class="cancelBtn">Canсel</button>');
-            } else if (!id) {
-                tr.remove();
             }
             this.$el.find('.add').remove();
 
@@ -79,7 +77,7 @@ define([
             }
 
             name = tr.find('.newName').val();
-            discount = tr.find('.newDiscount').val();
+            discount = tr.find('.newPrice').val();
             logoBASE64 = tr.find('.logo').attr('src');
 
             tr.find('.prompt').remove();
@@ -91,12 +89,12 @@ define([
             }
 
             if (!name) {
-                tr.find('.name').append('<span class="prompt">Please fill Service Name field</span>');
+                tr.find('.name').append('<span class="prompt">Please fill Package Name field</span>');
                 error = true;
             }
 
             if (!discount) {
-                tr.find('.discount').append('<span class="prompt">Please fill Discount field</span>');
+                tr.find('.price').append('<span class="prompt">Please fill Price field</span>');
                 error = true;
             }
 
@@ -138,8 +136,8 @@ define([
                 var modelJSON = model.toJSON();
 
                 tr.find('.name').html(modelJSON.name);
-                tr.find('.discount').html(modelJSON.price);
-                tr.find('.newDiscount').remove();
+                tr.find('.price').html(modelJSON.price);
+                tr.find('.newPrice').remove();
                 tr.find('.saveBtn').remove();
                 tr.find('.cancelBtn').remove();
 
@@ -148,17 +146,17 @@ define([
             } else if (!id) {
                 tr.remove();
             }
-            this.$el.find('.buttons').html('<button class="add">Add New Service</button>');
+            this.$el.find('.buttons').html('<button class="add">Add New Packages</button>');
 
             e.stopPropagation();
         },
 
         add: function (e) {
-                this.$el.find('.items').prepend('<tr>' +
+            this.$el.find('.items').prepend('<tr>' +
                 '<td ><img class="logo" width="90" height="90" alt="logo" src="<%= item.logo %>"/>' +
-                    '<input style="display: none" type="file" value="Logo" class="changeLogo" accept="image/*"><br/></td>' +
+                '<input style="display: none" type="file" value="Logo" class="changeLogo" accept="image/*"><br/></td>' +
                 '<td class="name"><input class="newName"></td>' +
-                '<td class="discount"><input class="newDiscount"></td>' +
+                '<td class="price"><input class="newPrice"></td>' +
                 '<td class="editOrSave"><button class="saveBtn">Save</button></td>' +
                 '<td class="removeOrCancel"><button class="cancelBtn">Canсel</button></td></tr>');
 

@@ -2,10 +2,13 @@
 
 define([
     'collections/parentCollection',
-    'models/subscriptionModel'
+    'models/inboxModel'
 ], function (ParentCollection, Model) {
     var Collection = ParentCollection.extend({
-        model: Model
+        model: Model,
+        url: function () {
+            return '/admin/inbox';
+        }
     });
 
     return Collection;

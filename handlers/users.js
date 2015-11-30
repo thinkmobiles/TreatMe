@@ -1388,7 +1388,7 @@ var UserHandler = function (app, db) {
 
                         function(cb){
 
-                            // TODO update subscription when update client profile
+                            // TODO update packages when update client profile
                             if (userObj !== CONSTANTS.USER_ROLE.CLIENT){
                                 return cb(null);
                             }
