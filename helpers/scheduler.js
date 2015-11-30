@@ -9,10 +9,27 @@ var SchedulerHelper = function(app, db){
     var stylistHandler = new StylistHandler(app, db);
     var Services = db.model('Service');
     var User = db.model('User');
+    var Appointment = db.model('Appointment');
     var Payments = db.model('Payment');
     var StylistPayments = db.model('StylistPayments');
     var io = app.get('io');
     var ObjectId = mongoose.Types.ObjectId;
+
+    function cancelShedulerAndSocketInform(scheduler, appointmentId, arrayOfRooms) {
+        var room;
+
+        for (var i = arrayOfRooms.length; i>0; i--){
+            room = arrayOfRooms[i - 1];
+
+            console.log('=> Remove appointment from map. Send socket event to room: ' + room);
+
+            io.to(room).emit('remove appointment from map', {appointmentId: appointmentId});
+        }
+
+        console.log('>>> Scheduler canceled');
+
+        scheduler.cancel();
+    }
 
     function getStylistsPaymentsByPeriod (starDate, endDate, callback){
         var start = new Date(starDate);
@@ -53,6 +70,7 @@ var SchedulerHelper = function(app, db){
     this.startLookStylistForAppointment = function (appointmentId, userCoordinates, serviceTypeId) {
 
         var foundedStylists = [];
+        var sendedStylists = [];
         var tenStylistsModelArray = [];
         var goodStylistModel;
         var stylistId;
@@ -69,6 +87,14 @@ var SchedulerHelper = function(app, db){
 
             if (distance > maxDistance) {
                 console.log('>>> Scheduler canceled');
+
+                Appointment
+                    .findOneAndUpdate({_id: appointmentId}, {$set: {sentTo: sendedStylists}}, function (err) {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
+
                 newScheduler.cancel();
 
                 return;
@@ -85,8 +111,7 @@ var SchedulerHelper = function(app, db){
                 stylistHandler.checkStylistAvailability(availabilityObj, stylistId, appointmentId, function (err, appointmentModel) {
                     if (err) {
                         if (err.message.indexOf('was accepted') !== -1) {
-                            console.log('>>> Scheduler canceled');
-                            newScheduler.cancel();
+                            cancelShedulerAndSocketInform(newScheduler, appointmentId, sendedStylists);
                             return;
                         }
 
@@ -95,6 +120,8 @@ var SchedulerHelper = function(app, db){
 
                     if (appointmentModel) {
                         room = stylistId.toString();
+
+                        sendedStylists.push(room);
 
                         io.to(room).emit('new appointment', appointmentModel);
                         return console.log('==> Sent appointment to stylist with id: ' + stylistId);
@@ -178,8 +205,7 @@ var SchedulerHelper = function(app, db){
                                 stylistHandler.checkStylistAvailability(availabilityObj, stylistId, appointmentId, function (err, appointmentModel) {
                                     if (err) {
                                         if (err.message.indexOf('was accepted') !== -1) {
-                                            console.log('>>> Scheduler canceled');
-                                            newScheduler.cancel();
+                                            cancelShedulerAndSocketInform(newScheduler, appointmentId, sendedStylists);
                                             return;
                                         }
 
@@ -188,6 +214,8 @@ var SchedulerHelper = function(app, db){
 
                                     if (appointmentModel) {
                                         room = stylistId.toString();
+
+                                        sendedStylists.push(room);
 
                                         io.to(room).emit('new appointment', appointmentModel);
                                         console.log('==> Sent appointment to stylist with id: ' + stylistId);

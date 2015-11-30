@@ -653,7 +653,7 @@ var ClientsHandler = function (app, db) {
                             return cb(err);
                         }
 
-                        appointmentId = (appointmentModel.get('_id')).toString();
+                        appointmentId = appointmentModel.get('_id').toString();
 
                         cb(null, appointmentId);
                     });
