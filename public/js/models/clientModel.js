@@ -18,7 +18,7 @@ define([
             }
         },
 
-        validate: function (attrs, options) {
+        validate__: function (attrs, options) {
             var errors = [];
             var email = attrs.email;
             var password = attrs.password;

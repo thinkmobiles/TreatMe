@@ -105,10 +105,11 @@ require(['app', 'socketio', 'Validator'], function(app, io, validator){
         return dd + '/' + mm + '/' + yy;
     };
 
-    App.__errorContainer__ = $('#errorNotifications');
+    App.$notifications = $('#notifications');
 
-    App.errorNotification = function (data) {
-        var container = this.__errorContainer__;
+    //App.errorNotification = function (data) {
+    App.notification = function (data) {
+        var container = this.$notifications;
         var messageClass = data.type || 'error';
         var text = (typeof data === 'string') ? data : (data.message || 'Something went wrong');
         var renderEl = '<div class="animate ' + messageClass + '">' + text + '</div>';

@@ -20,9 +20,9 @@ define([
             'click .saveBtn'      : 'saveClient',
             'click .avatar'       : 'changeAvatar',
             'change .changeAvatar': 'changeInputFile',
-            'click #errorBtn': 'testError',
-            'click #warningBtn': 'testWarning',
-            'click #successBtn': 'testSuccess'
+            'click .errorBtn': 'testError',
+            'click .warningBtn': 'testWarning',
+            'click .successBtn': 'testSuccess'
         },
 
         initialize: function (options) {
@@ -38,7 +38,7 @@ define([
         addClient: function (options) {
             var model = new ClientModel();
 
-            model.on('error', this.handleModelError, this);
+            //model.on('error', this.handleModelError, this);
             model.on('invalid', this.handleModelValidationError, this);
 
             this.model = model;
@@ -62,7 +62,7 @@ define([
                 error  : function (model, res) {
                     var err = res.responseJSON ? res.responseJSON.message : 'Something broke!';
 
-                    App.errorNotification(err);
+                    App.notification(err);
                 }
             });
         },
@@ -184,6 +184,7 @@ define([
                         url        : '/avatar',
                         data       : JSON.stringify(data),
                         success    : function () {
+                            //App.notification({message: 'Success updated', type: 'success'});
                             cb(null, model);
                         },
                         error      : function (xhr) {
@@ -196,9 +197,9 @@ define([
 
             ], function (err, result) {
                 if (err) {
-                    return App.errorNotification(err);
+                    return App.notification(err);
                 }
-                console.log('async.parallel: success saved');
+                App.notification({message: 'Client was saved success', type: 'success'});
             });
 
         },
@@ -223,15 +224,15 @@ define([
         },
 
         testError: function () {
-            aadmin
+            App.notification({message: 'Custom error', type: 'error'});
         },
-        
-        testWarning: function () {
-            
-        },
-        
-        testSuccess: function () {
 
+        testWarning: function () {
+            App.notification({message: 'Custom warning', type: 'warning'});
+        },
+
+        testSuccess: function () {
+            App.notification({message: 'Custom success', type: 'success'});
         }
 
     });
