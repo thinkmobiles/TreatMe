@@ -47,7 +47,7 @@ module.exports = {
     SEARCH_DISTANCE: {
         START: 1609.344, // start search stylists from 1 mile
         STEP: 1609.344, // increase search distance for 1 mile
-        MAX: 5 * 1609.344 //max 50 miles
+        MAX: 50 * 1609.344 //max 50 miles
     }
 };
 
