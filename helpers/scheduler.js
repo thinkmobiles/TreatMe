@@ -9,6 +9,7 @@ var SchedulerHelper = function(app, db){
     var stylistHandler = new StylistHandler(app, db);
     var Services = db.model('Service');
     var User = db.model('User');
+    var Appointment = db.model('Appointment');
     var Payments = db.model('Payment');
     var StylistPayments = db.model('StylistPayments');
     var io = app.get('io');
@@ -20,7 +21,7 @@ var SchedulerHelper = function(app, db){
         for (var i = arrayOfRooms.length; i>0; i--){
             room = arrayOfRooms[i - 1];
 
-            console.log('=> Appointment was accepted by stylist. Send socket event to room: ' + room);
+            console.log('=> Remove appointment from map. Send socket event to room: ' + room);
 
             io.to(room).emit('remove appointment from map', {appointmentId: appointmentId});
         }
@@ -78,7 +79,16 @@ var SchedulerHelper = function(app, db){
             console.log('>>> Scheduler starts for appointment id: ' + appointmentId + ' and distance: ' + distance / 1609.344 + ' miles');
 
             if (distance > maxDistance) {
-                cancelShedulerAndSocketInform(newScheduler, appointmentId, sendedStylists);
+                console.log('>>> Scheduler canceled');
+
+                Appointment
+                    .findOneAndUpdate({_id: appointmentId}, {$set: {sentTo: sendedStylists}}, function (err) {
+                        if (err) {
+                            console.log(err);
+                        }
+                    });
+
+                newScheduler.cancel();
 
                 return;
             }
